@@ -1,0 +1,2106 @@
+<!DOCTYPE html>
+
+<html lang="es">
+
+<head>
+
+```
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0">
+
+<title>Finanzas Personales</title>
+
+<link
+    rel="stylesheet"
+    href="css/styles.css">
+```
+
+</head>
+
+<body>
+
+<!-- ========================================
+     LOGIN
+========================================= -->
+
+<div id="loginScreen" class="auth-screen">
+
+    <div class="auth-card">
+
+        <div class="auth-logo">
+            ₲
+        </div>
+
+        <h1>
+            Finanzas Personales
+        </h1>
+
+        <p class="auth-subtitle">
+            Inicia sesión para acceder a tus finanzas.
+        </p>
+
+        <form id="loginForm">
+
+            <div class="form-group">
+
+                <label for="loginEmail">
+                    Correo electrónico
+                </label>
+
+                <input
+                    type="email"
+                    id="loginEmail"
+                    placeholder="tu@email.com"
+                    required>
+
+            </div>
+
+            <div class="form-group">
+
+                <label for="loginPassword">
+                    Contraseña
+                </label>
+
+                <input
+                    type="password"
+                    id="loginPassword"
+                    placeholder="••••••••"
+                    required>
+
+            </div>
+
+            <button
+                type="submit"
+                class="primary-button auth-submit-button">
+
+                Iniciar sesión
+
+            </button>
+
+            <p
+                id="loginMessage"
+                class="auth-message">
+            </p>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- ========================================
+     APLICACIÓN
+========================================= -->
+
+<div class="app">
+
+
+    <!-- ========================================
+     SIDEBAR
+========================================= -->
+
+<aside class="sidebar">
+
+
+        <!-- LOGO -->
+
+        <div class="logo">
+
+            <div class="logo-icon">
+                ₲
+            </div>
+
+            <div class="logo-text">
+
+                <strong>
+                    Finanzas
+                </strong>
+
+                <span>
+                    Personales
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <!-- MENÚ -->
+
+        <nav class="menu">
+
+
+            <button
+                type="button"
+                class="menu-item active"
+                data-section="dashboard">
+
+                <span class="menu-icon">
+                    ⌂
+                </span>
+
+                <span>
+                    Dashboard
+                </span>
+
+            </button>
+
+
+            <button
+                type="button"
+                class="menu-item"
+                data-section="ingresos">
+
+                <span class="menu-icon">
+                    ↗
+                </span>
+
+                <span>
+                    Ingresos
+                </span>
+
+            </button>
+
+
+            <button
+                type="button"
+                class="menu-item"
+                data-section="gastos">
+
+                <span class="menu-icon">
+                    ↘
+                </span>
+
+                <span>
+                    Gastos
+                </span>
+
+            </button>
+
+
+            <button
+                type="button"
+                class="menu-item"
+                data-section="presupuesto">
+
+                <span class="menu-icon">
+                    ▦
+                </span>
+
+                <span>
+                    Presupuesto
+                </span>
+
+            </button>
+
+
+            <button
+                type="button"
+                class="menu-item"
+                data-section="fijos">
+
+                <span class="menu-icon">
+                    ◷
+                </span>
+
+                <span>
+                    Gastos fijos
+                </span>
+
+            </button>
+
+
+            <button
+                type="button"
+                class="menu-item"
+                data-section="reportes">
+
+                <span class="menu-icon">
+                    ◒
+                </span>
+
+                <span>
+                    Reportes
+                </span>
+
+            </button>
+
+
+            <button
+                type="button"
+                class="menu-item"
+                data-section="configuracion">
+
+                <span class="menu-icon">
+                    ⚙
+                </span>
+
+                <span>
+                    Configuración
+                </span>
+
+            </button>
+
+
+        </nav>
+
+
+        <!-- FOOTER -->
+
+        <div class="sidebar-footer">
+
+            <span>
+                Finanzas Personales
+            </span>
+
+            <small>
+                Versión 1.0
+            </small>
+
+        </div>
+
+
+    </aside>
+
+
+    <!-- ========================================
+         CONTENIDO PRINCIPAL
+    ========================================= -->
+
+    <main class="main-content">
+
+
+        <!-- ========================================
+             HEADER
+        ========================================= -->
+
+        <header class="topbar">
+
+
+            <div>
+
+                <h1 id="pageTitle">
+                    Dashboard
+                </h1>
+
+                <p id="pageSubtitle">
+                    Resumen de tus finanzas personales
+                </p>
+
+            </div>
+
+
+            <div class="year-selector">
+
+                <label for="year">
+                    Año
+                </label>
+
+                <select id="year">
+
+                    <option value="2026">
+                        2026
+                    </option>
+
+                    <option value="2025">
+                        2025
+                    </option>
+
+                    <option value="2024">
+                        2024
+                    </option>
+
+                </select>
+
+            </div>
+
+
+        </header>
+
+
+        <!-- ========================================
+             DASHBOARD
+        ========================================= -->
+
+        <section
+            id="dashboard"
+            class="dashboard page-section active">
+
+
+            <div class="summary-cards">
+
+
+                <!-- INGRESOS -->
+
+                <article
+                    class="summary-card income">
+
+                    <span class="card-label">
+                        Ingresos
+                    </span>
+
+                    <strong id="dashboardIncome">
+                        Q 0.00
+                    </strong>
+
+                    <small>
+                        Acumulado del año
+                    </small>
+
+                </article>
+
+
+                <!-- GASTOS -->
+
+                <article
+                    class="summary-card expense">
+
+                    <span class="card-label">
+                        Gastos
+                    </span>
+
+                    <strong id="dashboardExpenses">
+                        Q 0.00
+                    </strong>
+
+                    <small>
+                        Acumulado del año
+                    </small>
+
+                </article>
+
+
+                <!-- GASTOS FIJOS -->
+
+                <article
+                    class="summary-card fixed">
+
+                    <span class="card-label">
+                        Gastos fijos
+                    </span>
+
+                    <strong id="dashboardFixed">
+                        Q 0.00
+                    </strong>
+
+                    <small>
+                        Gastos recurrentes
+                    </small>
+
+                </article>
+
+
+                <!-- DISPONIBLE -->
+
+                <article
+                    class="summary-card balance">
+
+                    <span class="card-label">
+                        Disponible
+                    </span>
+
+                    <strong id="dashboardBalance">
+                        Q 0.00
+                    </strong>
+
+                    <small>
+                        Ingresos − gastos
+                    </small>
+
+                </article>
+
+
+            </div>
+
+
+            <div class="dashboard-grid">
+
+
+                <!-- FLUJO MENSUAL -->
+
+                <article class="panel">
+
+                    <div class="panel-header">
+
+                        <div>
+
+                            <h2>
+                                Flujo mensual
+                            </h2>
+
+                            <p>
+                                Ingresos y gastos por mes
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div
+    class="dashboard-chart"
+    id="monthlyFlowChart">
+
+    <!-- JavaScript construirá la gráfica -->
+
+</div>
+
+
+                </article>
+
+
+                <!-- GASTOS POR CATEGORÍA -->
+
+                <article class="panel">
+
+                    <div class="panel-header">
+
+                        <div>
+
+                            <h2>
+                                Gastos por categoría
+                            </h2>
+
+                            <p>
+                                Distribución de tus gastos
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div
+    class="category-chart"
+    id="expenseCategoryChart">
+
+    <!-- JavaScript construirá la gráfica -->
+
+</div>
+
+
+                </article>
+
+
+            </div>
+
+
+        </section>
+
+
+        <!-- ========================================
+             INGRESOS
+        ========================================= -->
+
+        <section
+            id="ingresos"
+            class="page-section">
+
+
+            <div class="section-header">
+
+                <div>
+
+                    <h2>
+                        Ingresos
+                    </h2>
+
+                    <p>
+                        Registra y administra tus ingresos.
+                    </p>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    class="primary-button"
+                    id="newIncomeButton">
+
+                    + Nuevo ingreso
+
+                </button>
+
+            </div>
+
+
+            <!-- FORMULARIO DE INGRESOS -->
+
+            <div
+                class="panel"
+                id="incomeFormPanel"
+                style="display: none;">
+
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <h2 id="incomeFormTitle">
+                            Nuevo ingreso
+                        </h2>
+
+                        <p>
+                            Registra los detalles del ingreso.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <form id="incomeForm">
+
+
+                    <input
+                        type="hidden"
+                        id="incomeId">
+
+
+                    <div class="form-grid">
+
+
+                        <!-- FECHA -->
+
+                        <div class="form-group">
+
+                            <label for="incomeDate">
+                                Fecha
+                            </label>
+
+                            <input
+                                type="date"
+                                id="incomeDate"
+                                required>
+
+                        </div>
+
+
+                        <!-- DESCRIPCIÓN -->
+
+                        <div class="form-group">
+
+                            <label for="incomeDescription">
+                                Descripción
+                            </label>
+
+                            <input
+                                type="text"
+                                id="incomeDescription"
+                                placeholder="Ej. Salario de septiembre"
+                                required>
+
+                        </div>
+
+
+                        <!-- CATEGORÍA -->
+
+                        <div class="form-group">
+
+                            <label for="incomeCategory">
+                                Categoría
+                            </label>
+
+                            <select
+                                id="incomeCategory"
+                                required>
+
+                                <option value="">
+                                    Selecciona una categoría
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <!-- MONEDA -->
+
+                        <div class="form-group">
+
+                            <label for="incomeCurrency">
+                                Moneda
+                            </label>
+
+                            <select
+                                id="incomeCurrency">
+
+                                <option value="GTQ">
+                                    GTQ - Quetzales
+                                </option>
+
+                                <option value="USD">
+                                    USD - Dólares
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <!-- MONTO -->
+
+                        <div class="form-group">
+
+                            <label for="incomeAmount">
+                                Monto
+                            </label>
+
+                            <input
+                                type="number"
+                                id="incomeAmount"
+                                min="0"
+                                step="0.01"
+                                placeholder="0.00"
+                                required>
+
+                        </div>
+
+
+                        <!-- TIPO DE CAMBIO -->
+
+                        <div
+    class="form-group"
+    id="incomeExchangeGroup"
+    hidden>
+
+                            <label for="incomeExchangeRate">
+                                Tipo de cambio
+                            </label>
+
+
+                            <div class="exchange-input">
+
+                                <input
+                                    type="number"
+                                    id="incomeExchangeRate"
+                                    min="0"
+                                    step="0.00001"
+                                    placeholder="0.00000">
+
+
+                                <button
+                                    type="button"
+                                    class="secondary-button"
+                                    id="refreshExchangeRate">
+
+                                    ↻ Actualizar
+
+                                </button>
+
+                            </div>
+
+
+                            <small
+                                class="field-help"
+                                id="exchangeRateStatus">
+
+                                Tipo de cambio manual.
+
+                            </small>
+
+                        </div>
+
+
+                        <!-- EQUIVALENTE -->
+
+                        <div class="form-group">
+
+                            <label>
+                                Equivalente en GTQ
+                            </label>
+
+
+                            <div
+                                class="calculated-value"
+                                id="incomeAmountGTQ">
+
+                                Q 0.00
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- NOTAS -->
+
+                        <div
+                            class="form-group form-group-full">
+
+                            <label for="incomeNotes">
+                                Notas
+                            </label>
+
+                            <textarea
+                                id="incomeNotes"
+                                rows="3"
+                                placeholder="Información adicional..."></textarea>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <!-- BOTONES -->
+
+                    <div class="form-actions">
+
+
+                        <button
+                            type="button"
+                            class="secondary-button"
+                            id="cancelIncomeButton">
+
+                            Cancelar
+
+                        </button>
+
+
+                        <button
+                            type="submit"
+                            class="primary-button">
+
+                            Guardar ingreso
+
+                        </button>
+
+
+                    </div>
+
+
+                </form>
+
+
+            </div>
+
+
+            <!-- TABLA DE INGRESOS -->
+
+            <div class="panel">
+
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <h2>
+                            Ingresos registrados
+                        </h2>
+
+                        <p>
+                            Historial de tus ingresos.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    class="table-container"
+                    id="incomeTableContainer">
+
+
+                    <div class="empty-table">
+
+                        No hay ingresos registrados.
+
+                    </div>
+
+
+                </div>
+
+
+            </div>
+
+
+        </section>
+
+
+        <!-- ========================================
+             GASTOS
+        ========================================= -->
+
+        <!-- ========================================
+     GASTOS
+========================================= -->
+
+<section
+    id="gastos"
+    class="page-section">
+
+    <div class="section-header">
+
+        <div>
+
+            <h2>
+                Gastos
+            </h2>
+
+            <p>
+                Registra y administra tus gastos.
+            </p>
+
+        </div>
+
+        <button
+            type="button"
+            class="primary-button"
+            id="newExpenseButton">
+
+            + Nuevo gasto
+
+        </button>
+
+    </div>
+
+
+    <!-- FORMULARIO DE GASTOS -->
+
+    <div
+        class="panel"
+        id="expenseFormPanel"
+        hidden>
+
+        <div class="panel-header">
+
+            <div>
+
+                <h2 id="expenseFormTitle">
+                    Nuevo gasto
+                </h2>
+
+                <p>
+                    Registra los detalles del gasto.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <form id="expenseForm">
+
+            <input
+                type="hidden"
+                id="expenseId">
+
+
+            <div class="form-grid">
+
+
+                <!-- FECHA -->
+
+                <div class="form-group">
+
+                    <label for="expenseDate">
+                        Fecha
+                    </label>
+
+                    <input
+                        type="date"
+                        id="expenseDate"
+                        required>
+
+                </div>
+
+
+                <!-- DESCRIPCIÓN -->
+
+                <div class="form-group">
+
+                    <label for="expenseDescription">
+                        Descripción
+                    </label>
+
+                    <input
+                        type="text"
+                        id="expenseDescription"
+                        placeholder="Ej. Compra de supermercado"
+                        required>
+
+                </div>
+
+
+                <!-- CATEGORÍA -->
+
+                <div class="form-group">
+
+                    <label for="expenseCategory">
+                        Categoría
+                    </label>
+
+                    <select
+                        id="expenseCategory"
+                        required>
+
+                        <option value="">
+                            Selecciona una categoría
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- MONEDA -->
+
+                <div class="form-group">
+
+                    <label for="expenseCurrency">
+                        Moneda
+                    </label>
+
+                    <select id="expenseCurrency">
+
+                        <option value="GTQ">
+                            GTQ - Quetzales
+                        </option>
+
+                        <option value="USD">
+                            USD - Dólares
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- MONTO -->
+
+                <div class="form-group">
+
+                    <label for="expenseAmount">
+                        Monto
+                    </label>
+
+                    <input
+                        type="number"
+                        id="expenseAmount"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        required>
+
+                </div>
+
+
+                <!-- TIPO DE CAMBIO -->
+
+                <div
+                    class="form-group"
+                    id="expenseExchangeGroup"
+                    hidden>
+
+                    <label for="expenseExchangeRate">
+                        Tipo de cambio
+                    </label>
+
+                    <div class="exchange-input">
+
+                        <input
+                            type="number"
+                            id="expenseExchangeRate"
+                            min="0"
+                            step="0.00001"
+                            placeholder="0.00000">
+
+                        <button
+                            type="button"
+                            class="secondary-button"
+                            id="refreshExpenseExchangeRate">
+
+                            ↻ Actualizar
+
+                        </button>
+
+                    </div>
+
+                    <small
+                        class="field-help"
+                        id="expenseExchangeRateStatus">
+
+                        Tipo de cambio manual.
+
+                    </small>
+
+                </div>
+
+
+                <!-- EQUIVALENTE -->
+
+                <div class="form-group">
+
+                    <label>
+                        Equivalente en GTQ
+                    </label>
+
+                    <div
+                        class="calculated-value"
+                        id="expenseAmountGTQ">
+
+                        Q 0.00
+
+                    </div>
+
+                </div>
+
+
+                <!-- NOTAS -->
+
+                <div
+                    class="form-group form-group-full">
+
+                    <label for="expenseNotes">
+                        Notas
+                    </label>
+
+                    <textarea
+                        id="expenseNotes"
+                        rows="3"
+                        placeholder="Información adicional..."></textarea>
+
+                </div>
+
+
+            </div>
+
+
+            <!-- BOTONES -->
+
+            <div class="form-actions">
+
+                <button
+                    type="button"
+                    class="secondary-button"
+                    id="cancelExpenseButton">
+
+                    Cancelar
+
+                </button>
+
+                <button
+                    type="submit"
+                    class="primary-button">
+
+                    Guardar gasto
+
+                </button>
+
+            </div>
+
+
+        </form>
+
+    </div>
+
+
+    <!-- TABLA DE GASTOS -->
+
+    <div class="panel">
+
+        <div class="panel-header">
+
+            <div>
+
+                <h2>
+                    Gastos registrados
+                </h2>
+
+                <p>
+                    Historial de tus gastos.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div
+            class="table-container"
+            id="expenseTableContainer">
+
+            <div class="empty-table">
+                Todavía no tienes gastos registrados.
+            </div>
+
+        </div>
+
+    </div>
+
+
+</section>
+
+        <!-- ========================================
+             PRESUPUESTO
+        ========================================= -->
+
+<!-- ========================================
+     PRESUPUESTO
+========================================= -->
+
+<section
+    id="presupuesto"
+    class="page-section">
+
+
+    <div class="section-header">
+
+        <div>
+
+            <h2>
+                Presupuesto
+            </h2>
+
+            <p>
+                Controla cuánto puedes gastar en cada categoría.
+            </p>
+
+        </div>
+
+
+        <button
+            type="button"
+            class="primary-button"
+            id="newBudgetButton">
+
+            + Nuevo presupuesto
+
+        </button>
+
+    </div>
+
+
+    <!-- FORMULARIO DE PRESUPUESTO -->
+
+    <div
+        class="panel"
+        id="budgetFormPanel"
+        hidden>
+
+
+        <div class="panel-header">
+
+            <div>
+
+                <h2 id="budgetFormTitle">
+                    Nuevo presupuesto
+                </h2>
+
+                <p>
+                    Define el límite de gasto para una categoría.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <form id="budgetForm">
+
+
+            <input
+                type="hidden"
+                id="budgetId">
+
+
+            <div class="form-grid">
+
+
+                <!-- MES -->
+
+                <div class="form-group">
+
+                    <label for="budgetMonth">
+                        Mes
+                    </label>
+
+                    <input
+                        type="month"
+                        id="budgetMonth"
+                        required>
+
+                </div>
+
+
+                <!-- CATEGORÍA -->
+
+                <div class="form-group">
+
+                    <label for="budgetCategory">
+                        Categoría
+                    </label>
+
+                    <select
+                        id="budgetCategory"
+                        required>
+
+                        <option value="">
+                            Selecciona una categoría
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- MONTO -->
+
+                <div class="form-group">
+
+                    <label for="budgetAmount">
+                        Presupuesto mensual (GTQ)
+                    </label>
+
+                    <input
+                        type="number"
+                        id="budgetAmount"
+                        min="0.01"
+                        step="0.01"
+                        placeholder="0.00"
+                        required>
+
+                </div>
+
+
+            </div>
+
+
+            <div class="form-actions">
+
+                <button
+                    type="button"
+                    class="secondary-button"
+                    id="cancelBudgetButton">
+
+                    Cancelar
+
+                </button>
+
+
+                <button
+                    type="submit"
+                    class="primary-button">
+
+                    Guardar presupuesto
+
+                </button>
+
+            </div>
+
+
+        </form>
+
+
+    </div>
+
+
+    <!-- TABLA DE PRESUPUESTOS -->
+
+    <div class="panel">
+
+
+        <div class="panel-header">
+
+            <div>
+
+                <h2>
+                    Presupuestos registrados
+                </h2>
+
+                <p>
+                    Consulta tus límites y el progreso de cada categoría.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div
+            class="table-container"
+            id="budgetTableContainer">
+
+            <div class="empty-table">
+                Todavía no tienes presupuestos registrados.
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+</section>
+
+
+        <!-- ========================================
+             GASTOS FIJOS
+        ========================================= -->
+
+        <!-- ========================================
+     GASTOS FIJOS
+========================================= -->
+
+<section
+    id="fijos"
+    class="page-section">
+
+
+    <div class="section-header">
+
+        <div>
+
+            <h2>
+                Gastos fijos
+            </h2>
+
+            <p>
+                Administra tus gastos recurrentes.
+            </p>
+
+        </div>
+
+
+        <button
+            type="button"
+            class="primary-button"
+            id="newFixedExpenseButton">
+
+            + Nuevo gasto fijo
+
+        </button>
+
+    </div>
+
+
+    <!-- FORMULARIO -->
+
+    <div
+        class="panel"
+        id="fixedExpenseFormPanel"
+        hidden>
+
+
+        <div class="panel-header">
+
+            <div>
+
+                <h3 id="fixedExpenseFormTitle">
+                    Nuevo gasto fijo
+                </h3>
+
+                <p>
+                    Registra un gasto que se repite
+                    periódicamente.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <form id="fixedExpenseForm">
+
+
+            <input
+                type="hidden"
+                id="fixedExpenseId">
+
+
+            <div class="form-grid">
+
+
+                <!-- NOMBRE -->
+
+                <div class="form-group">
+
+                    <label for="fixedExpenseName">
+                        Nombre
+                    </label>
+
+                    <input
+                        type="text"
+                        id="fixedExpenseName"
+                        placeholder="Ej. Netflix"
+                        required>
+
+                </div>
+
+
+                <!-- CATEGORÍA -->
+
+                <div class="form-group">
+
+                    <label for="fixedExpenseCategory">
+                        Categoría
+                    </label>
+
+                    <select
+                        id="fixedExpenseCategory"
+                        required>
+
+                        <option value="">
+                            Selecciona una categoría
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- MONEDA -->
+
+                <div class="form-group">
+
+                    <label for="fixedExpenseCurrency">
+                        Moneda
+                    </label>
+
+                    <select
+                        id="fixedExpenseCurrency">
+
+                        <option value="GTQ">
+                            GTQ - Quetzales
+                        </option>
+
+                        <option value="USD">
+                            USD - Dólares
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- MONTO -->
+
+                <div class="form-group">
+
+                    <label for="fixedExpenseAmount">
+                        Monto
+                    </label>
+
+                    <input
+                        type="number"
+                        id="fixedExpenseAmount"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        required>
+
+                </div>
+
+
+                <!-- TIPO DE CAMBIO -->
+
+                <div
+                    class="form-group"
+                    id="fixedExpenseExchangeGroup"
+                    hidden>
+
+                    <label for="fixedExpenseExchangeRate">
+                        Tipo de cambio
+                    </label>
+
+                    <div class="exchange-input">
+
+                        <input
+                            type="number"
+                            id="fixedExpenseExchangeRate"
+                            min="0"
+                            step="0.00001"
+                            placeholder="0.00000">
+
+                        <button
+                            type="button"
+                            class="secondary-button"
+                            id="refreshFixedExpenseExchangeRate">
+
+                            ↻ Actualizar
+
+                        </button>
+
+                    </div>
+
+                    <small
+                        class="field-help"
+                        id="fixedExpenseExchangeStatus">
+
+                        Tipo de cambio manual.
+
+                    </small>
+
+                </div>
+
+                <!-- FRECUENCIA -->
+
+                <div class="form-group">
+
+                    <label for="fixedExpenseFrequency">
+                        Frecuencia
+                    </label>
+
+                    <select
+                        id="fixedExpenseFrequency"
+                        required>
+
+                        <option value="monthly">
+                            Mensual
+                        </option>
+
+                        <option value="biweekly">
+                            Quincenal
+                        </option>
+
+                        <option value="weekly">
+                            Semanal
+                        </option>
+
+                        <option value="yearly">
+                            Anual
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- DÍA DE PAGO -->
+
+                <div class="form-group">
+
+                    <label for="fixedExpenseDueDay">
+                        Día de pago
+                    </label>
+
+                    <input
+                        type="number"
+                        id="fixedExpenseDueDay"
+                        min="1"
+                        max="31"
+                        placeholder="Ej. 15">
+
+                </div>
+
+
+                <!-- ESTADO -->
+
+                <div class="form-group">
+
+                    <label for="fixedExpenseActive">
+                        Estado
+                    </label>
+
+                    <select
+                        id="fixedExpenseActive">
+
+                        <option value="true">
+                            Activo
+                        </option>
+
+                        <option value="false">
+                            Inactivo
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- NOTAS -->
+
+                <div class="form-group form-group-full">
+
+                    <label for="fixedExpenseNotes">
+                        Notas
+                    </label>
+
+                    <textarea
+                        id="fixedExpenseNotes"
+                        rows="3"
+                        placeholder="Información adicional..."></textarea>
+
+                </div>
+
+
+            </div>
+
+
+            <!-- BOTONES -->
+
+            <div class="form-actions">
+
+                <button
+                    type="submit"
+                    class="primary-button">
+
+                    Guardar gasto fijo
+
+                </button>
+
+
+                <button
+                    type="button"
+                    class="secondary-button"
+                    id="cancelFixedExpenseButton">
+
+                    Cancelar
+
+                </button>
+
+            </div>
+
+
+        </form>
+
+    </div>
+
+
+    <!-- TABLA -->
+
+    <div class="panel">
+
+        <div class="panel-header">
+
+            <div>
+
+                <h3>
+                    Gastos recurrentes
+                </h3>
+
+                <p>
+                    Pagos que se repiten periódicamente.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div id="fixedExpenseTableContainer">
+
+            <!-- JavaScript -->
+
+        </div>
+
+    </div>
+
+
+</section>
+
+
+        <!-- ========================================
+             REPORTES
+        ========================================= -->
+
+        <!-- ========================================
+     REPORTES
+========================================= -->
+
+<section
+    id="reportes"
+    class="page-section">
+
+
+    <div class="section-header">
+
+        <div>
+
+            <h2>
+                Reportes
+            </h2>
+
+            <p>
+                Analiza el comportamiento
+                de tus finanzas.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- FILTROS -->
+
+    <div class="panel report-filters-panel">
+
+        <div class="panel-header">
+
+            <div>
+
+                <h3>
+                    Filtros
+                </h3>
+
+                <p>
+                    Selecciona el período que deseas analizar.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="report-filters">
+
+
+            <div class="form-group">
+
+                <label for="reportYear">
+                    Año
+                </label>
+
+                <select id="reportYear">
+
+                    <option value="2026">
+                        2026
+                    </option>
+
+                    <option value="2025">
+                        2025
+                    </option>
+
+                    <option value="2024">
+                        2024
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="reportMonth">
+                    Mes
+                </label>
+
+                <select id="reportMonth">
+
+                    <option value="all">
+                        Todos los meses
+                    </option>
+
+                    <option value="01">Enero</option>
+                    <option value="02">Febrero</option>
+                    <option value="03">Marzo</option>
+                    <option value="04">Abril</option>
+                    <option value="05">Mayo</option>
+                    <option value="06">Junio</option>
+                    <option value="07">Julio</option>
+                    <option value="08">Agosto</option>
+                    <option value="09">Septiembre</option>
+                    <option value="10">Octubre</option>
+                    <option value="11">Noviembre</option>
+                    <option value="12">Diciembre</option>
+
+                </select>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+
+    <!-- RESUMEN -->
+
+    <div class="report-summary-cards">
+
+
+        <article class="report-summary-card income">
+
+            <span>
+                Ingresos
+            </span>
+
+            <strong id="reportIncome">
+                Q 0.00
+            </strong>
+
+        </article>
+
+
+        <article class="report-summary-card expense">
+
+            <span>
+                Gastos
+            </span>
+
+            <strong id="reportExpenses">
+                Q 0.00
+            </strong>
+
+        </article>
+
+
+        <article class="report-summary-card balance">
+
+            <span>
+                Balance
+            </span>
+
+            <strong id="reportBalance">
+                Q 0.00
+            </strong>
+
+        </article>
+
+
+        <article class="report-summary-card fixed">
+
+            <span>
+                Gastos fijos
+            </span>
+
+            <strong id="reportFixed">
+                Q 0.00
+            </strong>
+
+        </article>
+
+
+    </div>
+
+
+    <!-- PRESUPUESTO -->
+
+    <div class="panel">
+
+        <div class="panel-header">
+
+            <div>
+
+                <h3>
+                    Presupuesto vs. gasto
+                </h3>
+
+                <p>
+                    Comparación del presupuesto
+                    registrado con el gasto real.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div id="reportBudgetContainer">
+
+            <!-- JavaScript -->
+
+        </div>
+
+    </div>
+
+
+    <!-- GASTOS POR CATEGORÍA -->
+
+    <div class="panel">
+
+        <div class="panel-header">
+
+            <div>
+
+                <h3>
+                    Gastos por categoría
+                </h3>
+
+                <p>
+                    Distribución de los gastos
+                    durante el período seleccionado.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div id="reportCategoryContainer">
+
+            <!-- JavaScript -->
+
+        </div>
+
+    </div>
+
+
+    <!-- RESUMEN MENSUAL -->
+
+    <div class="panel">
+
+        <div class="panel-header">
+
+            <div>
+
+                <h3>
+                    Resumen mensual
+                </h3>
+
+                <p>
+                    Evolución de ingresos, gastos
+                    y balance.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div id="reportMonthlyContainer">
+
+            <!-- JavaScript -->
+
+        </div>
+
+    </div>
+
+
+</section>
+
+
+        <!-- ========================================
+             CONFIGURACIÓN
+        ========================================= -->
+
+        <section
+            id="configuracion"
+            class="page-section">
+
+
+            <div class="section-header">
+
+                <div>
+
+                    <h2>
+                        Configuración
+                    </h2>
+
+                    <p>
+                        Personaliza las categorías
+                        de tu aplicación.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="settings-grid">
+
+
+                <!-- CATEGORÍAS DE INGRESOS -->
+
+                <div class="panel">
+
+
+                    <div class="settings-header">
+
+                        <div>
+
+                            <h3>
+                                Categorías de ingresos
+                            </h3>
+
+                            <p>
+                                Categorías disponibles
+                                para tus ingresos.
+                            </p>
+
+                        </div>
+
+
+                        <button
+                            type="button"
+                            class="primary-button"
+                            id="addIncomeCategory">
+
+                            + Nueva
+
+                        </button>
+
+                    </div>
+
+
+                    <div id="incomeCategoriesList">
+
+                        <!-- JavaScript -->
+
+                    </div>
+
+
+                </div>
+
+
+                <!-- CATEGORÍAS DE GASTOS -->
+
+                <div class="panel">
+
+
+                    <div class="settings-header">
+
+                        <div>
+
+                            <h3>
+                                Categorías de gastos
+                            </h3>
+
+                            <p>
+                                Categorías disponibles
+                                para tus gastos.
+                            </p>
+
+                        </div>
+
+
+                        <button
+                            type="button"
+                            class="primary-button"
+                            id="addExpenseCategory">
+
+                            + Nueva
+
+                        </button>
+
+                    </div>
+
+
+                    <div id="expenseCategoriesList">
+
+                        <!-- JavaScript -->
+
+                    </div>
+
+
+                </div>
+
+
+            </div>
+
+
+        </section>
+
+
+    </main>
+
+
+</div>
+
+
+<!-- ========================================
+     JAVASCRIPT
+========================================= -->
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/app.js"></script>
+
+</body>
+
+</html>
