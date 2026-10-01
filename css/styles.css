@@ -645,28 +645,170 @@ body {
 
 
 /* ========================================
-   TABLET
+   RESPONSIVE PRINCIPAL
 ======================================== */
+
+/* TABLET */
 
 @media (max-width: 1100px) {
 
+    .sidebar {
+    width: 64px;
+    padding: 18px 7px;
+}
+
+.logo {
+    justify-content: center;
+    padding:
+        5px
+        0
+        25px;
+}
+
+.logo-text {
+    display: none;
+}
+
+.menu-item {
+    justify-content: center;
+    padding:
+        13px
+        6px;
+}
+
+.menu-item > span:last-child {
+    display: none;
+}
+
+.main-content {
+    margin-left: 64px;
+
+    width:
+        calc(100% - 64px);
+
+    padding: 24px;
+
+    box-sizing: border-box;
+
+    min-width: 0;
+}
+
     .summary-cards {
-
         grid-template-columns:
-
-            repeat(2, 1fr);
-
+            repeat(2, minmax(0, 1fr));
     }
 
-
     .dashboard-grid {
-
         grid-template-columns: 1fr;
-
     }
 
 }
 
+.dashboard,
+.dashboard-grid,
+.panel {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+.sidebar-footer {
+    display: none !important;
+}
+
+/* ========================================
+   GRÁFICAS - TABLET
+======================================== */
+
+@media (max-width: 900px) {
+
+    .dashboard-chart {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+
+        display: grid;
+
+        grid-template-columns:
+            repeat(12, minmax(0, 1fr));
+
+        gap: 4px;
+
+        height: 260px;
+
+        padding:
+            20px
+            4px
+            5px;
+
+        overflow: hidden;
+    }
+
+    .month-chart-item {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .month-bars {
+        width: 100%;
+        height: 210px;
+
+        gap: 3px;
+    }
+
+    .month-bar {
+        width: 8px;
+    }
+
+    .month-label {
+        font-size: 9px;
+        white-space: nowrap;
+    }
+
+    .chart-legend {
+        grid-column: 1 / -1;
+
+        justify-content: center;
+
+        gap: 14px;
+
+        font-size: 11px;
+
+        white-space: nowrap;
+    }
+
+
+    /* GASTOS POR CATEGORÍA */
+
+    .category-chart-row {
+        grid-template-columns:
+            minmax(120px, 1fr)
+            minmax(80px, 2fr)
+            auto;
+
+        gap: 10px;
+
+        min-width: 0;
+    }
+
+    .category-chart-name {
+        min-width: 0;
+
+        overflow: hidden;
+
+        text-overflow: ellipsis;
+
+        white-space: nowrap;
+    }
+
+    .category-chart-bar-container {
+        min-width: 0;
+    }
+
+    .category-chart-amount {
+        white-space: nowrap;
+    }
+
+}
 
 /* ========================================
    MOBILE
@@ -674,126 +816,316 @@ body {
 
 @media (max-width: 760px) {
 
-    .sidebar {
-
-        width: 70px;
-
-        padding:
-
-            18px
-
-            9px;
-
+    html,
+    body {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
     }
 
 
+    .app {
+        width: 100%;
+        min-width: 0;
+    }
+
+
+    /* SIDEBAR */
+
+    .sidebar {
+    width: 54px;
+
+    padding:
+        18px
+        5px;
+
+    overflow: hidden;
+}
+
+
     .logo {
-
         justify-content: center;
-
-        padding-bottom: 25px;
-
+        padding:
+            5px
+            0
+            25px;
     }
 
 
     .logo-text {
-
         display: none;
+    }
 
+
+    .logo-icon {
+    width: 38px;
+    height: 38px;
+}
+
+
+    .menu {
+        width: 100%;
     }
 
 
     .menu-item {
+        width: 100%;
 
         justify-content: center;
 
-        padding: 13px;
-
+        padding:
+            13px
+            6px;
     }
 
 
     .menu-item > span:last-child {
-
         display: none;
+    }
 
+
+    .menu-icon {
+        width: auto;
+        font-size: 18px;
     }
 
 
     .sidebar-footer {
-
         display: none;
-
     }
 
+
+    /* CONTENIDO */
 
     .main-content {
+    margin-left: 54px;
 
-        margin-left: 70px;
+    width:
+        calc(100% - 54px);
 
-        width:
-
-            calc(100% - 70px);
+        max-width: none;
 
         padding:
+            18px
+            12px;
 
-            20px
-
-            14px;
-
+        box-sizing: border-box;
     }
 
 
+    /* HEADER */
+
     .topbar {
+        flex-direction: column;
 
-        align-items: flex-start;
+        align-items: stretch;
 
-        gap: 10px;
+        gap: 12px;
 
+        margin-bottom: 20px;
     }
 
 
     .topbar h1 {
-
-        font-size: 22px;
-
+        font-size: 23px;
     }
 
 
+    .topbar p {
+        font-size: 12px;
+    }
+
+
+    .year-selector {
+        width: 100%;
+
+        justify-content: space-between;
+    }
+
+
+    .year-selector select {
+        min-width: 90px;
+    }
+
+
+    /* TARJETAS */
+
     .summary-cards {
+        grid-template-columns: 1fr;
 
-        grid-template-columns:
+        gap: 12px;
+    }
 
-            repeat(2, 1fr);
 
+    .summary-card {
+        width: 100%;
+        min-width: 0;
+    }
+
+
+    /* DASHBOARD */
+
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+
+        gap: 14px;
+    }
+
+
+    .panel {
+        width: 100%;
+        min-width: 0;
+
+        box-sizing: border-box;
+    }
+
+
+    /* HEADER DE PANELES */
+
+    .panel-header {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+
+    .panel-header h2 {
+        font-size: 16px;
+    }
+
+
+    .panel-header p {
+        font-size: 12px;
+    }
+
+
+    /* FORMULARIOS */
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+
+    .form-group-full {
+        grid-column: auto;
+    }
+
+
+    .form-actions {
+        flex-direction: column-reverse;
+
+        gap: 10px;
+    }
+
+
+    .form-actions button {
+        width: 100%;
+    }
+
+
+    /* ENCABEZADOS DE SECCIONES */
+
+    .section-header {
+        flex-direction: column;
+
+        align-items: stretch;
+
+        gap: 12px;
+    }
+
+
+    .section-header .primary-button {
+        width: 100%;
+    }
+
+
+    /* TABLAS */
+
+    .table-container,
+    .fixed-expense-table-wrapper {
+        width: 100%;
+        max-width: 100%;
+
+        overflow-x: auto;
+        overflow-y: hidden;
+
+        -webkit-overflow-scrolling: touch;
+    }
+
+
+    /* EVITAR DESBORDES */
+
+    input,
+    select,
+    textarea,
+    button {
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+
+    img,
+    svg {
+        max-width: 100%;
     }
 
 }
 
 
 /* ========================================
-   SMALL MOBILE
+   MOBILE PEQUEÑO
 ======================================== */
 
 @media (max-width: 500px) {
 
-    .summary-cards {
-
-        grid-template-columns: 1fr;
-
+    .main-content {
+        padding:
+            15px
+            9px;
     }
 
 
-    .topbar {
-
-        flex-direction: column;
-
+    .topbar h1 {
+        font-size: 21px;
     }
 
 
-    .dashboard-grid {
+    .topbar p {
+        font-size: 11px;
+    }
 
-        grid-template-columns: 1fr;
 
+    .panel {
+        padding: 14px;
+    }
+
+
+    .summary-card {
+        padding: 15px;
+    }
+
+
+    .summary-card strong {
+        font-size: 21px;
+    }
+
+
+    .section-header h2 {
+        font-size: 20px;
+    }
+
+
+    .panel-header h2 {
+        font-size: 15px;
+    }
+
+
+    .year-selector {
+        width: 100%;
+    }
+
+
+    .year-selector select {
+        flex: 1;
     }
 
 }
@@ -1670,7 +2002,7 @@ body {
     display: flex;
     align-items: flex-end;
     gap: 14px;
-    height: 280px;
+    height: 230px;
     padding: 30px 10px 10px;
     overflow-x: auto;
 }
@@ -2364,6 +2696,312 @@ body {
 
     100% {
         transform: scale(1);
+    }
+
+}
+/* ========================================
+   GRÁFICAS RESPONSIVE - V1.1.1
+======================================== */
+
+.dashboard-chart {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+
+/* ========================================
+   MOBILE
+======================================== */
+
+@media (max-width: 760px) {
+
+    /* SIDEBAR */
+
+    .sidebar-footer {
+        display: none !important;
+    }
+
+
+    /* GRÁFICA */
+
+    .dashboard-chart {
+        display: grid;
+
+        grid-template-columns:
+            repeat(12, minmax(0, 1fr));
+
+        align-items: end;
+
+        gap: 2px;
+
+        height: 270px;
+
+        padding:
+            20px
+            2px
+            5px;
+
+        overflow: hidden;
+    }
+
+
+    .month-chart-item {
+        width: 100%;
+        min-width: 0;
+
+        height: 100%;
+
+        display: flex;
+
+        flex-direction: column;
+
+        justify-content: flex-end;
+
+        align-items: center;
+
+        gap: 6px;
+    }
+
+
+    .month-bars {
+        width: 100%;
+
+        height: 220px;
+
+        display: flex;
+
+        align-items: flex-end;
+
+        justify-content: center;
+
+        gap: 2px;
+    }
+
+
+    .month-bar {
+        width: 5px;
+
+        min-height: 2px;
+
+        border-radius:
+            3px
+            3px
+            0
+            0;
+    }
+
+
+    .month-label {
+        font-size: 8px;
+
+        white-space: nowrap;
+
+        line-height: 1;
+    }
+
+
+    /* LEYENDA */
+
+    .chart-legend {
+        grid-column:
+            1 / -1;
+
+        display: flex;
+
+        justify-content: center;
+
+        align-items: center;
+
+        gap: 12px;
+
+        margin-top: 5px;
+
+        font-size: 10px;
+
+        white-space: nowrap;
+    }
+
+}
+
+
+/* ========================================
+   MOBILE PEQUEÑO
+======================================== */
+
+@media (max-width: 500px) {
+
+    .dashboard-chart {
+        height: 250px;
+
+        padding:
+            15px
+            1px
+            5px;
+    }
+
+
+    .month-bars {
+        height: 200px;
+    }
+
+
+    .month-bar {
+        width: 4px;
+    }
+
+
+    .month-label {
+        font-size: 7px;
+    }
+
+
+    .chart-legend {
+        gap: 8px;
+
+        font-size: 9px;
+    }
+
+}
+/* ========================================
+   GASTOS POR CATEGORÍA - RESPONSIVE
+======================================== */
+
+@media (max-width: 760px) {
+
+    .category-chart {
+        width: 100%;
+        gap: 14px;
+    }
+
+    .category-chart-row {
+        grid-template-columns:
+            minmax(90px, 1.1fr)
+            minmax(50px, 1.8fr)
+            auto;
+
+        gap: 8px;
+
+        min-width: 0;
+    }
+
+    .category-chart-name {
+        min-width: 0;
+        font-size: 11px;
+    }
+
+    .category-chart-bar-container {
+        min-width: 0;
+    }
+
+    .category-chart-amount {
+        white-space: nowrap;
+        font-size: 10px;
+    }
+
+}
+
+
+/* MOBILE PEQUEÑO */
+
+@media (max-width: 500px) {
+
+    .category-chart-row {
+        grid-template-columns:
+            minmax(80px, 1fr)
+            minmax(45px, 1.7fr)
+            auto;
+
+        gap: 6px;
+    }
+
+    .category-chart-name {
+        font-size: 10px;
+    }
+
+    .category-chart-amount {
+        font-size: 9px;
+    }
+
+}
+/* ========================================
+   TABLET GRANDE / IPAD AIR
+======================================== */
+
+@media (min-width: 761px) and (max-width: 1100px) {
+
+    .summary-cards {
+    width: 100%;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 14px;
+}
+
+    .summary-card {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .dashboard-grid {
+        width: 100%;
+    }
+
+}
+/* ========================================
+   CATEGORÍAS - MOBILE
+======================================== */
+
+@media (max-width: 500px) {
+
+    .category-item {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+
+    .category-info {
+        width: 100%;
+        min-width: 0;
+    }
+
+
+    .category-name {
+        min-width: 0;
+
+        overflow-wrap: anywhere;
+
+        word-break: break-word;
+    }
+
+
+    .category-actions {
+        width: 100%;
+
+        display: grid;
+
+        grid-template-columns:
+            repeat(3, minmax(0, 1fr));
+
+        gap: 6px;
+    }
+
+
+    .category-button {
+        width: 100%;
+
+        min-width: 0;
+
+        padding:
+            9px
+            6px;
+
+        white-space: nowrap;
+
+        font-size: 11px;
     }
 
 }
