@@ -7089,6 +7089,26 @@ const fixedExpenseExchangeStatus =
         "fixedExpenseExchangeStatus"
     );
 
+const fixedExpenseType =
+    document.getElementById(
+        "fixedExpenseType"
+    );
+
+const installmentFields =
+    document.getElementById(
+        "installmentFields"
+    );
+
+const fixedExpenseStartDate =
+    document.getElementById(
+        "fixedExpenseStartDate"
+    );
+
+const fixedExpenseTotalInstallments =
+    document.getElementById(
+        "fixedExpenseTotalInstallments"
+    );
+
 const fixedExpenseFrequency =
     document.getElementById(
         "fixedExpenseFrequency"
@@ -7098,6 +7118,27 @@ const fixedExpenseDueDay =
     document.getElementById(
         "fixedExpenseDueDay"
     );
+
+    function updateFixedExpenseTypeVisibility() {
+
+    if (!fixedExpenseType || !installmentFields) {
+        return;
+    }
+
+    const isInstallment =
+        fixedExpenseType.value === "installment";
+
+    installmentFields.style.display =
+        isInstallment
+            ? "block"
+            : "none";
+
+}
+
+fixedExpenseType?.addEventListener(
+    "change",
+    updateFixedExpenseTypeVisibility
+);
 
 const fixedExpenseActive =
     document.getElementById(
@@ -7159,20 +7200,23 @@ async function initializeFixedExpenses() {
         } = await supabaseClient
             .from("gastos_fijos")
             .select(`
-                id,
-                name,
-                category_id,
-                category_name,
-                currency,
-                amount,
-                amount_gtq,
-                frequency,
-                due_day,
-                active,
-                notes,
-                created_at,
-                updated_at
-            `)
+    id,
+    name,
+    category_id,
+    category_name,
+    currency,
+    amount,
+    amount_gtq,
+    expense_type,
+    start_date,
+    total_installments,
+    frequency,
+    due_day,
+    active,
+    notes,
+    created_at,
+    updated_at
+`)
             .order(
                 "created_at",
                 {
@@ -7242,11 +7286,19 @@ async function initializeFixedExpenses() {
                             1,
 
                         amount_gtq:
-                            expense.amountGTQ,
+    expense.amountGTQ,
 
+expense_type:
+    expense.expenseType,
 
-                        frequency:
-                            expense.frequency,
+start_date:
+    expense.startDate,
+
+total_installments:
+    expense.totalInstallments,
+
+frequency:
+    expense.frequency,
 
                         due_day:
                             expense.dueDay,
@@ -7285,6 +7337,9 @@ async function initializeFixedExpenses() {
                     amount,
                     exchange_rate,
                     amount_gtq,
+                    expense_type,
+                    start_date,
+                    total_installments,
                     frequency,
                     due_day,
                     active,
@@ -7340,10 +7395,19 @@ async function initializeFixedExpenses() {
                             expense.exchange_rate
                         ),
 
-                    amountGTQ:
+                                        amountGTQ:
                         Number(
                             expense.amount_gtq
                         ),
+
+                    expenseType:
+                        expense.expense_type,
+
+                    startDate:
+                        expense.start_date,
+
+                    totalInstallments:
+                        expense.total_installments,
 
                     frequency:
                         expense.frequency,
@@ -7477,6 +7541,111 @@ function formatFixedExpenseFrequency(frequency) {
 
 }
 
+function getFixedExpenseInstallmentProgress(expense) {
+
+    if (
+        expense.expenseType !== "installment" ||
+        !expense.startDate ||
+        !expense.totalInstallments
+    ) {
+        return null;
+    }
+
+    const startDate =
+        new Date(
+            expense.startDate + "T00:00:00"
+        );
+
+    const today =
+        new Date();
+
+    if (today < startDate) {
+        return {
+            current: 0,
+            total: expense.totalInstallments
+        };
+    }
+
+    let current = 1;
+
+    switch (expense.frequency) {
+
+        case "weekly": {
+
+            const diffMs =
+                today - startDate;
+
+            const diffDays =
+                Math.floor(
+                    diffMs /
+                    (1000 * 60 * 60 * 24)
+                );
+
+            current =
+                Math.floor(
+                    diffDays / 7
+                ) + 1;
+
+            break;
+        }
+
+        case "biweekly": {
+
+            const diffMs =
+                today - startDate;
+
+            const diffDays =
+                Math.floor(
+                    diffMs /
+                    (1000 * 60 * 60 * 24)
+                );
+
+            current =
+                Math.floor(
+                    diffDays / 14
+                ) + 1;
+
+            break;
+        }
+
+        case "yearly": {
+
+            current =
+                today.getFullYear() -
+                startDate.getFullYear() +
+                1;
+
+            break;
+        }
+
+        case "monthly":
+        default:
+
+            current =
+                (
+                    today.getFullYear() -
+                    startDate.getFullYear()
+                ) * 12 +
+                (
+                    today.getMonth() -
+                    startDate.getMonth()
+                ) + 1;
+
+            break;
+    }
+
+    current =
+        Math.min(
+            Math.max(current, 1),
+            expense.totalInstallments
+        );
+
+    return {
+        current,
+        total: expense.totalInstallments
+    };
+
+}
 
 function openFixedExpenseForm(expense = null) {
 
@@ -7503,6 +7672,15 @@ function openFixedExpenseForm(expense = null) {
         fixedExpenseAmount.value =
             expense.amount || "";
 
+            fixedExpenseType.value =
+    expense.expenseType || "recurring";
+
+fixedExpenseStartDate.value =
+    expense.startDate || "";
+
+fixedExpenseTotalInstallments.value =
+    expense.totalInstallments || "";
+
         fixedExpenseExchangeRate.value =
             expense.exchangeRate || "";
 
@@ -7522,13 +7700,27 @@ function openFixedExpenseForm(expense = null) {
 
     } else {
 
-        fixedExpenseCurrency.value = "GTQ";
-        fixedExpenseFrequency.value = "monthly";
-        fixedExpenseActive.value = "true";
+    fixedExpenseCurrency.value = "GTQ";
 
-    }
+    fixedExpenseType.value =
+        "recurring";
+
+    fixedExpenseStartDate.value =
+        "";
+
+    fixedExpenseTotalInstallments.value =
+        "";
+
+    fixedExpenseFrequency.value =
+        "monthly";
+
+    fixedExpenseActive.value =
+        "true";
+
+}
 
     updateFixedExpenseExchangeVisibility();
+    updateFixedExpenseTypeVisibility();
 
     fixedExpenseFormPanel.hidden = false;
 
@@ -7733,8 +7925,8 @@ if (refreshFixedExpenseExchangeRate) {
 if (fixedExpenseForm) {
 
     fixedExpenseForm.addEventListener(
-        "submit",
-        event => {
+    "submit",
+    async event => {
 
             event.preventDefault();
 
@@ -7754,6 +7946,20 @@ if (fixedExpenseForm) {
 
             const frequency =
                 fixedExpenseFrequency.value;
+
+                const expenseType =
+    fixedExpenseType.value;
+
+const startDate =
+    fixedExpenseStartDate.value ||
+    null;
+
+const totalInstallments =
+    fixedExpenseTotalInstallments.value
+        ? Number(
+            fixedExpenseTotalInstallments.value
+        )
+        : null;
 
             const dueDay =
                 fixedExpenseDueDay.value
@@ -7797,6 +8003,23 @@ if (fixedExpenseForm) {
                 return;
 
             }
+
+            if (
+    expenseType === "installment" &&
+    (
+        !startDate ||
+        !totalInstallments ||
+        totalInstallments <= 0
+    )
+) {
+
+    alert(
+        "Ingresa la fecha de inicio y el número de cuotas."
+    );
+
+    return;
+
+}
 
             let exchangeRate = 1;
 
@@ -7853,6 +8076,12 @@ if (fixedExpenseForm) {
 
                 amountGTQ,
 
+                expenseType,
+
+                startDate,
+
+                totalInstallments,
+
                 frequency,
 
                 dueDay,
@@ -7868,7 +8097,101 @@ if (fixedExpenseForm) {
                 updatedAt:
                     new Date().toISOString()
 
+                        };
+
+
+            const user = await getCurrentUser();
+
+            if (!user) {
+
+                alert(
+                    "Tu sesión ha expirado. Inicia sesión nuevamente."
+                );
+
+                return;
+
+            }
+
+
+            const databaseData = {
+
+                id:
+                    fixedExpense.id,
+
+                user_id:
+                    user.id,
+
+                name:
+                    fixedExpense.name,
+
+                category_id:
+                    fixedExpense.categoryId,
+
+                category_name:
+                    fixedExpense.categoryName,
+
+                currency:
+                    fixedExpense.currency,
+
+                amount:
+                    fixedExpense.amount,
+
+                exchange_rate:
+                    fixedExpense.exchangeRate,
+
+                amount_gtq:
+                    fixedExpense.amountGTQ,
+
+                expense_type:
+                    fixedExpense.expenseType,
+
+                start_date:
+                    fixedExpense.startDate,
+
+                total_installments:
+                    fixedExpense.totalInstallments,
+
+                frequency:
+                    fixedExpense.frequency,
+
+                due_day:
+                    fixedExpense.dueDay,
+
+                active:
+                    fixedExpense.active,
+
+                notes:
+                    fixedExpense.notes,
+
+                created_at:
+                    fixedExpense.createdAt,
+
+                updated_at:
+                    fixedExpense.updatedAt
+
             };
+
+
+            const { error } =
+                await supabaseClient
+                    .from("gastos_fijos")
+                    .upsert(databaseData);
+
+
+            if (error) {
+
+                console.error(
+                    "Error guardando gasto fijo en Supabase:",
+                    error
+                );
+
+                alert(
+                    "No se pudo guardar el gasto fijo."
+                );
+
+                return;
+
+            }
 
 
             if (existingId) {
@@ -8023,15 +8346,30 @@ function renderFixedExpenseTable() {
                 expense
             );
 
-        const statusClass =
-            expense.active
-                ? "active"
-                : "inactive";
+        const installmentProgress =
+    getFixedExpenseInstallmentProgress(
+        expense
+    );    
+
+        const installmentFinished =
+    expense.expenseType === "installment" &&
+    installmentProgress &&
+    installmentProgress.current >=
+        installmentProgress.total;
+
+const statusClass =
+    installmentFinished
+        ? "inactive"
+        : expense.active
+            ? "active"
+            : "inactive";
 
         const statusText =
-            expense.active
-                ? "Activo"
-                : "Inactivo";
+    installmentFinished
+        ? "Finalizado"
+        : expense.active
+            ? "Activo"
+            : "Inactivo";
 
 
         html += `
@@ -8081,17 +8419,26 @@ function renderFixedExpenseTable() {
                 </td>
 
 
-                <td>
 
-                    <div class="fixed-expense-frequency">
+                    <td>
+    <div class="fixed-expense-frequency">
 
-                        ${formatFixedExpenseFrequency(
-                            expense.frequency
-                        )}
+        ${
+            expense.expenseType === "installment"
+                ? `${formatFixedExpenseFrequency(
+                    expense.frequency
+                )} · ${
+                    installmentProgress
+                        ? `${installmentProgress.current} de ${installmentProgress.total}`
+                        : "Sin iniciar"
+                }`
+                : formatFixedExpenseFrequency(
+                    expense.frequency
+                )
+        }
 
-                    </div>
-
-                </td>
+    </div>
+</td>
 
 
                 <td>

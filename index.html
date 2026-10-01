@@ -251,17 +251,37 @@
 
         <!-- FOOTER -->
 
-        <div class="sidebar-footer">
+       <div class="sidebar-footer">
 
-            <span>
-                Finanzas Personales
-            </span>
+    <span>
+        Finanzas Personales
+    </span>
 
-            <small>
-                Versión 1.0
-            </small>
+    <div class="footer-credit">
 
-        </div>
+        <span>
+            Made with
+        </span>
+
+        <span class="heart">
+            ❤️
+        </span>
+
+        <span>
+            for
+        </span>
+
+        <strong>
+            JC Creations
+        </strong>
+
+    </div>
+
+    <small class="version">
+        Ver. 1.1.0
+    </small>
+
+</div>
 
 
     </aside>
@@ -1537,6 +1557,71 @@
                     </small>
 
                 </div>
+
+                <!-- TIPO DE GASTO -->
+
+<div class="form-group">
+
+    <label for="fixedExpenseType">
+
+        Tipo de gasto
+
+    </label>
+
+    <select
+        id="fixedExpenseType"
+        required>
+
+        <option value="recurring">
+
+            Recurrente
+
+        </option>
+
+        <option value="installment">
+
+            Por cuotas
+
+        </option>
+
+    </select>
+
+</div>
+
+
+<!-- DATOS DE CUOTAS -->
+
+<div
+    class="form-group"
+    id="installmentFields"
+    style="display: none;">
+
+    <label for="fixedExpenseStartDate">
+
+        Fecha de inicio
+
+    </label>
+
+    <input
+        type="date"
+        id="fixedExpenseStartDate">
+
+
+    <label
+        for="fixedExpenseTotalInstallments"
+        style="margin-top: 16px; display: block;">
+
+        Número de cuotas
+
+    </label>
+
+    <input
+        type="number"
+        id="fixedExpenseTotalInstallments"
+        min="1"
+        placeholder="Ej. 12">
+
+</div>
 
                 <!-- FRECUENCIA -->
 
