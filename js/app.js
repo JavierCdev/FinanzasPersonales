@@ -1419,6 +1419,15 @@ async function deleteCategory(type, id) {
     const category =
         findCategory(type, id);
 
+        const user = await getCurrentUser();
+
+if (!user) {
+    alert(
+        "Tu sesión ha expirado. Inicia sesión nuevamente."
+    );
+    return;
+}
+
 
     if (!category) {
         return;
@@ -1466,29 +1475,61 @@ async function deleteCategory(type, id) {
 
 
     const {
+    data: deletedRows,
+    error
+} = await supabaseClient
+    .from("categorias")
+    .delete()
+    .eq(
+        "id",
+        id
+    )
+    .eq(
+        "user_id",
+        user.id
+    )
+    .select("id");
+
+
+if (error) {
+
+    console.error(
+        "Error eliminando categoría:",
         error
-    } = await supabaseClient
-        .from("categorias")
-        .delete()
-        .eq(
-            "id",
-            id
-        );
+    );
+
+    alert(
+        "No se pudo eliminar la categoría."
+    );
+
+    return;
+
+}
 
 
-    if (error) {
+console.log(
+    "Categoría eliminada de Supabase:",
+    deletedRows
+);
 
-        console.error(
-            "Error eliminando categoría:",
-            error
-        );
 
-        alert(
-            "No se pudo eliminar la categoría. Puede tener registros asociados."
-        );
+if (
+    !deletedRows ||
+    deletedRows.length === 0
+) {
 
-        return;
-    }
+    console.error(
+        "DELETE ejecutado, pero Supabase no eliminó ninguna fila."
+    );
+
+    alert(
+        "Supabase no eliminó la categoría. Revisa las políticas RLS de DELETE."
+    );
+
+    return;
+
+}
+
 
 
     categories[type] =
@@ -8534,7 +8575,7 @@ if (fixedExpenseTableContainer) {
 
     fixedExpenseTableContainer.addEventListener(
         "click",
-        event => {
+        async event => {
 
             const button =
                 event.target.closest(
@@ -8570,32 +8611,73 @@ if (fixedExpenseTableContainer) {
 
             if (action === "delete") {
 
-                const confirmed =
-                    confirm(
-                        `¿Eliminar el gasto fijo "${expense.name}"?`
-                    );
+    const confirmed =
+        confirm(
+            `¿Eliminar el gasto fijo "${expense.name}"?`
+        );
 
-                if (!confirmed) return;
+    if (!confirmed) return;
 
-                fixedExpenses =
-                    fixedExpenses.filter(
-                        item => item.id !== id
-                    );
+    const user =
+        await getCurrentUser();
 
-                saveFixedExpenses();
+    if (!user) {
 
-                renderFixedExpenseTable();
+        alert(
+            "Tu sesión ha expirado. Inicia sesión nuevamente."
+        );
 
-                if (
-                    typeof updateDashboard ===
-                    "function"
-                ) {
+        return;
+    }
 
-                    updateDashboard();
+    const {
+        error
+    } = await supabaseClient
+        .from("gastos_fijos")
+        .delete()
+        .eq(
+            "id",
+            id
+        )
+        .eq(
+            "user_id",
+            user.id
+        );
 
-                }
+    if (error) {
 
-            }
+        console.error(
+            "Error eliminando gasto fijo:",
+            error
+        );
+
+        alert(
+            "No se pudo eliminar el gasto fijo."
+        );
+
+        return;
+    }
+
+    fixedExpenses =
+        fixedExpenses.filter(
+            item =>
+                item.id !== id
+        );
+
+    saveFixedExpenses();
+
+    renderFixedExpenseTable();
+
+    if (
+        typeof updateDashboard ===
+        "function"
+    ) {
+
+        updateDashboard();
+
+    }
+
+}
 
         }
     );
