@@ -278,7 +278,7 @@
     </div>
 
     <small class="version">
-        Ver. 1.1.1
+        Ver. 1.1.2
     </small>
 
 </div>
@@ -1591,35 +1591,45 @@
 
 <!-- DATOS DE CUOTAS -->
 
+<!-- DATOS DE CUOTAS -->
+
 <div
     class="form-group"
     id="installmentFields"
     style="display: none;">
 
-    <label for="fixedExpenseStartDate">
-
-        Fecha de inicio
-
+    <label for="fixedExpensePurchaseDate">
+        Fecha de compra
     </label>
 
     <input
         type="date"
-        id="fixedExpenseStartDate">
+        id="fixedExpensePurchaseDate">
 
+    <label
+        for="fixedExpenseCutoffDay"
+        style="margin-top: 16px; display: block;">
+        Día de corte
+    </label>
+
+    <input
+        type="number"
+        id="fixedExpenseCutoffDay"
+        min="1"
+        max="31"
+        placeholder="Ej. 20">
 
     <label
         for="fixedExpenseTotalInstallments"
         style="margin-top: 16px; display: block;">
-
         Número de cuotas
-
     </label>
 
     <input
         type="number"
         id="fixedExpenseTotalInstallments"
         min="1"
-        placeholder="Ej. 12">
+        placeholder="Ej. 18">
 
 </div>
 

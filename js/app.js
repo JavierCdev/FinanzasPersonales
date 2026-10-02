@@ -7140,9 +7140,14 @@ const installmentFields =
         "installmentFields"
     );
 
-const fixedExpenseStartDate =
+const fixedExpensePurchaseDate =
     document.getElementById(
-        "fixedExpenseStartDate"
+        "fixedExpensePurchaseDate"
+    );
+
+const fixedExpenseCutoffDay =
+    document.getElementById(
+        "fixedExpenseCutoffDay"
     );
 
 const fixedExpenseTotalInstallments =
@@ -7249,7 +7254,8 @@ async function initializeFixedExpenses() {
     amount,
     amount_gtq,
     expense_type,
-    start_date,
+    purchase_date,
+    cutoff_day,
     total_installments,
     frequency,
     due_day,
@@ -7441,13 +7447,16 @@ frequency:
                             expense.amount_gtq
                         ),
 
-                    expenseType:
+                    expenseType: 
                         expense.expense_type,
 
-                    startDate:
-                        expense.start_date,
-
-                    totalInstallments:
+                    purchaseDate: 
+                        expense.purchase_date,
+                    
+                    cutoffDay: 
+                        expense.cutoff_day,
+                         
+                    totalInstallments: 
                         expense.total_installments,
 
                     frequency:
@@ -7583,109 +7592,127 @@ function formatFixedExpenseFrequency(frequency) {
 }
 
 function getFixedExpenseInstallmentProgress(expense) {
-
     if (
         expense.expenseType !== "installment" ||
-        !expense.startDate ||
+        !expense.purchaseDate ||
+        !expense.cutoffDay ||
+        !expense.dueDay ||
         !expense.totalInstallments
     ) {
         return null;
     }
 
-    const startDate =
+    const purchaseDate =
         new Date(
-            expense.startDate + "T00:00:00"
+            expense.purchaseDate + "T00:00:00"
         );
 
-    const today =
-        new Date();
+    const cutoffDay =
+        Number(expense.cutoffDay);
 
-    if (today < startDate) {
+    const paymentDay =
+        Number(expense.dueDay);
+
+    const total =
+        Number(expense.totalInstallments);
+
+    // Determinar el mes del estado de cuenta
+    let statementYear =
+        purchaseDate.getFullYear();
+
+    let statementMonth =
+        purchaseDate.getMonth();
+
+    /*
+     * Si la compra ocurrió después del día de corte,
+     * pasa al siguiente estado de cuenta.
+     *
+     * Ejemplo:
+     * Compra: 26/04
+     * Corte: 20
+     * Estado de cuenta: mayo
+     * Pago: 13/06
+     */
+    if (
+        purchaseDate.getDate() >
+        cutoffDay
+    ) {
+        statementMonth++;
+
+        if (statementMonth > 11) {
+            statementMonth = 0;
+            statementYear++;
+        }
+    }
+
+    /*
+     * La primera cuota se paga en el mes
+     * siguiente al estado de cuenta.
+     */
+    let firstPaymentYear =
+        statementYear;
+
+    let firstPaymentMonth =
+        statementMonth + 1;
+
+    if (firstPaymentMonth > 11) {
+        firstPaymentMonth = 0;
+        firstPaymentYear++;
+    }
+
+    const firstPaymentDate =
+        new Date(
+            firstPaymentYear,
+            firstPaymentMonth,
+            paymentDay
+        );
+
+    const today = new Date();
+
+    today.setHours(0, 0, 0, 0);
+
+    if (today < firstPaymentDate) {
         return {
             current: 0,
-            total: expense.totalInstallments
+            total
         };
     }
 
-    let current = 1;
+    const monthsElapsed =
+        (
+            today.getFullYear() -
+            firstPaymentDate.getFullYear()
+        ) * 12 +
+        (
+            today.getMonth() -
+            firstPaymentDate.getMonth()
+        );
 
-    switch (expense.frequency) {
+    let current =
+        monthsElapsed + 1;
 
-        case "weekly": {
-
-            const diffMs =
-                today - startDate;
-
-            const diffDays =
-                Math.floor(
-                    diffMs /
-                    (1000 * 60 * 60 * 24)
-                );
-
-            current =
-                Math.floor(
-                    diffDays / 7
-                ) + 1;
-
-            break;
-        }
-
-        case "biweekly": {
-
-            const diffMs =
-                today - startDate;
-
-            const diffDays =
-                Math.floor(
-                    diffMs /
-                    (1000 * 60 * 60 * 24)
-                );
-
-            current =
-                Math.floor(
-                    diffDays / 14
-                ) + 1;
-
-            break;
-        }
-
-        case "yearly": {
-
-            current =
-                today.getFullYear() -
-                startDate.getFullYear() +
-                1;
-
-            break;
-        }
-
-        case "monthly":
-        default:
-
-            current =
-                (
-                    today.getFullYear() -
-                    startDate.getFullYear()
-                ) * 12 +
-                (
-                    today.getMonth() -
-                    startDate.getMonth()
-                ) + 1;
-
-            break;
+    /*
+     * Si todavía no hemos llegado al día
+     * de pago del mes actual, ese pago aún
+     * no cuenta como realizado.
+     */
+    if (
+        today.getDate() <
+        paymentDay
+    ) {
+        current--;
     }
 
     current =
         Math.min(
             Math.max(current, 1),
-            expense.totalInstallments
+            total
         );
 
     return {
         current,
-        total: expense.totalInstallments
+        total
     };
-
 }
 
 function openFixedExpenseForm(expense = null) {
@@ -7713,14 +7740,17 @@ function openFixedExpenseForm(expense = null) {
         fixedExpenseAmount.value =
             expense.amount || "";
 
-            fixedExpenseType.value =
-    expense.expenseType || "recurring";
+        fixedExpenseType.value =
+            expense.expenseType || "recurring";
 
-fixedExpenseStartDate.value =
-    expense.startDate || "";
+        fixedExpensePurchaseDate.value =
+            expense.purchaseDate || "";
 
-fixedExpenseTotalInstallments.value =
-    expense.totalInstallments || "";
+        fixedExpenseCutoffDay.value =
+            expense.cutoffDay || "";
+
+        fixedExpenseTotalInstallments.value =
+           expense.totalInstallments || "";
 
         fixedExpenseExchangeRate.value =
             expense.exchangeRate || "";
@@ -7746,11 +7776,14 @@ fixedExpenseTotalInstallments.value =
     fixedExpenseType.value =
         "recurring";
 
-    fixedExpenseStartDate.value =
-        "";
+    fixedExpensePurchaseDate.value =
+    "";
 
-    fixedExpenseTotalInstallments.value =
-        "";
+fixedExpenseCutoffDay.value =
+    "";
+
+fixedExpenseTotalInstallments.value =
+    "";
 
     fixedExpenseFrequency.value =
         "monthly";
@@ -7991,9 +8024,14 @@ if (fixedExpenseForm) {
                 const expenseType =
     fixedExpenseType.value;
 
-const startDate =
-    fixedExpenseStartDate.value ||
+const purchaseDate =
+    fixedExpensePurchaseDate.value ||
     null;
+
+const cutoffDay =
+    fixedExpenseCutoffDay.value
+        ? Number(fixedExpenseCutoffDay.value)
+        : null;
 
 const totalInstallments =
     fixedExpenseTotalInstallments.value
@@ -8048,18 +8086,20 @@ const totalInstallments =
             if (
     expenseType === "installment" &&
     (
-        !startDate ||
+        !purchaseDate ||
+        !cutoffDay ||
+        cutoffDay < 1 ||
+        cutoffDay > 31 ||
         !totalInstallments ||
         totalInstallments <= 0
     )
 ) {
 
     alert(
-        "Ingresa la fecha de inicio y el número de cuotas."
+        "Ingresa la fecha de compra, el día de corte y el número de cuotas."
     );
 
     return;
-
 }
 
             let exchangeRate = 1;
@@ -8108,29 +8148,18 @@ const totalInstallments =
                     getFixedExpenseCategoryName(
                         categoryId
                     ),
-
                 currency,
-
                 amount,
-
                 exchangeRate,
-
                 amountGTQ,
-
                 expenseType,
-
-                startDate,
-
+                purchaseDate,
+                cutoffDay,
                 totalInstallments,
-
                 frequency,
-
                 dueDay,
-
                 active,
-
                 notes,
-
                 createdAt:
                     existingExpense?.createdAt ||
                     new Date().toISOString(),
@@ -8186,10 +8215,13 @@ const totalInstallments =
                 expense_type:
                     fixedExpense.expenseType,
 
-                start_date:
-                    fixedExpense.startDate,
+                purchase_date: 
+                    fixedExpense.purchaseDate,
 
-                total_installments:
+                cutoff_day: 
+                    fixedExpense.cutoffDay,
+
+                total_installments: 
                     fixedExpense.totalInstallments,
 
                 frequency:
