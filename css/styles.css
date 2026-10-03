@@ -3003,3 +3003,21 @@ body {
     }
 
 }
+/* ------------------------------------------------------------ */
+/* DATOS DE COMPRA A CUOTAS                                    */
+/* ------------------------------------------------------------ */
+
+/* ------------------------------------------------------------ */
+/* SELECTORES DEL PERIODO DEL DASHBOARD                         */
+/* ------------------------------------------------------------ */
+
+.dashboard-period {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 14px;
+    flex-wrap: nowrap;
+    width: auto;
+    margin-left: auto;
+}

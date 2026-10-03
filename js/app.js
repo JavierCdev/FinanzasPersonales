@@ -6157,6 +6157,9 @@ alert(
 const dashboardYear =
     document.getElementById("year");
 
+const dashboardMonth =
+    document.getElementById("month");
+
 const dashboardIncome =
     document.getElementById("dashboardIncome");
 
@@ -6354,6 +6357,19 @@ function getDashboardYear() {
 
 }
 
+// ------------------------------------------------------------
+// OBTENER MES SELECCIONADO DEL DASHBOARD
+// ------------------------------------------------------------
+
+function getDashboardMonth() {
+
+    return (
+        dashboardMonth?.value ||
+        String(new Date().getMonth() + 1).padStart(2, "0")
+    );
+
+}
+
 
 // ------------------------------------------------------------
 // VERIFICAR SI UNA FECHA PERTENECE AL AÑO
@@ -6455,9 +6471,114 @@ function getDashboardExpenses(
 
 }
 
+// ------------------------------------------------------------
+// CALCULAR GASTOS FIJOS DEL MES SELECCIONADO
+// ------------------------------------------------------------
+
+function getDashboardFixedExpenses(
+    year,
+    month
+) {
+
+    const selectedDate =
+        new Date(
+            Number(year),
+            Number(month) - 1,
+            1
+        );
+
+        const storedFixedExpenses =
+    JSON.parse(
+        localStorage.getItem(
+            "finanzasGastosFijos"
+        )
+    ) || [];
+
+
+    return storedFixedExpenses.reduce(
+        (total, expense) => {
+
+            if (
+                expense.active === false
+            ) {
+                return total;
+            }
+
+
+            const amount =
+                parseFloat(
+                    expense.amountGTQ
+                ) || 0;
+
+
+            // CUOTAS
+
+            if (
+                expense.expenseType ===
+                    "installment"
+            ) {
+
+                const progress =
+                    getFixedExpenseInstallmentProgressForMonth(
+                        expense,
+                        selectedDate
+                    );
+
+
+                if (!progress) {
+                    return total;
+                }
+
+
+                return total + amount;
+
+            }
+
+
+            // GASTOS RECURRENTES
+
+            switch (
+                expense.frequency
+            ) {
+
+                case "weekly":
+                    return total +
+                        (
+                            amount *
+                            52 /
+                            12
+                        );
+
+                case "biweekly":
+                    return total +
+                        (
+                            amount *
+                            26 /
+                            12
+                        );
+
+                case "yearly":
+                    return total +
+                        (
+                            amount /
+                            12
+                        );
+
+                case "monthly":
+                default:
+                    return total +
+                        amount;
+
+            }
+
+        },
+        0
+    );
+
+}
 
 // ------------------------------------------------------------
-// ACTUALIZAR TARJETAS
+// ACTUALIZAR TARJETAS DEL DASHBOARD
 // ------------------------------------------------------------
 
 function updateDashboardCards() {
@@ -6465,23 +6586,114 @@ function updateDashboardCards() {
     const year =
         getDashboardYear();
 
+    const month =
+        getDashboardMonth();
 
-    const totalIncome =
-        getDashboardIncome(
-            year
+    const selectedPeriod =
+        `${year}-${month}`;
+
+
+    // --------------------------------------------------------
+    // VARIABLES PRINCIPALES DEL DASHBOARD
+    // --------------------------------------------------------
+
+    let totalIncome = 0;
+
+    let totalExpenses = 0;
+
+    let monthlyFixedExpenses = 0;
+
+
+    // --------------------------------------------------------
+    // INGRESOS DEL MES SELECCIONADO
+    // --------------------------------------------------------
+
+    totalIncome =
+        incomes.reduce(
+            (total, income) => {
+
+                if (
+                    !income.date ||
+                    !income.date.startsWith(
+                        selectedPeriod
+                    )
+                ) {
+                    return total;
+                }
+
+                const amount =
+                    parseFloat(
+                        income.amountGTQ
+                    ) || 0;
+
+                return total + amount;
+
+            },
+            0
         );
 
 
-    const totalExpenses =
-        getDashboardExpenses(
-            year
+    // --------------------------------------------------------
+    // GASTOS DEL MES SELECCIONADO
+    // --------------------------------------------------------
+
+    const storedExpenses =
+        JSON.parse(
+            localStorage.getItem(
+                "finanzasGastos"
+            )
+        ) || [];
+
+
+    totalExpenses =
+        storedExpenses.reduce(
+            (total, expense) => {
+
+                if (
+                    !expense.date ||
+                    !expense.date.startsWith(
+                        selectedPeriod
+                    )
+                ) {
+                    return total;
+                }
+
+                const amount =
+                    parseFloat(
+                        expense.amountGTQ
+                    ) || 0;
+
+                return total + amount;
+
+            },
+            0
         );
 
+
+    // --------------------------------------------------------
+    // GASTOS FIJOS DEL MES SELECCIONADO
+    // --------------------------------------------------------
+
+    monthlyFixedExpenses =
+        getDashboardFixedExpenses(
+            year,
+            month
+        );
+
+
+    // --------------------------------------------------------
+    // DISPONIBLE
+    // --------------------------------------------------------
 
     const balance =
         totalIncome -
-        totalExpenses;
+        totalExpenses -
+        monthlyFixedExpenses;
 
+
+    // --------------------------------------------------------
+    // MOSTRAR INGRESOS
+    // --------------------------------------------------------
 
     if (dashboardIncome) {
 
@@ -6494,6 +6706,10 @@ function updateDashboardCards() {
     }
 
 
+    // --------------------------------------------------------
+    // MOSTRAR GASTOS
+    // --------------------------------------------------------
+
     if (dashboardExpenses) {
 
         dashboardExpenses.textContent =
@@ -6505,62 +6721,24 @@ function updateDashboardCards() {
     }
 
 
-    /*
-     * Gastos Fijos todavía no tiene
-     * su propio módulo.
-     *
-     * Lo conectaremos cuando construyamos
-     * Gastos Fijos.
-     */
+    // --------------------------------------------------------
+    // MOSTRAR GASTOS FIJOS
+    // --------------------------------------------------------
 
     if (dashboardFixed) {
 
-    const fixedExpenses =
-        JSON.parse(
-            localStorage.getItem(
-                "finanzasGastosFijos"
-            )
-        ) || [];
+        dashboardFixed.textContent =
+            formatCurrency(
+                monthlyFixedExpenses,
+                "GTQ"
+            );
 
-    const monthlyFixedExpenses =
-        fixedExpenses.reduce(
-            (total, expense) => {
+    }
 
-                if (expense.active === false) {
-                    return total;
-                }
 
-                const amount =
-                    parseFloat(
-                        expense.amountGTQ
-                    ) || 0;
-
-                switch (expense.frequency) {
-
-                    case "weekly":
-                        return total + (amount * 52 / 12);
-
-                    case "biweekly":
-                        return total + (amount * 26 / 12);
-
-                    case "yearly":
-                        return total + (amount / 12);
-
-                    case "monthly":
-                    default:
-                        return total + amount;
-                }
-            },
-            0
-        );
-
-    dashboardFixed.textContent =
-        formatCurrency(
-            monthlyFixedExpenses,
-            "GTQ"
-        );
-}
-
+    // --------------------------------------------------------
+    // MOSTRAR DISPONIBLE
+    // --------------------------------------------------------
 
     if (dashboardBalance) {
 
@@ -6573,7 +6751,6 @@ function updateDashboardCards() {
     }
 
 }
-
 
 // ------------------------------------------------------------
 // DATOS MENSUALES
@@ -7054,16 +7231,26 @@ function updateDashboard() {
 
 
 // ------------------------------------------------------------
-// CAMBIO DE AÑO
+// ACTUALIZAR DASHBOARD AL CAMBIAR EL AÑO
 // ------------------------------------------------------------
 
 if (dashboardYear) {
-
     dashboardYear.addEventListener(
         "change",
         updateDashboard
     );
+}
 
+
+// ------------------------------------------------------------
+// ACTUALIZAR DASHBOARD AL CAMBIAR EL MES
+// ------------------------------------------------------------
+
+if (dashboardMonth) {
+    dashboardMonth.addEventListener(
+        "change",
+        updateDashboard
+    );
 }
 
 
@@ -7175,9 +7362,9 @@ const fixedExpenseDueDay =
         fixedExpenseType.value === "installment";
 
     installmentFields.style.display =
-        isInstallment
-            ? "block"
-            : "none";
+    isInstallment
+        ? "contents"
+        : "none";
 
 }
 
@@ -7545,24 +7732,73 @@ function populateFixedExpenseCategories() {
 }
 
 
+// ------------------------------------------------------------
+// CALCULAR EQUIVALENTE MENSUAL DEL GASTO FIJO
+// ------------------------------------------------------------
+
 function getFixedExpenseMonthlyAmount(expense) {
 
     const amount =
-        parseFloat(expense.amountGTQ) || 0;
+        parseFloat(
+            expense.amountGTQ
+        ) || 0;
+
+
+    // --------------------------------------------------------
+    // GASTOS POR CUOTAS
+    // --------------------------------------------------------
+
+    if (
+        expense.expenseType ===
+            "installment" &&
+        expense.totalInstallments > 0
+    ) {
+
+        return (
+            amount /
+            Number(
+                expense.totalInstallments
+            )
+        );
+
+    }
+
+
+    // --------------------------------------------------------
+    // GASTOS RECURRENTES
+    // --------------------------------------------------------
 
     switch (expense.frequency) {
 
         case "weekly":
-            return amount * 52 / 12;
+
+            return (
+                amount *
+                52 /
+                12
+            );
+
 
         case "biweekly":
-            return amount * 26 / 12;
+
+            return (
+                amount *
+                26 /
+                12
+            );
+
 
         case "yearly":
-            return amount / 12;
+
+            return (
+                amount /
+                12
+            );
+
 
         case "monthly":
         default:
+
             return amount;
 
     }
@@ -7713,6 +7949,141 @@ function getFixedExpenseInstallmentProgress(expense) {
         current,
         total
     };
+}
+
+// ------------------------------------------------------------
+// CALCULAR CUOTA CORRESPONDIENTE A UN MES ESPECÍFICO
+// ------------------------------------------------------------
+
+function getFixedExpenseInstallmentProgressForMonth(
+    expense,
+    selectedDate
+) {
+
+    if (
+        expense.expenseType !==
+            "installment" ||
+        !expense.purchaseDate ||
+        !expense.cutoffDay ||
+        !expense.dueDay ||
+        !expense.totalInstallments
+    ) {
+        return null;
+    }
+
+
+    const purchaseDate =
+        new Date(
+            expense.purchaseDate +
+            "T00:00:00"
+        );
+
+
+    const cutoffDay =
+        Number(
+            expense.cutoffDay
+        );
+
+
+    const paymentDay =
+        Number(
+            expense.dueDay
+        );
+
+
+    const total =
+        Number(
+            expense.totalInstallments
+        );
+
+
+    let statementYear =
+        purchaseDate.getFullYear();
+
+
+    let statementMonth =
+        purchaseDate.getMonth();
+
+
+    if (
+        purchaseDate.getDate() >
+        cutoffDay
+    ) {
+
+        statementMonth++;
+
+        if (
+            statementMonth > 11
+        ) {
+
+            statementMonth = 0;
+            statementYear++;
+
+        }
+
+    }
+
+
+    let firstPaymentYear =
+        statementYear;
+
+
+    let firstPaymentMonth =
+        statementMonth + 1;
+
+
+    if (
+        firstPaymentMonth > 11
+    ) {
+
+        firstPaymentMonth = 0;
+        firstPaymentYear++;
+
+    }
+
+
+    const firstPaymentDate =
+        new Date(
+            firstPaymentYear,
+            firstPaymentMonth,
+            paymentDay
+        );
+
+
+    const selectedYear =
+        selectedDate.getFullYear();
+
+
+    const selectedMonth =
+        selectedDate.getMonth();
+
+
+    const monthsElapsed =
+        (
+            selectedYear -
+            firstPaymentDate.getFullYear()
+        ) * 12 +
+        (
+            selectedMonth -
+            firstPaymentDate.getMonth()
+        );
+
+
+    if (
+        monthsElapsed < 0 ||
+        monthsElapsed >= total
+    ) {
+        return null;
+    }
+
+
+    return {
+        current:
+            monthsElapsed + 1,
+
+        total
+    };
+
 }
 
 function openFixedExpenseForm(expense = null) {

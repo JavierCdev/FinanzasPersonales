@@ -313,31 +313,43 @@
 
             </div>
 
+ <div class="year-selector">
 
-            <div class="year-selector">
+    <label for="month">
+        Mes
+    </label>
 
-                <label for="year">
-                    Año
-                </label>
+    <select id="month">
 
-                <select id="year">
+        <option value="01">Enero</option>
+        <option value="02">Febrero</option>
+        <option value="03">Marzo</option>
+        <option value="04">Abril</option>
+        <option value="05">Mayo</option>
+        <option value="06">Junio</option>
+        <option value="07">Julio</option>
+        <option value="08">Agosto</option>
+        <option value="09">Septiembre</option>
+        <option value="10">Octubre</option>
+        <option value="11">Noviembre</option>
+        <option value="12">Diciembre</option>
 
-                    <option value="2026">
-                        2026
-                    </option>
+    </select>
 
-                    <option value="2025">
-                        2025
-                    </option>
 
-                    <option value="2024">
-                        2024
-                    </option>
+    <label for="year">
+        Año
+    </label>
 
-                </select>
+    <select id="year">
 
-            </div>
+        <option value="2026">2026</option>
+        <option value="2025">2025</option>
+        <option value="2024">2024</option>
 
+    </select>
+
+</div>
 
         </header>
 
@@ -1589,47 +1601,72 @@
 </div>
 
 
-<!-- DATOS DE CUOTAS -->
-
-<!-- DATOS DE CUOTAS -->
+<!-- -------------------------------------------------------- -->
+<!-- DATOS DE COMPRA A CUOTAS                                -->
+<!-- -------------------------------------------------------- -->
 
 <div
-    class="form-group"
-    id="installmentFields"
-    style="display: none;">
+    class="installment-fields"
+    id="installmentFields">
 
-    <label for="fixedExpensePurchaseDate">
-        Fecha de compra
-    </label>
+    <div class="form-group">
 
-    <input
-        type="date"
-        id="fixedExpensePurchaseDate">
+        <label for="fixedExpensePurchaseDate">
+            Fecha de compra
+        </label>
 
-    <label
-        for="fixedExpenseCutoffDay"
-        style="margin-top: 16px; display: block;">
-        Día de corte
-    </label>
+        <input
+            type="date"
+            id="fixedExpensePurchaseDate">
 
-    <input
-        type="number"
-        id="fixedExpenseCutoffDay"
-        min="1"
-        max="31"
-        placeholder="Ej. 20">
+    </div>
 
-    <label
-        for="fixedExpenseTotalInstallments"
-        style="margin-top: 16px; display: block;">
-        Número de cuotas
-    </label>
 
-    <input
-        type="number"
-        id="fixedExpenseTotalInstallments"
-        min="1"
-        placeholder="Ej. 18">
+    <div class="form-group">
+
+        <label for="fixedExpenseCutoffDay">
+            Día de corte
+        </label>
+
+        <input
+            type="number"
+            id="fixedExpenseCutoffDay"
+            min="1"
+            max="31"
+            placeholder="Ej. 20">
+
+    </div>
+
+
+    <div class="form-group">
+
+        <label for="fixedExpenseTotalInstallments">
+            Número de cuotas
+        </label>
+
+        <input
+            type="number"
+            id="fixedExpenseTotalInstallments"
+            min="1"
+            placeholder="Ej. 18">
+
+    </div>
+
+
+    <div class="form-group">
+
+        <label for="fixedExpenseDueDay">
+            Día de pago
+        </label>
+
+        <input
+            type="number"
+            id="fixedExpenseDueDay"
+            min="1"
+            max="31"
+            placeholder="Ej. 13">
+
+    </div>
 
 </div>
 
@@ -1664,25 +1701,6 @@
                     </select>
 
                 </div>
-
-
-                <!-- DÍA DE PAGO -->
-
-                <div class="form-group">
-
-                    <label for="fixedExpenseDueDay">
-                        Día de pago
-                    </label>
-
-                    <input
-                        type="number"
-                        id="fixedExpenseDueDay"
-                        min="1"
-                        max="31"
-                        placeholder="Ej. 15">
-
-                </div>
-
 
                 <!-- ESTADO -->
 
