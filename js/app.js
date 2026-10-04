@@ -2607,7 +2607,6 @@ if (incomeForm) {
                 return;
             }
 
-
             let exchangeRate = 1;
 
             let amountGTQ = amount;
@@ -4678,6 +4677,31 @@ const expenseTableContainer =
         "expenseTableContainer"
     );
 
+const creditCardStatementsContainer =
+    document.getElementById(
+        "creditCardStatementsContainer"
+    );  
+
+    const expensePaymentMethod =
+    document.getElementById("expensePaymentMethod");
+
+const expenseCreditCardGroup =
+    document.getElementById("expenseCreditCardGroup");
+
+const expenseCreditCardId =
+    document.getElementById("expenseCreditCardId");
+
+expensePaymentMethod?.addEventListener("change", () => {
+    const usesCard =
+        expensePaymentMethod.value === "card";
+
+    expenseCreditCardGroup.hidden = !usesCard;
+    expenseCreditCardId.required = usesCard;
+
+    if (!usesCard) {
+        expenseCreditCardId.value = "";
+    }
+});
 
 // ============================================================
 // GUARDAR GASTOS
@@ -4731,6 +4755,10 @@ async function initializeExpenses() {
                 amount_gtq,
                 exchange_rate_source,
                 notes,
+                payment_method,
+                credit_card_id,
+                statement_cutoff_date,
+                statement_due_date,
                 created_at,
                 updated_at
             `)
@@ -4919,6 +4947,18 @@ async function initializeExpenses() {
                         expense.notes ||
                         "",
 
+                    paymentMethod:
+                          expense.payment_method || "cash",
+
+                    creditCardId:
+                         expense.credit_card_id || null,
+
+                    statementCutoffDate:
+                        expense.statement_cutoff_date || null,
+
+                    statementDueDate:
+                        expense.statement_due_date || null,
+
                     createdAt:
                         expense.created_at,
 
@@ -5084,6 +5124,20 @@ function openExpenseForm(
         expenseNotes.value =
             expense.notes || "";
 
+        expensePaymentMethod.value =
+           expense.paymentMethod || "cash";
+
+expensePaymentMethod.dispatchEvent(
+    new Event("change")
+);
+
+populateExpenseCreditCardOptions(
+    expense.creditCardId || null
+);
+
+expenseCreditCardId.value =
+    expense.creditCardId || "";
+
 
         if (
             expense.currency === "USD"
@@ -5112,6 +5166,11 @@ function openExpenseForm(
     } else {
 
         expenseForm.reset();
+        expensePaymentMethod.value = "cash";
+
+expensePaymentMethod.dispatchEvent(
+    new Event("change")
+);
 
 
         expenseId.value =
@@ -5557,6 +5616,18 @@ if (expenseForm) {
             const notes =
                 expenseNotes.value.trim();
 
+                const paymentMethod =
+    expensePaymentMethod.value;
+
+const creditCardId =
+    paymentMethod === "card"
+        ? expenseCreditCardId.value
+        : null;
+
+if (paymentMethod === "card" && !creditCardId) {
+    alert("Selecciona una tarjeta de crédito.");
+    return;
+}
 
             if (!date) {
 
@@ -5617,6 +5688,27 @@ if (expenseForm) {
                 return;
             }
 
+            const selectedCreditCard =
+    paymentMethod === "card"
+        ? creditCards.find(
+            card =>
+                card.id === creditCardId &&
+                card.active !== false
+        )
+        : null;
+
+if (paymentMethod === "card" && !selectedCreditCard) {
+    alert("La tarjeta seleccionada no está disponible.");
+    return;
+}
+
+const statementDates =
+    selectedCreditCard
+        ? getCreditCardStatementDates(date, selectedCreditCard)
+        : {
+            statementCutoffDate: null,
+            statementDueDate: null
+        };
 
             let exchangeRate =
                 1;
@@ -5705,6 +5797,18 @@ if (expenseForm) {
                 notes:
                     notes,
 
+                paymentMethod:
+                   paymentMethod,
+
+                  creditCardId:
+                    creditCardId,
+
+                statementCutoffDate:
+                   statementDates.statementCutoffDate,
+
+                statementDueDate:
+                   statementDates.statementDueDate,
+
                 createdAt:
                     existingExpense?.createdAt ||
                     now,
@@ -5768,6 +5872,18 @@ if (expenseForm) {
 
                     notes:
                         expenseData.notes,
+
+                    payment_method:
+                        expenseData.paymentMethod,
+
+                    credit_card_id:
+                        expenseData.creditCardId,
+
+                    statement_cutoff_date:
+                        expenseData.statementCutoffDate,
+
+                    statement_due_date:
+                        expenseData.statementDueDate,
 
                     created_at:
                         expenseData.createdAt,
@@ -5854,29 +5970,44 @@ function renderExpenseTable() {
         return;
     }
 
+renderCreditCardStatements();
+renderDashboardCardPayments();
 
-    if (
-        expenses.length === 0
-    ) {
+    const selectedMonth =
+    dashboardMonth?.value ||
+    String(new Date().getMonth() + 1).padStart(2, "0");
 
-        expenseTableContainer.innerHTML = `
+const selectedYear =
+    dashboardYear?.value ||
+    String(new Date().getFullYear());
 
-            <div class="empty-table">
-                Todavía no tienes gastos registrados.
-            </div>
+const monthlyExpenses = expenses.filter(expense => {
+    if (!expense.date) return false;
 
-        `;
+    const [expenseYear, expenseMonth] =
+        expense.date.split("-");
 
-        return;
-    }
+    return (
+        expenseYear === selectedYear &&
+        expenseMonth === selectedMonth
+    );
+});
 
+if (monthlyExpenses.length === 0) {
+    expenseTableContainer.innerHTML = `
+        <div class="empty-table">
+            No hay gastos registrados en el mes seleccionado.
+        </div>
+    `;
+    return;
+}
 
-    const sorted =
-        [...expenses].sort(
-            (a, b) =>
-                new Date(b.date) -
-                new Date(a.date)
-        );
+const sorted =
+    [...monthlyExpenses].sort(
+        (a, b) =>
+            new Date(b.date) -
+            new Date(a.date)
+    );
 
 
     let html = `
@@ -6015,6 +6146,122 @@ function renderExpenseTable() {
 
 }
 
+function renderCreditCardStatements() {
+    if (!creditCardStatementsContainer) {
+        return;
+    }
+
+    const selectedPeriod =
+    `${getDashboardYear()}-${getDashboardMonth()}-`;
+
+const actualCardExpenses = expenses.filter(
+    expense =>
+        expense.paymentMethod === "card" &&
+        expense.creditCardId &&
+        expense.statementCutoffDate &&
+        expense.statementDueDate &&
+        expense.statementDueDate.startsWith(selectedPeriod)
+);
+
+const projectedCardExpenses =
+    getProjectedFixedCardCharges(selectedPeriod);
+
+const cardExpenses = [
+    ...actualCardExpenses,
+    ...projectedCardExpenses
+];
+
+    if (cardExpenses.length === 0) {
+        creditCardStatementsContainer.innerHTML = `
+            <div class="empty-table">
+                No hay gastos registrados con tarjeta de crédito.
+            </div>
+        `;
+        return;
+    }
+
+    const statements = new Map();
+
+    cardExpenses.forEach(expense => {
+        const key = [
+            expense.creditCardId,
+            expense.statementCutoffDate,
+            expense.statementDueDate
+        ].join("|");
+
+        let statement = statements.get(key);
+
+        if (!statement) {
+            statement = {
+                creditCardId: expense.creditCardId,
+                cutoffDate: expense.statementCutoffDate,
+                dueDate: expense.statementDueDate,
+                totalGTQ: 0,
+                projectedGTQ: 0
+            };
+
+            statements.set(key, statement);
+        }
+
+        const amountGTQ =
+    Number(expense.amountGTQ) || 0;
+
+statement.totalGTQ += amountGTQ;
+
+if (expense.isProjected) {
+    statement.projectedGTQ += amountGTQ;
+}
+    });
+
+    const sortedStatements =
+        [...statements.values()].sort(
+            (a, b) =>
+                a.dueDate.localeCompare(b.dueDate) ||
+                a.cutoffDate.localeCompare(b.cutoffDate)
+        );
+
+    let html = `
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Tarjeta</th>
+                    <th>Fecha de corte</th>
+                    <th>Fecha de pago</th>
+                    <th>Total a pagar (GTQ)</th>
+                    <th>Previsto (GTQ)</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    sortedStatements.forEach(statement => {
+        const card = creditCards.find(
+            item => item.id === statement.creditCardId
+        );
+
+        const cardName = card
+            ? `${card.bank} - ${card.name}`
+            : "Tarjeta de crédito";
+
+        html += `
+            <tr>
+                <td>${escapeHtml(cardName)}</td>
+                <td>${formatDate(statement.cutoffDate)}</td>
+                <td>${formatDate(statement.dueDate)}</td>
+                <td class="income-amount">
+                    ${formatCurrency(statement.totalGTQ, "GTQ")}</td>
+                <td>${formatCurrency(statement.projectedGTQ, "GTQ")}</td>
+            </tr>
+        `;
+    });
+
+    html += `
+            </tbody>
+        </table>
+    `;
+
+    creditCardStatementsContainer.innerHTML = html;
+}
 
 // ============================================================
 // EDITAR / ELIMINAR GASTOS
@@ -6163,6 +6410,836 @@ const dashboardMonth =
 const dashboardIncome =
     document.getElementById("dashboardIncome");
 
+    // Referencias del formulario de tarjetas de crédito
+const addCreditCardButton = document.getElementById("addCreditCard");
+const creditCardFormPanel = document.getElementById("creditCardFormPanel");
+const cancelCreditCardButton = document.getElementById("cancelCreditCardButton");
+const creditCardForm = document.getElementById("creditCardForm");
+const creditCardsList =
+    document.getElementById("creditCardsList");
+
+// Mostrar formulario para agregar una tarjeta
+addCreditCardButton?.addEventListener("click", () => {
+    creditCardForm.reset();
+
+    document.getElementById("creditCardId").value = "";
+
+    document.getElementById("creditCardFormTitle").textContent =
+        "Nueva tarjeta de crédito";
+
+    creditCardFormPanel.hidden = false;
+});
+
+// Ocultar formulario de tarjeta
+cancelCreditCardButton?.addEventListener("click", () => {
+    creditCardFormPanel.hidden = true;
+});
+
+// Capturar los datos del formulario de tarjeta
+creditCardForm?.addEventListener(
+    "submit",
+    async event => {
+
+        event.preventDefault();
+
+        const creditCard = {
+
+            bank:
+                document
+                    .getElementById("creditCardBank")
+                    .value
+                    .trim(),
+
+            name:
+                document
+                    .getElementById("creditCardName")
+                    .value
+                    .trim(),
+
+            cutoffDay:
+                Number(
+                    document
+                        .getElementById(
+                            "creditCardCutoffDay"
+                        )
+                        .value
+                ),
+
+            paymentDay:
+                Number(
+                    document
+                        .getElementById(
+                            "creditCardPaymentDay"
+                        )
+                        .value
+                ),
+
+            creditLimit:
+                Number(
+                    document
+                        .getElementById(
+                            "creditCardLimit"
+                        )
+                        .value
+                )
+
+        };
+
+
+        // ----------------------------------------------------
+        // VALIDACIONES
+        // ----------------------------------------------------
+
+        if (!creditCard.bank) {
+
+            alert(
+                "Ingresa el banco de la tarjeta."
+            );
+
+            return;
+
+        }
+
+
+        if (!creditCard.name) {
+
+            alert(
+                "Ingresa el nombre de la tarjeta."
+            );
+
+            return;
+
+        }
+
+
+        if (
+            creditCard.cutoffDay < 1 ||
+            creditCard.cutoffDay > 31
+        ) {
+
+            alert(
+                "El día de corte debe estar entre 1 y 31."
+            );
+
+            return;
+
+        }
+
+
+        if (
+            creditCard.paymentDay < 1 ||
+            creditCard.paymentDay > 31
+        ) {
+
+            alert(
+                "El día límite de pago debe estar entre 1 y 31."
+            );
+
+            return;
+
+        }
+
+
+        if (creditCard.creditLimit < 0) {
+
+            alert(
+                "El límite de crédito no puede ser negativo."
+            );
+
+            return;
+
+        }
+
+
+        // ----------------------------------------------------
+        // OBTENER USUARIO ACTUAL
+        // ----------------------------------------------------
+
+        const user =
+            await getCurrentUser();
+
+
+        if (!user) {
+
+            alert(
+                "No hay un usuario autenticado."
+            );
+
+            return;
+
+        }
+
+
+        // ----------------------------------------------------
+        // GUARDAR O ACTUALIZAR EN SUPABASE
+        // ----------------------------------------------------
+
+        const editingId =
+            document.getElementById("creditCardId").value;
+
+        const cardData = {
+            bank: creditCard.bank,
+            name: creditCard.name,
+            cutoff_day: creditCard.cutoffDay,
+            payment_day: creditCard.paymentDay,
+            credit_limit: creditCard.creditLimit
+        };
+
+        let saveQuery =
+            supabaseClient
+                .from("tarjetas_credito");
+
+        if (editingId) {
+            saveQuery = saveQuery
+                .update(cardData)
+                .eq("id", editingId);
+        } else {
+            saveQuery = saveQuery
+                .insert({
+                    user_id: user.id,
+                    ...cardData
+                });
+        }
+
+        const { data, error } =
+    await saveQuery
+        .select(
+            "id, bank, name, cutoff_day, payment_day, credit_limit, active"
+        )
+        .single();
+
+        if (error) {
+            console.error(
+                "Error guardando tarjeta:",
+                error
+            );
+
+            alert(
+                "No fue posible guardar la tarjeta."
+            );
+
+            return;
+        }
+
+        if (editingId) {
+            creditCards = creditCards.map(card =>
+                card.id === data.id ? data : card
+            );
+        } else {
+            creditCards.push(data);
+        }
+
+        renderCreditCards();
+        populateExpenseCreditCardOptions();
+        populateFixedExpenseCreditCardOptions();
+
+        alert(
+            editingId
+                ? "Tarjeta actualizada correctamente."
+                : "Tarjeta guardada correctamente."
+        );
+
+
+        // ----------------------------------------------------
+        // LIMPIAR Y CERRAR FORMULARIO
+        // ----------------------------------------------------
+
+        creditCardForm.reset();
+
+        creditCardFormPanel.hidden = true;
+
+    }
+);
+
+// ============================================================
+// TARJETAS DE CRÉDITO - CARGAR DESDE SUPABASE
+// ============================================================
+
+let creditCards = [];
+
+function populateExpenseCreditCardOptions(selectedCardId = null) {
+    if (!expenseCreditCardId) return;
+
+    const availableCards = creditCards.filter(
+        card =>
+            card.active !== false ||
+            card.id === selectedCardId
+    );
+
+    expenseCreditCardId.innerHTML =
+        '<option value="">Selecciona una tarjeta</option>';
+
+    availableCards.forEach(card => {
+        const option = document.createElement("option");
+        option.value = card.id;
+        option.textContent = `${card.bank} - ${card.name}`;
+        expenseCreditCardId.appendChild(option);
+    });
+}
+
+function populateFixedExpenseCreditCardOptions(selectedCardId = null) {
+    if (!fixedExpenseCreditCardId) return;
+
+    const availableCards = creditCards.filter(
+        card =>
+            card.active !== false ||
+            card.id === selectedCardId
+    );
+
+    fixedExpenseCreditCardId.innerHTML =
+        '<option value="">Selecciona una tarjeta</option>';
+
+    availableCards.forEach(card => {
+        const option = document.createElement("option");
+        option.value = card.id;
+        option.textContent = `${card.bank} - ${card.name}`;
+        fixedExpenseCreditCardId.appendChild(option);
+    });
+
+    fixedExpenseCreditCardId.value =
+        selectedCardId || "";
+}
+
+function getCreditCardStatementDates(expenseDate, card) {
+    const [yearValue, monthValue, dayValue] =
+        expenseDate.split("-").map(Number);
+
+    const cutoffDay = Number(card.cutoff_day);
+    const paymentDay = Number(card.payment_day);
+
+    let cutoffYear = yearValue;
+    let cutoffMonth = monthValue;
+
+    // Si la compra fue después del corte, pasa al corte del mes siguiente.
+    if (dayValue > cutoffDay) {
+        cutoffMonth += 1;
+
+        if (cutoffMonth > 12) {
+            cutoffMonth = 1;
+            cutoffYear += 1;
+        }
+    }
+
+    const formatDate = (year, month, day) => {
+        const lastDay = new Date(
+            Date.UTC(year, month, 0)
+        ).getUTCDate();
+
+        const validDay = Math.min(day, lastDay);
+
+        return [
+            year,
+            String(month).padStart(2, "0"),
+            String(validDay).padStart(2, "0")
+        ].join("-");
+    };
+
+    let dueYear = cutoffYear;
+    let dueMonth = cutoffMonth;
+
+    // Si el día de pago es anterior o igual al día de corte,
+    // el pago corresponde al mes siguiente.
+    if (paymentDay <= cutoffDay) {
+        dueMonth += 1;
+
+        if (dueMonth > 12) {
+            dueMonth = 1;
+            dueYear += 1;
+        }
+    }
+
+    return {
+        statementCutoffDate:
+            formatDate(cutoffYear, cutoffMonth, cutoffDay),
+
+        statementDueDate:
+            formatDate(dueYear, dueMonth, paymentDay)
+    };
+}
+
+async function initializeCreditCards() {
+
+    if (!creditCardsList) {
+        return;
+    }
+
+
+    const user =
+        await getCurrentUser();
+
+
+    if (!user) {
+
+        console.warn(
+            "No hay usuario autenticado para cargar tarjetas."
+        );
+
+        return;
+
+    }
+
+
+    try {
+
+        const {
+            data,
+            error
+        } = await supabaseClient
+            .from("tarjetas_credito")
+            .select(`
+                id,
+                bank,
+                name,
+                cutoff_day,
+                payment_day,
+                credit_limit,
+                active,
+                created_at
+            `)
+            .order(
+                "created_at",
+                {
+                    ascending: true
+                }
+            );
+
+
+        if (error) {
+            throw error;
+        }
+
+
+        creditCards =
+            data || [];
+
+            populateExpenseCreditCardOptions();
+            populateFixedExpenseCreditCardOptions();
+            renderCreditCards();
+
+
+    } catch (error) {
+
+        console.error(
+            "Error cargando tarjetas de crédito:",
+            error
+        );
+
+        creditCardsList.innerHTML = `
+            <p>
+                No fue posible cargar las tarjetas.
+            </p>
+        `;
+
+    }
+
+}
+
+
+// ============================================================
+// MOSTRAR TARJETAS DE CRÉDITO
+// ============================================================
+
+let showInactiveCreditCards = false;
+
+function renderCreditCards() {
+
+    if (!creditCardsList) {
+        return;
+    }
+
+    const activeCards =
+        creditCards.filter(
+            card => card.active !== false
+        );
+
+    const inactiveCards =
+        creditCards.filter(
+            card => card.active === false
+        );
+
+    const visibleCards =
+        showInactiveCreditCards
+            ? creditCards
+            : activeCards;
+
+    let html = "";
+
+    html += `
+        <div class="category-list-header">
+
+            <span>
+                ${activeCards.length} activa(s)
+
+                ${
+                    inactiveCards.length
+                        ? ` · ${inactiveCards.length} inactiva(s)`
+                        : ""
+                }
+            </span>
+
+            ${
+                inactiveCards.length
+                    ? `
+                        <button
+                            type="button"
+                            class="category-filter-button"
+                            data-credit-card-filter
+                        >
+                            ${
+                                showInactiveCreditCards
+                                    ? "Ocultar inactivas"
+                                    : `Mostrar inactivas (${inactiveCards.length})`
+                            }
+                        </button>
+                    `
+                    : ""
+            }
+
+        </div>
+    `;
+
+    if (visibleCards.length === 0) {
+
+        html += `
+            <div class="category-empty">
+                No hay tarjetas.
+            </div>
+        `;
+
+        creditCardsList.innerHTML = html;
+
+        return;
+    }
+
+    html += `
+        <div class="credit-card-list">
+    `;
+
+    visibleCards.forEach(card => {
+
+        html += `
+
+            <div
+                class="
+                    credit-card-item
+                    ${
+                        card.active === false
+                            ? "inactive-category"
+                            : ""
+                    }
+                "
+            >
+
+                <div class="credit-card-main">
+
+                    <div class="category-info">
+
+                        <span
+                            class="
+                                category-status
+                                ${
+                                    card.active === false
+                                        ? "inactive"
+                                        : ""
+                                }
+                            "
+                        ></span>
+
+                        <div class="credit-card-title">
+
+                            <strong>
+                                ${escapeHtml(card.bank)}
+                            </strong>
+
+                            <span>
+                                ${escapeHtml(card.name)}
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="credit-card-details">
+
+                    <div class="credit-card-detail">
+
+                        <span>
+                            Límite de crédito
+                        </span>
+
+                        <strong>
+                            ${formatCurrency(
+                                card.credit_limit,
+                                "GTQ"
+                            )}
+                        </strong>
+
+                    </div>
+
+                    <div class="credit-card-detail">
+
+                        <span>
+                            Día de corte
+                        </span>
+
+                        <strong>
+                            ${card.cutoff_day}
+                        </strong>
+
+                    </div>
+
+                    <div class="credit-card-detail">
+
+                        <span>
+                            Día de pago
+                        </span>
+
+                        <strong>
+                            ${card.payment_day}
+                        </strong>
+
+                    </div>
+
+                </div>
+
+                <div class="category-actions">
+
+                    <button
+                        type="button"
+                        class="category-button"
+                        data-credit-card-action="edit"
+                        data-credit-card-id="${card.id}"
+                    >
+                        Editar
+                    </button>
+
+                    <button
+                        type="button"
+                        class="category-button"
+                        data-credit-card-action="toggle"
+                        data-credit-card-id="${card.id}"
+                    >
+                        ${
+                            card.active === false
+                                ? "Activar"
+                                : "Desactivar"
+                        }
+                    </button>
+
+                    <button
+                        type="button"
+                        class="category-button delete"
+                        data-credit-card-action="delete"
+                        data-credit-card-id="${card.id}"
+                    >
+                        Eliminar
+                    </button>
+
+                </div>
+
+            </div>
+
+        `;
+
+    });
+
+    html += `
+        </div>
+    `;
+
+    creditCardsList.innerHTML = html;
+}
+
+function editCreditCard(id) {
+    const card = creditCards.find(item => item.id === id);
+
+    if (!card) {
+        return;
+    }
+
+    document.getElementById("creditCardId").value = card.id;
+    document.getElementById("creditCardBank").value = card.bank;
+    document.getElementById("creditCardName").value = card.name;
+    document.getElementById("creditCardCutoffDay").value = card.cutoff_day;
+    document.getElementById("creditCardPaymentDay").value = card.payment_day;
+    document.getElementById("creditCardLimit").value = card.credit_limit;
+
+    document.getElementById("creditCardFormTitle").textContent =
+        "Editar tarjeta de crédito";
+
+    creditCardFormPanel.hidden = false;
+}
+
+async function toggleCreditCard(id) {
+
+    const card =
+        creditCards.find(
+            item => item.id === id
+        );
+
+    if (!card) {
+        return;
+    }
+
+    const newActive =
+        card.active === false;
+
+    const {
+        error
+    } = await supabaseClient
+        .from("tarjetas_credito")
+        .update({
+            active: newActive,
+            updated_at:
+                new Date().toISOString()
+        })
+        .eq("id", id);
+
+    if (error) {
+
+        console.error(
+            "Error cambiando estado de tarjeta:",
+            error
+        );
+
+        alert(
+            "No se pudo cambiar el estado de la tarjeta."
+        );
+
+        return;
+    }
+
+    card.active =
+        newActive;
+
+    renderCreditCards();
+    populateExpenseCreditCardOptions();
+    populateFixedExpenseCreditCardOptions();
+}
+
+
+async function deleteCreditCard(id) {
+
+    const card =
+        creditCards.find(
+            item => item.id === id
+        );
+
+    if (!card) {
+        return;
+    }
+
+    const confirmed =
+        confirm(
+            `¿Seguro que quieres eliminar la tarjeta "${card.bank} - ${card.name}"?`
+        );
+
+    if (!confirmed) {
+        return;
+    }
+
+    const {
+        data: deletedRows,
+        error
+    } = await supabaseClient
+        .from("tarjetas_credito")
+        .delete()
+        .eq("id", id)
+        .select("id");
+
+    if (error) {
+
+        console.error(
+            "Error eliminando tarjeta:",
+            error
+        );
+
+        alert(
+            "No se pudo eliminar la tarjeta."
+        );
+
+        return;
+    }
+
+    if (
+        !deletedRows ||
+        deletedRows.length === 0
+    ) {
+
+        alert(
+            "Supabase no eliminó la tarjeta. Revisa las políticas RLS de DELETE."
+        );
+
+        return;
+    }
+
+    creditCards =
+        creditCards.filter(
+            item => item.id !== id
+        );
+
+    renderCreditCards();
+    populateExpenseCreditCardOptions();
+    populateFixedExpenseCreditCardOptions();
+}
+
+document.addEventListener(
+    "click",
+    event => {
+
+        const button =
+            event.target.closest(
+                "[data-credit-card-action]"
+            );
+
+        if (button) {
+
+            const action =
+                button.dataset.creditCardAction;
+
+            const id =
+                button.dataset.creditCardId;
+
+            if (action === "toggle") {
+
+                toggleCreditCard(id);
+
+            }
+
+            if (action === "delete") {
+
+                deleteCreditCard(id);
+
+            }
+
+            if (action === "edit") {
+
+                editCreditCard(id);
+
+            }
+
+            return;
+        }
+
+        const filterButton =
+            event.target.closest(
+                "[data-credit-card-filter]"
+            );
+
+        if (filterButton) {
+
+            showInactiveCreditCards =
+                !showInactiveCreditCards;
+
+            renderCreditCards();
+
+        }
+
+    }
+);
+
 const dashboardExpenses =
     document.getElementById("dashboardExpenses");
 
@@ -6171,6 +7248,9 @@ const dashboardFixed =
 
 const dashboardBalance =
     document.getElementById("dashboardBalance");
+
+    const dashboardCardPayments =
+    document.getElementById("dashboardCardPayments");
 
 const monthlyFlowChart =
     document.getElementById("monthlyFlowChart");
@@ -6183,6 +7263,11 @@ const expenseCategoryChart =
 // ------------------------------------------------------------
 
 function populateYearSelectors() {
+
+        if (dashboardMonth) {
+        dashboardMonth.value =
+            String(new Date().getMonth() + 1).padStart(2, "0");
+    }
 
     const yearSelectors = [
         document.getElementById("year"),
@@ -7220,13 +8305,251 @@ function renderExpenseCategoryChart() {
 // ------------------------------------------------------------
 
 function updateDashboard() {
+    renderDashboardCardPayments();
+    renderCreditCardStatements();
 
     updateDashboardCards();
-
     renderMonthlyFlowChart();
-
     renderExpenseCategoryChart();
+}
 
+function getProjectedFixedCardCharges(selectedPeriod) {
+    const selectedYear =
+        Number(selectedPeriod.slice(0, 4));
+
+    const selectedMonthIndex =
+        Number(selectedPeriod.slice(5, 7)) - 1;
+
+    const projectedCharges = [];
+
+    fixedExpenses.forEach(expense => {
+        if (
+            expense.active === false ||
+            expense.expenseType !== "recurring" ||
+            expense.frequency !== "monthly" ||
+            expense.paymentMethod !== "card" ||
+            !expense.creditCardId ||
+            !expense.chargeDay
+        ) {
+            return;
+        }
+
+        const card = creditCards.find(
+            item =>
+                String(item.id) ===
+                String(expense.creditCardId)
+        );
+
+        if (!card) {
+            return;
+        }
+
+        for (let monthsBack = 0; monthsBack <= 2; monthsBack++) {
+            const occurrenceMonth = new Date(
+                selectedYear,
+                selectedMonthIndex - monthsBack,
+                1
+            );
+
+            const year =
+                occurrenceMonth.getFullYear();
+
+            const monthIndex =
+                occurrenceMonth.getMonth();
+
+            const lastDayOfMonth =
+                new Date(year, monthIndex + 1, 0).getDate();
+
+            const chargeDay =
+                Math.min(
+                    Number(expense.chargeDay),
+                    lastDayOfMonth
+                );
+
+            const chargeDate = [
+                year,
+                String(monthIndex + 1).padStart(2, "0"),
+                String(chargeDay).padStart(2, "0")
+            ].join("-");
+
+            const statementDates =
+                getCreditCardStatementDates(
+                    chargeDate,
+                    card
+                );
+
+            if (
+                !statementDates.statementDueDate.startsWith(
+                    selectedPeriod
+                )
+            ) {
+                continue;
+            }
+
+            const alreadyRegistered = expenses.some(
+    registeredExpense =>
+        registeredExpense.paymentMethod === "card" &&
+        String(registeredExpense.creditCardId) ===
+            String(expense.creditCardId) &&
+        registeredExpense.date === chargeDate &&
+        String(registeredExpense.description || "")
+            .trim()
+            .toLowerCase() ===
+            String(expense.name || "")
+                .trim()
+                .toLowerCase()
+);
+
+if (alreadyRegistered) {
+    continue;
+}
+
+            const amountGTQ =
+                Number(expense.amountGTQ) ||
+                Number(expense.amount) *
+                    Number(expense.exchangeRate || 1);
+
+            projectedCharges.push({
+                creditCardId: expense.creditCardId,
+                statementCutoffDate:
+                    statementDates.statementCutoffDate,
+                statementDueDate:
+                    statementDates.statementDueDate,
+                amountGTQ,
+                isProjected: true
+            });
+        }
+    });
+
+    return projectedCharges;
+}
+
+function renderDashboardCardPayments() {
+    if (!dashboardCardPayments) {
+        return;
+    }
+
+    const selectedPeriod =
+        `${getDashboardYear()}-${getDashboardMonth()}-`;
+
+    const actualDueExpenses = expenses.filter(
+    expense =>
+        expense.paymentMethod === "card" &&
+        expense.creditCardId &&
+        expense.statementCutoffDate &&
+        expense.statementDueDate &&
+        expense.statementDueDate.startsWith(selectedPeriod)
+);
+
+const projectedDueExpenses =
+    getProjectedFixedCardCharges(selectedPeriod);
+
+const dueExpenses = [
+    ...actualDueExpenses,
+    ...projectedDueExpenses
+];
+
+    if (dueExpenses.length === 0) {
+        dashboardCardPayments.innerHTML = `
+            <div class="empty-table">
+                No hay pagos de tarjetas programados para este mes.
+            </div>
+        `;
+        return;
+    }
+
+    const payments = new Map();
+
+    dueExpenses.forEach(expense => {
+        const key = [
+            expense.creditCardId,
+            expense.statementCutoffDate,
+            expense.statementDueDate
+        ].join("|");
+
+        let payment = payments.get(key);
+
+        if (!payment) {
+            payment = {
+    creditCardId: expense.creditCardId,
+    cutoffDate: expense.statementCutoffDate,
+    dueDate: expense.statementDueDate,
+    totalGTQ: 0,
+    projectedGTQ: 0
+};
+
+            payments.set(key, payment);
+        }
+
+        const amountGTQ =
+    Number(expense.amountGTQ) || 0;
+
+payment.totalGTQ += amountGTQ;
+
+if (expense.isProjected) {
+    payment.projectedGTQ += amountGTQ;
+}
+    });
+
+    const monthlyPayments =
+        [...payments.values()].sort(
+            (a, b) => a.dueDate.localeCompare(b.dueDate)
+        );
+
+    const totalDue = monthlyPayments.reduce(
+        (total, payment) => total + payment.totalGTQ,
+        0
+    );
+
+    let html = `
+        <div class="dashboard-payment-summary">
+    <span>Total estimado a pagar este mes</span>
+    <strong>${formatCurrency(totalDue, "GTQ")}</strong>
+</div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Tarjeta</th>
+                    <th>Fecha de corte</th>
+                    <th>Fecha de pago</th>
+                    <th>Monto total (GTQ)</th>
+                    <th>Previsto (GTQ)</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    monthlyPayments.forEach(payment => {
+        const card = creditCards.find(
+            item => item.id === payment.creditCardId
+        );
+
+        const cardName = card
+            ? `${card.bank} - ${card.name}`
+            : "Tarjeta de crédito";
+
+        html += `
+            <tr>
+                <td>${escapeHtml(cardName)}</td>
+                <td>${formatDate(payment.cutoffDate)}</td>
+                <td>${formatDate(payment.dueDate)}</td>
+                <td class="income-amount">
+                   ${formatCurrency(payment.totalGTQ, "GTQ")}
+                           </td>
+                     <td>
+    ${formatCurrency(payment.projectedGTQ, "GTQ")}
+</td>
+            </tr>
+        `;
+    });
+
+    html += `
+            </tbody>
+        </table>
+    `;
+
+    dashboardCardPayments.innerHTML = html;
 }
 
 
@@ -7237,7 +8560,10 @@ function updateDashboard() {
 if (dashboardYear) {
     dashboardYear.addEventListener(
         "change",
-        updateDashboard
+        () => {
+            updateDashboard();
+            renderExpenseTable();
+        }
     );
 }
 
@@ -7249,7 +8575,10 @@ if (dashboardYear) {
 if (dashboardMonth) {
     dashboardMonth.addEventListener(
         "change",
-        updateDashboard
+        () => {
+            updateDashboard();
+            renderExpenseTable();
+        }
     );
 }
 
@@ -7260,13 +8589,6 @@ if (dashboardMonth) {
 
 populateYearSelectors();
 
-
-// ------------------------------------------------------------
-// INICIALIZAR DASHBOARD
-// ------------------------------------------------------------
-
-updateDashboard();
-
 // ============================================================
 // 13. GASTOS FIJOS
 // ============================================================
@@ -7275,6 +8597,12 @@ let fixedExpenses =
     JSON.parse(
         localStorage.getItem("finanzasGastosFijos")
     ) || [];
+
+// ------------------------------------------------------------
+// INICIALIZAR DASHBOARD
+// ------------------------------------------------------------
+
+updateDashboard();
 
 
 const newFixedExpenseButton =
@@ -7300,6 +8628,21 @@ const fixedExpenseCurrency =
 
 const fixedExpenseAmount =
     document.getElementById("fixedExpenseAmount");
+
+const fixedExpensePaymentMethod =
+    document.getElementById("fixedExpensePaymentMethod");
+
+const fixedExpenseCreditCardGroup =
+    document.getElementById("fixedExpenseCreditCardGroup");
+
+const fixedExpenseCreditCardId =
+    document.getElementById("fixedExpenseCreditCardId");
+
+const fixedExpenseChargeDayGroup =
+    document.getElementById("fixedExpenseChargeDayGroup");
+
+const fixedExpenseChargeDay =
+    document.getElementById("fixedExpenseChargeDay");
 
 const fixedExpenseExchangeGroup =
     document.getElementById("fixedExpenseExchangeGroup");
@@ -7353,25 +8696,41 @@ const fixedExpenseDueDay =
     );
 
     function updateFixedExpenseTypeVisibility() {
+    const isInstallment =
+        fixedExpenseType?.value === "installment";
 
-    if (!fixedExpenseType || !installmentFields) {
-        return;
+    const isRecurring =
+        fixedExpenseType?.value === "recurring";
+
+    const isCard =
+        fixedExpensePaymentMethod?.value === "card";
+
+    if (installmentFields) {
+        installmentFields.style.display =
+            isInstallment ? "contents" : "none";
     }
 
-    const isInstallment =
-        fixedExpenseType.value === "installment";
+    if (fixedExpenseCreditCardGroup) {
+        fixedExpenseCreditCardGroup.hidden = !isCard;
+    }
 
-    installmentFields.style.display =
-    isInstallment
-        ? "contents"
-        : "none";
-
+    if (fixedExpenseChargeDayGroup) {
+        fixedExpenseChargeDayGroup.hidden =
+            !(isCard && isRecurring);
+    }
 }
 
 fixedExpenseType?.addEventListener(
     "change",
     updateFixedExpenseTypeVisibility
 );
+
+fixedExpensePaymentMethod?.addEventListener(
+    "change",
+    updateFixedExpenseTypeVisibility
+);
+
+updateFixedExpenseTypeVisibility();
 
 const fixedExpenseActive =
     document.getElementById(
@@ -7446,6 +8805,9 @@ async function initializeFixedExpenses() {
     total_installments,
     frequency,
     due_day,
+    payment_method,
+    credit_card_id,
+    charge_day,
     active,
     notes,
     created_at,
@@ -7576,6 +8938,9 @@ frequency:
                     total_installments,
                     frequency,
                     due_day,
+                    payment_method,
+                    credit_card_id,
+                    charge_day,
                     active,
                     notes,
                     created_at,
@@ -7651,6 +9016,15 @@ frequency:
 
                     dueDay:
                         expense.due_day,
+
+                    paymentMethod:
+                        expense.payment_method || "cash",
+
+                    creditCardId:
+                        expense.credit_card_id || null,
+
+                    chargeDay:
+                        expense.charge_day || null,
 
                     active:
                         expense.active !== false,
@@ -8094,6 +9468,10 @@ function openFixedExpenseForm(expense = null) {
 
     fixedExpenseForm.reset();
 
+    populateFixedExpenseCreditCardOptions(
+    expense?.creditCardId || null
+);
+
     fixedExpenseId.value =
         expense?.id || "";
 
@@ -8130,7 +9508,16 @@ function openFixedExpenseForm(expense = null) {
             expense.frequency || "monthly";
 
         fixedExpenseDueDay.value =
-            expense.dueDay || "";
+    expense.dueDay || "";
+
+fixedExpensePaymentMethod.value =
+    expense.paymentMethod || "cash";
+
+fixedExpenseCreditCardId.value =
+    expense.creditCardId || "";
+
+fixedExpenseChargeDay.value =
+    expense.chargeDay || "";
 
         fixedExpenseActive.value =
             String(
@@ -8395,6 +9782,28 @@ if (fixedExpenseForm) {
                 const expenseType =
     fixedExpenseType.value;
 
+    const paymentMethod =
+    fixedExpensePaymentMethod.value || "cash";
+
+const creditCardId =
+    paymentMethod === "card"
+        ? fixedExpenseCreditCardId.value
+        : null;
+
+const chargeDay =
+    paymentMethod === "card" &&
+    expenseType === "recurring" &&
+    fixedExpenseChargeDay.value
+        ? Number(fixedExpenseChargeDay.value)
+        : null;
+
+const selectedFixedExpenseCard =
+    creditCards.find(
+        card =>
+            String(card.id) === String(creditCardId) &&
+            card.active !== false
+    );
+
 const purchaseDate =
     fixedExpensePurchaseDate.value ||
     null;
@@ -8423,6 +9832,7 @@ const totalInstallments =
 
             const notes =
                 fixedExpenseNotes.value.trim();
+
 
             if (!name) {
 
@@ -8453,6 +9863,23 @@ const totalInstallments =
                 return;
 
             }
+
+            if (
+    paymentMethod === "card" &&
+    !selectedFixedExpenseCard
+) {
+    alert("Selecciona una tarjeta de crédito activa.");
+    return;
+}
+
+if (
+    paymentMethod === "card" &&
+    expenseType === "recurring" &&
+    (!chargeDay || chargeDay < 1 || chargeDay > 31)
+) {
+    alert("Ingresa el día mensual en que se realiza el cargo.");
+    return;
+}
 
             if (
     expenseType === "installment" &&
@@ -8527,9 +9954,12 @@ const totalInstallments =
                 purchaseDate,
                 cutoffDay,
                 totalInstallments,
-                frequency,
-                dueDay,
-                active,
+               frequency,
+               dueDay,
+paymentMethod,
+creditCardId,
+chargeDay,
+active,
                 notes,
                 createdAt:
                     existingExpense?.createdAt ||
@@ -8599,10 +10029,19 @@ const totalInstallments =
                     fixedExpense.frequency,
 
                 due_day:
-                    fixedExpense.dueDay,
+    fixedExpense.dueDay,
 
-                active:
-                    fixedExpense.active,
+payment_method:
+    fixedExpense.paymentMethod,
+
+credit_card_id:
+    fixedExpense.creditCardId,
+
+charge_day:
+    fixedExpense.chargeDay,
+
+active:
+    fixedExpense.active,
 
                 notes:
                     fixedExpense.notes,
@@ -8901,9 +10340,14 @@ const statusClass =
 
                 <td>
 
-                    ${expense.dueDay
-                        ? `Día ${expense.dueDay}`
-                        : "—"}
+                    ${expense.expenseType === "recurring" &&
+  expense.paymentMethod === "card"
+    ? expense.chargeDay
+        ? `Día ${expense.chargeDay}`
+        : "—"
+    : expense.dueDay
+        ? `Día ${expense.dueDay}`
+        : "—"}
 
                 </td>
 
@@ -10244,20 +11688,27 @@ function escapeHtml(
 // ============================================================
 
 async function initializeAppData() {
+    // Inicia la carga de tarjetas desde el principio.
+    const creditCardsLoad = initializeCreditCards();
 
+    // Las categorías deben estar listas antes de cargar los demás datos.
     await initializeCategories();
 
-    await initializeIncomes();
+    // Inicia estas cargas en paralelo para no sumar sus tiempos de espera.
+    const budgetsLoad = initializeBudgets();
 
-    await initializeExpenses();
+    await Promise.all([
+        initializeIncomes(),
+        initializeExpenses(),
+        initializeFixedExpenses(),
+        creditCardsLoad
+    ]);
 
-    await initializeFixedExpenses();
-
-    await initializeBudgets();
-
+    // Aquí ya están listas tarjetas, gastos y cargos recurrentes.
     renderExpenseTable();
-    
 
+    // El presupuesto termina de cargar sin retrasar el panel de tarjetas.
+    await budgetsLoad;
 }
 
 

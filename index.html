@@ -278,7 +278,7 @@
     </div>
 
     <small class="version">
-        Ver. 1.1.2
+        Ver. 2.0
     </small>
 
 </div>
@@ -448,6 +448,26 @@
 
             </div>
 
+<article class="panel dashboard-card-payments-panel">
+
+    <div class="panel-header">
+        <div>
+            <h2>Pagos de tarjetas</h2>
+            <p>Pagos programados para el mes seleccionado.</p>
+        </div>
+    </div>
+
+    <div
+        id="dashboardCardPayments"
+        class="table-container">
+
+        <div class="empty-table">
+            Cargando pagos de tarjetas...
+        </div>
+
+    </div>
+
+</article>
 
             <div class="dashboard-grid">
 
@@ -534,19 +554,6 @@
 
 
             <div class="section-header">
-
-                <div>
-
-                    <h2>
-                        Ingresos
-                    </h2>
-
-                    <p>
-                        Registra y administra tus ingresos.
-                    </p>
-
-                </div>
-
 
                 <button
                     type="button"
@@ -866,19 +873,7 @@
     id="gastos"
     class="page-section">
 
-    <div class="section-header">
-
-        <div>
-
-            <h2>
-                Gastos
-            </h2>
-
-            <p>
-                Registra y administra tus gastos.
-            </p>
-
-        </div>
+    <div class="section-header expenses-section-header">
 
         <button
             type="button"
@@ -1002,7 +997,6 @@
 
                 </div>
 
-
                 <!-- MONTO -->
 
                 <div class="form-group">
@@ -1021,6 +1015,24 @@
 
                 </div>
 
+                <!-- FORMA DE PAGO -->
+<div class="form-group">
+    <label for="expensePaymentMethod">Forma de pago</label>
+
+    <select id="expensePaymentMethod">
+        <option value="cash">Efectivo</option>
+        <option value="card">Tarjeta de crédito</option>
+    </select>
+</div>
+
+<!-- TARJETA DE CRÉDITO -->
+<div class="form-group" id="expenseCreditCardGroup" hidden>
+    <label for="expenseCreditCardId">Tarjeta de crédito</label>
+
+    <select id="expenseCreditCardId">
+        <option value="">Selecciona una tarjeta</option>
+    </select>
+</div>
 
                 <!-- TIPO DE CAMBIO -->
 
@@ -1134,7 +1146,7 @@
 
     <!-- TABLA DE GASTOS -->
 
-    <div class="panel">
+    <div class="panel expense-history-panel">
 
         <div class="panel-header">
 
@@ -1165,12 +1177,28 @@
 
     </div>
 
+    <div class="panel">
+
+    <div class="panel-header">
+        <div>
+            <h2>Cortes y pagos de tarjetas</h2>
+            <p>Consulta cuánto debes pagar y en qué fecha.</p>
+        </div>
+    </div>
+
+    <div
+        class="table-container"
+        id="creditCardStatementsContainer">
+
+        <div class="empty-table">
+            Todavía no hay pagos de tarjetas registrados.
+        </div>
+
+    </div>
+
+</div>
 
 </section>
-
-        <!-- ========================================
-             PRESUPUESTO
-        ========================================= -->
 
 <!-- ========================================
      PRESUPUESTO
@@ -1182,19 +1210,6 @@
 
 
     <div class="section-header">
-
-        <div>
-
-            <h2>
-                Presupuesto
-            </h2>
-
-            <p>
-                Controla cuánto puedes gastar en cada categoría.
-            </p>
-
-        </div>
-
 
         <button
             type="button"
@@ -1386,19 +1401,6 @@
 
     <div class="section-header">
 
-        <div>
-
-            <h2>
-                Gastos fijos
-            </h2>
-
-            <p>
-                Administra tus gastos recurrentes.
-            </p>
-
-        </div>
-
-
         <button
             type="button"
             class="primary-button"
@@ -1528,6 +1530,35 @@
 
                 </div>
 
+                <!-- FORMA DE PAGO DEL GASTO FIJO -->
+<div class="form-group">
+    <label for="fixedExpensePaymentMethod">Forma de pago</label>
+    <select id="fixedExpensePaymentMethod">
+        <option value="cash">Efectivo</option>
+        <option value="card">Tarjeta de crédito</option>
+    </select>
+</div>
+
+<!-- TARJETA DE CRÉDITO -->
+<div class="form-group" id="fixedExpenseCreditCardGroup" hidden>
+    <label for="fixedExpenseCreditCardId">Tarjeta de crédito</label>
+    <select id="fixedExpenseCreditCardId">
+        <option value="">Selecciona una tarjeta</option>
+    </select>
+</div>
+
+<!-- DÍA MENSUAL DEL CARGO -->
+<div class="form-group" id="fixedExpenseChargeDayGroup" hidden>
+    <label for="fixedExpenseChargeDay">Día del cargo mensual</label>
+    <input
+        type="number"
+        id="fixedExpenseChargeDay"
+        min="1"
+        max="31"
+        step="1"
+        placeholder="Ej. 15"
+    >
+</div>
 
                 <!-- TIPO DE CAMBIO -->
 
@@ -1808,35 +1839,15 @@
 </section>
 
 
-        <!-- ========================================
-             REPORTES
-        ========================================= -->
 
-        <!-- ========================================
+
+<!-- ========================================
      REPORTES
 ========================================= -->
 
 <section
     id="reportes"
     class="page-section">
-
-
-    <div class="section-header">
-
-        <div>
-
-            <h2>
-                Reportes
-            </h2>
-
-            <p>
-                Analiza el comportamiento
-                de tus finanzas.
-            </p>
-
-        </div>
-
-    </div>
 
 
     <!-- FILTROS -->
@@ -2087,26 +2098,178 @@
             id="configuracion"
             class="page-section">
 
+            <div class="settings-grid">
 
-            <div class="section-header">
+                <!-- TARJETAS DE CRÉDITO -->
+<div class="panel">
 
-                <div>
+    <div class="settings-header">
 
-                    <h2>
-                        Configuración
-                    </h2>
+        <div>
+            <h3>
+                Tarjetas de crédito
+            </h3>
 
-                    <p>
-                        Personaliza las categorías
-                        de tu aplicación.
-                    </p>
+            <p>
+                Administra tus tarjetas, fechas de corte y pagos.
+            </p>
+        </div>
 
-                </div>
+        <button
+            type="button"
+            class="primary-button"
+            id="addCreditCard">
+
+            + Nueva
+
+        </button>
+
+    </div>
+
+    <div id="creditCardsList">
+
+    <!-- JavaScript -->
+
+</div>
+
+</div>
+
+<!-- FORMULARIO DE TARJETA DE CRÉDITO -->
+<div class="panel" id="creditCardFormPanel" hidden>
+
+    <div class="settings-header">
+
+        <div>
+            <h3 id="creditCardFormTitle">
+                Nueva tarjeta de crédito
+            </h3>
+
+            <p>
+                Registra los datos de tu tarjeta.
+            </p>
+        </div>
+
+    </div>
+
+    <form id="creditCardForm">
+
+        <input
+            type="hidden"
+            id="creditCardId"
+        >
+
+        <div class="form-grid">
+
+            <!-- BANCO -->
+            <div class="form-group">
+
+                <label for="creditCardBank">
+                    Banco
+                </label>
+
+                <input
+                    type="text"
+                    id="creditCardBank"
+                    placeholder="Ej. Banrural"
+                    required
+                >
 
             </div>
 
+            <!-- NOMBRE DE TARJETA -->
+            <div class="form-group">
 
-            <div class="settings-grid">
+                <label for="creditCardName">
+                    Nombre de la tarjeta
+                </label>
+
+                <input
+                    type="text"
+                    id="creditCardName"
+                    placeholder="Ej. Visa Clásica"
+                    required
+                >
+
+            </div>
+
+            <!-- DÍA DE CORTE -->
+            <div class="form-group">
+
+                <label for="creditCardCutoffDay">
+                    Día de corte
+                </label>
+
+                <input
+                    type="number"
+                    id="creditCardCutoffDay"
+                    min="1"
+                    max="31"
+                    placeholder="Ej. 4"
+                    required
+                >
+
+            </div>
+
+            <!-- DÍA DE PAGO -->
+            <div class="form-group">
+
+                <label for="creditCardPaymentDay">
+                    Día límite de pago
+                </label>
+
+                <input
+                    type="number"
+                    id="creditCardPaymentDay"
+                    min="1"
+                    max="31"
+                    placeholder="Ej. 29"
+                    required
+                >
+
+            </div>
+
+            <!-- LÍMITE -->
+            <div class="form-group">
+
+                <label for="creditCardLimit">
+                    Límite de crédito (GTQ)
+                </label>
+
+                <input
+                    type="number"
+                    id="creditCardLimit"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    required
+                >
+
+            </div>
+
+        </div>
+
+        <div class="form-actions">
+
+            <button
+                type="submit"
+                class="primary-button"
+            >
+                Guardar tarjeta
+            </button>
+
+            <button
+                type="button"
+                class="secondary-button"
+                id="cancelCreditCardButton"
+            >
+                Cancelar
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
 
 
                 <!-- CATEGORÍAS DE INGRESOS -->
