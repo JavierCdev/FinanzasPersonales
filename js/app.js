@@ -8320,16 +8320,30 @@ function getProjectedFixedCardCharges(selectedPeriod) {
     const selectedMonthIndex =
         Number(selectedPeriod.slice(5, 7)) - 1;
 
+    const selectedMonthDate =
+        new Date(selectedYear, selectedMonthIndex, 1);
+
     const projectedCharges = [];
+
+    const formatDate = (year, monthIndex, day) => {
+        const lastDay =
+            new Date(year, monthIndex + 1, 0).getDate();
+
+        const validDay =
+            Math.min(Number(day), lastDay);
+
+        return [
+            year,
+            String(monthIndex + 1).padStart(2, "0"),
+            String(validDay).padStart(2, "0")
+        ].join("-");
+    };
 
     fixedExpenses.forEach(expense => {
         if (
             expense.active === false ||
-            expense.expenseType !== "recurring" ||
-            expense.frequency !== "monthly" ||
             expense.paymentMethod !== "card" ||
-            !expense.creditCardId ||
-            !expense.chargeDay
+            !expense.creditCardId
         ) {
             return;
         }
@@ -8341,6 +8355,80 @@ function getProjectedFixedCardCharges(selectedPeriod) {
         );
 
         if (!card) {
+            return;
+        }
+
+        // Las cuotas se agregan solo durante los meses que corresponden.
+        if (expense.expenseType === "installment") {
+            const progress =
+                getFixedExpenseInstallmentProgressForMonth(
+                    expense,
+                    selectedMonthDate
+                );
+
+            if (!progress) {
+                return;
+            }
+
+            const alreadyRegistered = expenses.some(
+                registeredExpense =>
+                    registeredExpense.paymentMethod === "card" &&
+                    String(registeredExpense.creditCardId) ===
+                        String(expense.creditCardId) &&
+                    registeredExpense.statementDueDate &&
+                    registeredExpense.statementDueDate.startsWith(
+                        selectedPeriod
+                    ) &&
+                    String(registeredExpense.description || "")
+                        .trim()
+                        .toLowerCase() ===
+                    String(expense.name || "")
+                        .trim()
+                        .toLowerCase()
+            );
+
+            if (alreadyRegistered) {
+                return;
+            }
+
+            const installmentAmountGTQ =
+                Number(expense.amountGTQ) /
+                Number(expense.totalInstallments);
+
+            const cardCutoffDay =
+    Number(card.cutoff_day || expense.cutoffDay);
+
+const cardPaymentDay =
+    Number(card.payment_day || expense.dueDay);
+
+const cutoffMonthDate =
+    new Date(selectedYear, selectedMonthIndex - 1, 1);
+
+projectedCharges.push({
+    creditCardId: expense.creditCardId,
+    statementCutoffDate: formatDate(
+        cutoffMonthDate.getFullYear(),
+        cutoffMonthDate.getMonth(),
+        cardCutoffDay
+    ),
+    statementDueDate: formatDate(
+        selectedYear,
+        selectedMonthIndex,
+        cardPaymentDay
+    ),
+    amountGTQ: installmentAmountGTQ,
+    isProjected: true
+});
+
+            return;
+        }
+
+        // Los cargos recurrentes mensuales conservan su cálculo actual.
+        if (
+            expense.expenseType !== "recurring" ||
+            expense.frequency !== "monthly" ||
+            !expense.chargeDay
+        ) {
             return;
         }
 
@@ -8373,10 +8461,7 @@ function getProjectedFixedCardCharges(selectedPeriod) {
             ].join("-");
 
             const statementDates =
-                getCreditCardStatementDates(
-                    chargeDate,
-                    card
-                );
+                getCreditCardStatementDates(chargeDate, card);
 
             if (
                 !statementDates.statementDueDate.startsWith(
@@ -8387,22 +8472,22 @@ function getProjectedFixedCardCharges(selectedPeriod) {
             }
 
             const alreadyRegistered = expenses.some(
-    registeredExpense =>
-        registeredExpense.paymentMethod === "card" &&
-        String(registeredExpense.creditCardId) ===
-            String(expense.creditCardId) &&
-        registeredExpense.date === chargeDate &&
-        String(registeredExpense.description || "")
-            .trim()
-            .toLowerCase() ===
-            String(expense.name || "")
-                .trim()
-                .toLowerCase()
-);
+                registeredExpense =>
+                    registeredExpense.paymentMethod === "card" &&
+                    String(registeredExpense.creditCardId) ===
+                        String(expense.creditCardId) &&
+                    registeredExpense.date === chargeDate &&
+                    String(registeredExpense.description || "")
+                        .trim()
+                        .toLowerCase() ===
+                    String(expense.name || "")
+                        .trim()
+                        .toLowerCase()
+            );
 
-if (alreadyRegistered) {
-    continue;
-}
+            if (alreadyRegistered) {
+                continue;
+            }
 
             const amountGTQ =
                 Number(expense.amountGTQ) ||

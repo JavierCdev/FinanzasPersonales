@@ -919,14 +919,13 @@ body {
     /* HEADER */
 
     .topbar {
-        flex-direction: column;
-
-        align-items: stretch;
-
-        gap: 12px;
-
-        margin-bottom: 20px;
-    }
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+}
 
 
     .topbar h1 {
@@ -940,10 +939,11 @@ body {
 
 
     .year-selector {
-        width: 100%;
-
-        justify-content: space-between;
-    }
+    width: auto;
+    margin-left: auto;
+    justify-content: flex-end;
+    flex: 0 0 auto;
+}
 
 
     .year-selector select {
@@ -1131,6 +1131,16 @@ body {
         flex: 1;
     }
 
+}
+
+.topbar {
+    align-items: flex-start;
+}
+
+.year-selector {
+    width: 100%;
+    margin-left: 0;
+    justify-content: flex-start;
 }
 /* ========================================
    SECCIONES INTERNAS
@@ -3350,4 +3360,10 @@ body {
 #fijos > .section-header > #newFixedExpenseButton {
     width: auto;
     margin-left: auto;
+}
+
+.topbar .year-selector {
+    margin-left: auto;
+    align-self: flex-end;
+    justify-content: flex-end;
 }
