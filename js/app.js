@@ -2958,72 +2958,120 @@ function renderIncomeTable() {
             "Categoría eliminada";
 
 
-        html += `
-
-            <tr>
-
-                <td>
-                    ${formatDate(income.date)}
-                </td>
-
-                <td>
-                    ${escapeHtml(
-                        income.description
-                    )}
-                </td>
-
-                <td>
-                    ${escapeHtml(
-                        categoryName
-                    )}
-                </td>
-
-                <td>
-                    ${income.currency}
-                </td>
-
+                html += `
+            <tr class="income-main-row">
+                <td>${formatDate(income.date)}</td>
+                <td>${escapeHtml(income.description || "")}</td>
+                <td>${escapeHtml(categoryName)}</td>
+                <td>${escapeHtml(income.currency || "GTQ")}</td>
                 <td class="income-amount">
-                    ${formatCurrency(
-                        income.amount,
-                        income.currency
-                    )}
+                    ${formatCurrency(income.amount, income.currency)}
                 </td>
-
                 <td class="income-amount">
-                    ${formatCurrency(
-                        income.amountGTQ,
-                        "GTQ"
-                    )}
+                    ${formatCurrency(income.amountGTQ, "GTQ")}
                 </td>
-
                 <td>
-
                     <div class="table-actions">
-
                         <button
                             type="button"
                             class="table-action-button"
                             data-income-action="edit"
-                            data-income-id="${income.id}"
-                        >
+                            data-income-id="${income.id}">
                             Editar
                         </button>
-
                         <button
                             type="button"
                             class="table-action-button delete"
                             data-income-action="delete"
-                            data-income-id="${income.id}"
-                        >
+                            data-income-id="${income.id}">
                             Eliminar
                         </button>
-
                     </div>
-
                 </td>
 
+                <td class="income-mobile-summary-cell" colspan="7">
+                    <button
+                        type="button"
+                        class="income-mobile-toggle"
+                        data-income-toggle="${income.id}"
+                        aria-expanded="false">
+                        <span class="income-mobile-date">
+                            ${formatDate(income.date)}
+                        </span>
+                        <span class="income-mobile-description">
+                            ${escapeHtml(income.description || "Sin descripción")}
+                        </span>
+                        <span class="income-mobile-category">
+                            ${escapeHtml(categoryName)}
+                        </span>
+                        <span class="income-mobile-chevron" aria-hidden="true">⌄</span>
+                    </button>
+                </td>
             </tr>
 
+            <tr
+                class="income-details-row"
+                data-income-details="${income.id}"
+                hidden>
+                <td colspan="7">
+                    <div class="income-details-panel">
+                        ${
+                            income.description
+                                ? `
+                                    <div class="income-detail-item full income-detail-description">
+                                        <span>Descripción completa</span>
+                                        <strong>${escapeHtml(income.description)}</strong>
+                                    </div>
+                                `
+                                : ""
+                        }
+
+                        <div class="income-detail-group">
+                            <div class="income-detail-item">
+                                <span>Moneda y monto</span>
+                                <strong>
+                                    ${formatCurrency(income.amount, income.currency)}
+                                </strong>
+                            </div>
+
+                            <div class="income-detail-item">
+                                <span>Equivalente en GTQ</span>
+                                <strong>
+                                    ${formatCurrency(income.amountGTQ, "GTQ")}
+                                </strong>
+                            </div>
+                        </div>
+
+                        ${
+                            income.notes
+                                ? `
+                                    <div class="income-detail-item full income-detail-notes">
+                                        <span>Notas</span>
+                                        <strong>${escapeHtml(income.notes)}</strong>
+                                    </div>
+                                `
+                                : ""
+                        }
+
+                        <div class="income-details-actions">
+                            <button
+                                type="button"
+                                class="table-action-button"
+                                data-income-action="edit"
+                                data-income-id="${income.id}">
+                                Editar
+                            </button>
+                            <button
+                                type="button"
+                                class="table-action-button delete"
+                                data-income-action="delete"
+                                data-income-id="${income.id}">
+                                Eliminar
+                            </button>
+                        </div>
+                    </div>
+                </td>
+            </tr>
         `;
 
     });
@@ -3043,6 +3091,42 @@ function renderIncomeTable() {
 
 }
 
+incomeTableContainer?.addEventListener("click", event => {
+    const toggle = event.target.closest("[data-income-toggle]");
+
+    if (!toggle || !incomeTableContainer.contains(toggle)) {
+        return;
+    }
+
+    const incomeId = toggle.dataset.incomeToggle;
+
+    const detailRows = [
+        ...incomeTableContainer.querySelectorAll(".income-details-row")
+    ];
+
+    const selectedDetails = detailRows.find(
+        row => row.dataset.incomeDetails === incomeId
+    );
+
+    if (!selectedDetails) return;
+
+    const shouldOpen = selectedDetails.hidden;
+
+    detailRows.forEach(row => {
+        row.hidden = true;
+    });
+
+    incomeTableContainer
+        .querySelectorAll("[data-income-toggle]")
+        .forEach(button => {
+            button.setAttribute("aria-expanded", "false");
+        });
+
+    if (shouldOpen) {
+        selectedDetails.hidden = false;
+        toggle.setAttribute("aria-expanded", "true");
+    }
+});
 
 // ============================================================
 // 13. EDITAR / ELIMINAR INGRESOS
@@ -6058,74 +6142,120 @@ const sorted =
                 "Categoría eliminada";
 
 
-            html += `
-
-                <tr>
-
-                    <td>
-                        ${formatDate(expense.date)}
-                    </td>
-
-                    <td>
-                        ${escapeHtml(
-                            expense.description
-                        )}
-                    </td>
-
-                    <td>
-                        ${escapeHtml(
-                            categoryName
-                        )}
-                    </td>
-
-                    <td>
-                        ${expense.currency}
-                    </td>
-
+                        html += `
+                <tr class="expense-main-row">
+                    <td>${formatDate(expense.date)}</td>
+                    <td>${escapeHtml(expense.description || "")}</td>
+                    <td>${escapeHtml(categoryName)}</td>
+                    <td>${escapeHtml(expense.currency || "GTQ")}</td>
                     <td class="income-amount">
-                        ${formatCurrency(
-                            expense.amount,
-                            expense.currency
-                        )}
+                        ${formatCurrency(expense.amount, expense.currency)}
                     </td>
-
                     <td class="income-amount">
-                        ${formatCurrency(
-                            expense.amountGTQ,
-                            "GTQ"
-                        )}
+                        ${formatCurrency(expense.amountGTQ, "GTQ")}
                     </td>
-
                     <td>
-
                         <div class="table-actions">
-
                             <button
                                 type="button"
                                 class="table-action-button"
                                 data-expense-action="edit"
                                 data-expense-id="${expense.id}">
-
                                 Editar
-
                             </button>
-
                             <button
                                 type="button"
                                 class="table-action-button delete"
                                 data-expense-action="delete"
                                 data-expense-id="${expense.id}">
-
                                 Eliminar
-
                             </button>
-
                         </div>
-
                     </td>
 
+                    <td class="expense-mobile-summary-cell" colspan="7">
+                        <button
+                            type="button"
+                            class="expense-mobile-toggle"
+                            data-expense-toggle="${expense.id}"
+                            aria-expanded="false">
+                            <span class="expense-mobile-date">
+                                ${formatDate(expense.date)}
+                            </span>
+                            <span class="expense-mobile-description">
+                                ${escapeHtml(expense.description || "Sin descripción")}
+                            </span>
+                            <span class="expense-mobile-category">
+                                ${escapeHtml(categoryName)}
+                            </span>
+                            <span class="expense-mobile-chevron" aria-hidden="true">⌄</span>
+                        </button>
+                    </td>
                 </tr>
 
+                <tr
+                    class="expense-details-row"
+                    data-expense-details="${expense.id}"
+                    hidden>
+                    <td colspan="7">
+                                                <div class="expense-details-panel">
+                            ${
+                                expense.description
+                                    ? `
+                                        <div class="expense-detail-item full expense-detail-description">
+                                            <span>Descripción completa</span>
+                                            <strong>${escapeHtml(expense.description)}</strong>
+                                        </div>
+                                    `
+                                    : ""
+                            }
+
+                            <div class="expense-detail-group">
+                                <div class="expense-detail-item">
+                                    <span>Moneda y monto</span>
+                                    <strong>
+                                        ${formatCurrency(expense.amount, expense.currency)}
+                                    </strong>
+                                </div>
+
+                                <div class="expense-detail-item">
+                                    <span>Equivalente en GTQ</span>
+                                    <strong>
+                                        ${formatCurrency(expense.amountGTQ, "GTQ")}
+                                    </strong>
+                                </div>
+                            </div>
+
+                            ${
+                                expense.notes
+                                    ? `
+                                        <div class="expense-detail-item full expense-detail-notes">
+                                            <span>Notas</span>
+                                            <strong>${escapeHtml(expense.notes)}</strong>
+                                        </div>
+                                    `
+                                    : ""
+                            }
+
+                            <div class="expense-details-actions">
+                                <button
+                                    type="button"
+                                    class="table-action-button"
+                                    data-expense-action="edit"
+                                    data-expense-id="${expense.id}">
+                                    Editar
+                                </button>
+                                <button
+                                    type="button"
+                                    class="table-action-button delete"
+                                    data-expense-action="delete"
+                                    data-expense-id="${expense.id}">
+                                    Eliminar
+                                </button>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
             `;
 
         }
@@ -6145,6 +6275,43 @@ const sorted =
         html;
 
 }
+
+expenseTableContainer?.addEventListener("click", event => {
+    const toggle = event.target.closest("[data-expense-toggle]");
+
+    if (!toggle || !expenseTableContainer.contains(toggle)) {
+        return;
+    }
+
+    const expenseId = toggle.dataset.expenseToggle;
+
+    const detailsRows = [
+        ...expenseTableContainer.querySelectorAll(".expense-details-row")
+    ];
+
+    const selectedDetails = detailsRows.find(
+        row => row.dataset.expenseDetails === expenseId
+    );
+
+    if (!selectedDetails) return;
+
+    const shouldOpen = selectedDetails.hidden;
+
+    detailsRows.forEach(row => {
+        row.hidden = true;
+    });
+
+    expenseTableContainer
+        .querySelectorAll("[data-expense-toggle]")
+        .forEach(button => {
+            button.setAttribute("aria-expanded", "false");
+        });
+
+    if (shouldOpen) {
+        selectedDetails.hidden = false;
+        toggle.setAttribute("aria-expanded", "true");
+    }
+});
 
 function renderCreditCardStatements() {
     if (!creditCardStatementsContainer) {
