@@ -826,7 +826,6 @@ body {
         overflow-x: hidden;
     }
 
-
     .app {
         width: 100%;
         min-width: 0;
@@ -3296,6 +3295,10 @@ body {
 /* Alinea el botón cuando se quita el encabezado repetido */
 .expenses-section-header {
     justify-content: flex-end;
+}
+.expenses-section-header .primary-button {
+    width: auto;
+    margin-left: auto;
 }
 
 /* Separa Gastos registrados de Cortes y pagos de tarjetas */
