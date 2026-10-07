@@ -6540,11 +6540,6 @@ renderExpenseTable();
 
 updateDashboard();
 
-alert(
-    "Gasto eliminado correctamente."
-);
-
-
             } catch (error) {
 
                 console.error(
