@@ -7777,7 +7777,7 @@ function getDashboardFixedExpenses(
                 }
 
 
-                return total + amount;
+                return total + getFixedExpenseMonthlyAmount(expense);
 
             }
 
@@ -10989,6 +10989,10 @@ function getReportFixedMonthlyTotal() {
                 parseFloat(
                     expense.amountGTQ
                 ) || 0;
+
+            if (expense.expenseType === "installment") {
+    return total + getFixedExpenseMonthlyAmount(expense);
+}    
 
             switch (
                 expense.frequency
