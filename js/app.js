@@ -2887,9 +2887,10 @@ function renderIncomeTable() {
     }
 
 
-    const selectedMonth =
+   const selectedMonth = String(
     dashboardMonth?.value ||
-    String(new Date().getMonth() + 1).padStart(2, "0");
+    new Date().getMonth() + 1
+).padStart(2, "0");
 
 const selectedYear =
     dashboardYear?.value ||
@@ -6070,9 +6071,10 @@ function renderExpenseTable() {
 renderCreditCardStatements();
 renderDashboardCardPayments();
 
-    const selectedMonth =
+    const selectedMonth = String(
     dashboardMonth?.value ||
-    String(new Date().getMonth() + 1).padStart(2, "0");
+    new Date().getMonth() + 1
+).padStart(2, "0");
 
 const selectedYear =
     dashboardYear?.value ||
@@ -7622,12 +7624,10 @@ function getDashboardYear() {
 // ------------------------------------------------------------
 
 function getDashboardMonth() {
-
-    return (
+    return String(
         dashboardMonth?.value ||
-        String(new Date().getMonth() + 1).padStart(2, "0")
-    );
-
+        new Date().getMonth() + 1
+    ).padStart(2, "0");
 }
 
 
@@ -7867,69 +7867,21 @@ function updateDashboardCards() {
     // --------------------------------------------------------
     // INGRESOS DEL MES SELECCIONADO
     // --------------------------------------------------------
+            const sumForSelectedPeriod = records =>
+    records.reduce((total, record) => {
+        const recordPeriod =
+            String(record.date || "").slice(0, 7);
 
-    totalIncome =
-        incomes.reduce(
-            (total, income) => {
+        if (recordPeriod !== selectedPeriod) {
+            return total;
+        }
 
-                if (
-                    !income.date ||
-                    !income.date.startsWith(
-                        selectedPeriod
-                    )
-                ) {
-                    return total;
-                }
+        return total +
+            (Number(record.amountGTQ) || 0);
+    }, 0);
 
-                const amount =
-                    parseFloat(
-                        income.amountGTQ
-                    ) || 0;
-
-                return total + amount;
-
-            },
-            0
-        );
-
-
-    // --------------------------------------------------------
-    // GASTOS DEL MES SELECCIONADO
-    // --------------------------------------------------------
-
-    const storedExpenses =
-        JSON.parse(
-            localStorage.getItem(
-                "finanzasGastos"
-            )
-        ) || [];
-
-
-    totalExpenses =
-        storedExpenses.reduce(
-            (total, expense) => {
-
-                if (
-                    !expense.date ||
-                    !expense.date.startsWith(
-                        selectedPeriod
-                    )
-                ) {
-                    return total;
-                }
-
-                const amount =
-                    parseFloat(
-                        expense.amountGTQ
-                    ) || 0;
-
-                return total + amount;
-
-            },
-            0
-        );
-
-
+totalIncome = sumForSelectedPeriod(incomes);
+totalExpenses = sumForSelectedPeriod(expenses);
     // --------------------------------------------------------
     // GASTOS FIJOS DEL MES SELECCIONADO
     // --------------------------------------------------------
@@ -8480,12 +8432,11 @@ function renderExpenseCategoryChart() {
 // ------------------------------------------------------------
 
 function updateDashboard() {
-    renderDashboardCardPayments();
-    renderCreditCardStatements();
-
     updateDashboardCards();
     renderMonthlyFlowChart();
     renderExpenseCategoryChart();
+    renderDashboardCardPayments();
+    renderCreditCardStatements();
 }
 
 function getProjectedFixedCardCharges(selectedPeriod) {
