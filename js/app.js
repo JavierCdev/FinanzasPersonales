@@ -2887,28 +2887,41 @@ function renderIncomeTable() {
     }
 
 
-    if (
-        incomes.length === 0
-    ) {
+    const selectedMonth =
+    dashboardMonth?.value ||
+    String(new Date().getMonth() + 1).padStart(2, "0");
 
-        incomeTableContainer.innerHTML = `
+const selectedYear =
+    dashboardYear?.value ||
+    String(new Date().getFullYear());
 
-            <div class="empty-table">
-                Todavía no tienes ingresos registrados.
-            </div>
+const monthlyIncomes = incomes.filter(income => {
+    if (!income.date) return false;
 
-        `;
+    const [incomeYear, incomeMonth] =
+        income.date.split("-");
 
-        return;
-    }
+    return (
+        incomeYear === selectedYear &&
+        incomeMonth === selectedMonth
+    );
+});
 
+if (monthlyIncomes.length === 0) {
+    incomeTableContainer.innerHTML = `
+        <div class="empty-table">
+            No hay ingresos registrados en el mes seleccionado.
+        </div>
+    `;
+    return;
+}
 
-    const sorted =
-        [...incomes].sort(
-            (a, b) =>
-                new Date(b.date) -
-                new Date(a.date)
-        );
+const sorted =
+    [...monthlyIncomes].sort(
+        (a, b) =>
+            new Date(b.date) -
+            new Date(a.date)
+    );
 
 
     let html = `
@@ -8809,6 +8822,7 @@ if (dashboardYear) {
         "change",
         () => {
             updateDashboard();
+            renderIncomeTable();
             renderExpenseTable();
         }
     );
@@ -8824,6 +8838,7 @@ if (dashboardMonth) {
         "change",
         () => {
             updateDashboard();
+            renderIncomeTable();
             renderExpenseTable();
         }
     );
@@ -11957,6 +11972,8 @@ async function initializeAppData() {
 
     // Aquí ya están listas tarjetas, gastos y cargos recurrentes.
     renderExpenseTable();
+    renderIncomeTable();
+    updateDashboard();
 
     // El presupuesto termina de cargar sin retrasar el panel de tarjetas.
     await budgetsLoad;
