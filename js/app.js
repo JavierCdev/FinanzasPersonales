@@ -317,186 +317,10 @@ function createDefaultCategories(type) {
 
 }
 
-
-function loadCategories() {
-
-    const saved =
-        localStorage.getItem("finanzasCategorias");
-
-
-    // --------------------------------------------------------
-    // No existen categorías todavía
-    // --------------------------------------------------------
-
-    if (!saved) {
-
-        const newCategories = {
-
-            income: createDefaultCategories("income"),
-
-            expense: createDefaultCategories("expense")
-
-        };
-
-        localStorage.setItem(
-            "finanzasCategorias",
-            JSON.stringify(newCategories)
-        );
-
-        return newCategories;
-    }
-
-
-    // --------------------------------------------------------
-    // Intentar leer categorías existentes
-    // --------------------------------------------------------
-
-    try {
-
-        const data = JSON.parse(saved);
-
-
-        return {
-
-            income: normalizeCategories(
-                data.income,
-                "income"
-            ),
-
-            expense: normalizeCategories(
-                data.expense,
-                "expense"
-            )
-
-        };
-
-    } catch (error) {
-
-        console.error(
-            "Error leyendo categorías:",
-            error
-        );
-
-
-        const newCategories = {
-
-            income: createDefaultCategories("income"),
-
-            expense: createDefaultCategories("expense")
-
-        };
-
-
-        localStorage.setItem(
-            "finanzasCategorias",
-            JSON.stringify(newCategories)
-        );
-
-
-        return newCategories;
-    }
-
-}
-
-
-function normalizeCategories(list, type) {
-
-    // --------------------------------------------------------
-    // Si no existe o está vacío
-    // --------------------------------------------------------
-
-    if (!Array.isArray(list) || list.length === 0) {
-
-        return createDefaultCategories(type);
-
-    }
-
-
-    return list
-        .map(category => {
-
-            // -----------------------------------------------
-            // Categoría antigua guardada como texto
-            // -----------------------------------------------
-
-            if (typeof category === "string") {
-
-                const name = category.trim();
-
-                if (!name) {
-                    return null;
-                }
-
-                return {
-
-                    id: createId(type),
-
-                    name: name,
-
-                    active: true
-
-                };
-
-            }
-
-
-            // -----------------------------------------------
-            // Categoría guardada como objeto
-            // -----------------------------------------------
-
-            if (
-                category &&
-                typeof category === "object"
-            ) {
-
-                const name =
-                    String(category.name || "").trim();
-
-
-                if (!name) {
-                    return null;
-                }
-
-
-                return {
-
-                    id:
-                        category.id ||
-                        createId(type),
-
-                    name: name,
-
-                    // Si no existe active,
-                    // la consideramos activa.
-                    active:
-                        category.active === false
-                            ? false
-                            : true
-
-                };
-
-            }
-
-
-            return null;
-
-        })
-        .filter(Boolean);
-
-}
-
-
-let categories = loadCategories();
-
-
-function saveCategories() {
-
-    localStorage.setItem(
-        "finanzasCategorias",
-        JSON.stringify(categories)
-    );
-
-}
+let categories = {
+    income: [],
+    expense: []
+};
 
 // ============================================================
 // SUPABASE - CATEGORÍAS
@@ -569,7 +393,7 @@ async function initializeCategories() {
 
         if (data && data.length > 0) {
 
-            categories = {
+                       categories = {
 
                 income: data
                     .filter(
@@ -605,9 +429,6 @@ async function initializeCategories() {
 
             };
 
-
-            saveCategories();
-
             renderCategories();
 
             console.log(
@@ -617,75 +438,77 @@ async function initializeCategories() {
             return;
         }
 
-
         // ----------------------------------------------------
-        // SUPABASE ESTÁ VACÍO
-        // MIGRAR CATEGORÍAS LOCALES
-        // ----------------------------------------------------
+// SUPABASE ESTÁ VACÍO
+// CREAR CATEGORÍAS PREDETERMINADAS
+// ----------------------------------------------------
 
-        const rows = [
+categories = {
+    income:
+        createDefaultCategories("income"),
 
-            ...categories.income.map(
-                category => ({
-
-                    id: category.id,
-
-                    user_id: user.id,
-
-                    type: "income",
-
-                    name: category.name,
-
-                    active:
-                        category.active !== false
-
-                })
-            ),
-
-            ...categories.expense.map(
-                category => ({
-
-                    id: category.id,
-
-                    user_id: user.id,
-
-                    type: "expense",
-
-                    name: category.name,
-
-                    active:
-                        category.active !== false
-
-                })
-            )
-
-        ];
+    expense:
+        createDefaultCategories("expense")
+};
 
 
-        if (rows.length > 0) {
+const rows = [
+    ...categories.income.map(category => ({
+        id:
+            category.id,
 
-            const {
-                error: insertError
-            } = await supabaseClient
-                .from("categorias")
-                .insert(rows);
+        user_id:
+            user.id,
+
+        type:
+            "income",
+
+        name:
+            category.name,
+
+        active:
+            category.active !== false
+    })),
+
+    ...categories.expense.map(category => ({
+        id:
+            category.id,
+
+        user_id:
+            user.id,
+
+        type:
+            "expense",
+
+        name:
+            category.name,
+
+        active:
+            category.active !== false
+    }))
+];
 
 
-            if (insertError) {
-                throw insertError;
-            }
+if (rows.length > 0) {
 
-        }
+    const {
+        error: insertError
+    } = await supabaseClient
+        .from("categorias")
+        .insert(rows);
+
+    if (insertError) {
+        throw insertError;
+    }
+
+}
 
 
-        saveCategories();
+renderCategories();
 
-        renderCategories();
-
-        console.log(
-            "Categorías locales migradas a Supabase."
-        );
-
+console.log(
+    "Categorías predeterminadas creadas en Supabase."
+);
 
     } catch (error) {
 
@@ -694,10 +517,8 @@ async function initializeCategories() {
             error
         );
 
-        // Si Supabase falla, mantenemos
-        // las categorías locales como respaldo.
-
         renderCategories();
+
 
     }
 
@@ -1034,30 +855,7 @@ function populateIncomeCategories() {
 
     }
 
-
-    // --------------------------------------------------------
-    // Seguridad:
-    // si por alguna razón no hay categorías,
-    // recuperar las predeterminadas.
-    // --------------------------------------------------------
-
-    if (
-        activeCategories.length === 0
-    ) {
-
-        categories.income =
-            createDefaultCategories("income");
-
-
-        saveCategories();
-
-
-        populateIncomeCategories();
-
-    }
-
 }
-
 
 // ============================================================
 // 5. AGREGAR CATEGORÍA
@@ -1173,12 +971,10 @@ async function addCategory(type) {
     }
 
 
-    categories[type].push(
+        categories[type].push(
         newCategory
     );
 
-
-    saveCategories();
 
     renderCategories();
 
@@ -1306,12 +1102,8 @@ async function editCategory(type, id) {
         return;
     }
 
-
-    category.name =
+        category.name =
         name;
-
-
-    saveCategories();
 
     renderCategories();
 
@@ -1364,12 +1156,8 @@ async function toggleCategory(type, id) {
         return;
     }
 
-
-    category.active =
+        category.active =
         newActive;
-
-
-    saveCategories();
 
     renderCategories();
 
@@ -1381,35 +1169,17 @@ function categoryHasTransactions(
     id
 ) {
 
-    const storageKey =
+    const transactions =
         type === "income"
-            ? "finanzasIngresos"
-            : "finanzasGastos";
+            ? incomes
+            : expenses;
 
 
-    let transactions = [];
-
-
-    try {
-
-        transactions =
-            JSON.parse(
-                localStorage.getItem(
-                    storageKey
-                )
-            ) || [];
-
-    } catch {
-
-        transactions = [];
-
-    }
-
-
-    return transactions.some(
-        transaction =>
-            transaction.categoryId === id
-    );
+    return Array.isArray(transactions)
+        && transactions.some(
+            transaction =>
+                transaction.categoryId === id
+        );
 
 }
 
@@ -1532,14 +1302,12 @@ if (
 
 
 
-    categories[type] =
+        categories[type] =
         categories[type].filter(
             item =>
                 item.id !== id
         );
 
-
-    saveCategories();
 
     renderCategories();
 
@@ -1634,32 +1402,6 @@ document.addEventListener(
 
 let incomes = [];
 
-
-try {
-
-    incomes =
-        JSON.parse(
-            localStorage.getItem(
-                "finanzasIngresos"
-            )
-        ) || [];
-
-} catch {
-
-    incomes = [];
-
-}
-
-
-function saveIncomes() {
-
-    localStorage.setItem(
-        "finanzasIngresos",
-        JSON.stringify(incomes)
-    );
-
-}
-
 // ============================================================
 // SUPABASE - INGRESOS
 // ============================================================
@@ -1717,126 +1459,6 @@ async function initializeIncomes() {
 
         const supabaseIncomes =
             data || [];
-
-
-        // ====================================================
-        // MIGRAR INGRESOS LOCALES QUE TODAVÍA NO EXISTEN
-        // EN SUPABASE
-        // ====================================================
-
-        const existingIds =
-            new Set(
-                supabaseIncomes.map(
-                    income =>
-                        income.id
-                )
-            );
-
-
-        const incomesToMigrate =
-            incomes.filter(
-                income =>
-                    !existingIds.has(
-                        income.id
-                    )
-            );
-
-
-        if (
-            incomesToMigrate.length > 0
-        ) {
-
-            const rows =
-                incomesToMigrate.map(
-                    income => ({
-
-                        id:
-                            income.id,
-
-                        user_id:
-                            user.id,
-
-                        date:
-                            income.date,
-
-                        description:
-                            income.description,
-
-                        category_id:
-                            income.categoryId,
-
-                        category_name:
-                            income.categoryName,
-
-                        currency:
-                            income.currency,
-
-                        amount:
-                            income.amount,
-
-                        exchange_rate:
-                            income.exchangeRate || 1,
-
-                        amount_gtq:
-                            income.amountGTQ,
-
-                        exchange_rate_source:
-                            income.exchangeRateSource || null,
-
-                        notes:
-                            income.notes || null,
-
-                        created_at:
-                            income.createdAt ||
-                            new Date().toISOString(),
-
-                        updated_at:
-                            income.updatedAt ||
-                            new Date().toISOString()
-
-                    })
-                );
-
-
-            const {
-                data: migratedData,
-                error: migrationError
-            } = await supabaseClient
-                .from("ingresos")
-                .insert(rows)
-                .select(`
-                    id,
-                    date,
-                    description,
-                    category_id,
-                    category_name,
-                    currency,
-                    amount,
-                    exchange_rate,
-                    amount_gtq,
-                    exchange_rate_source,
-                    notes,
-                    created_at,
-                    updated_at
-                `);
-
-
-            if (migrationError) {
-                throw migrationError;
-            }
-
-
-            supabaseIncomes.push(
-                ...(migratedData || [])
-            );
-
-
-            console.log(
-                `${incomesToMigrate.length} ingreso(s) local(es) migrado(s) a Supabase.`
-            );
-
-        }
-
 
         // ====================================================
         // SUPABASE ES AHORA LA FUENTE PRINCIPAL
@@ -1896,12 +1518,6 @@ async function initializeIncomes() {
                 })
             );
 
-
-        // Mantenemos localStorage temporalmente
-        // como respaldo.
-
-        saveIncomes();
-
         renderIncomeTable();
 
 
@@ -1917,15 +1533,11 @@ async function initializeIncomes() {
             error
         );
 
-        // Si Supabase falla, conservamos
-        // los datos locales como respaldo.
-
         renderIncomeTable();
 
     }
 
 }
-
 
 // Elementos
 
@@ -2858,8 +2470,6 @@ if (incomeForm) {
 
             }
 
-
-            saveIncomes();
             renderIncomeTable();
             updateDashboard();
             closeIncomeForm();
@@ -3240,9 +2850,6 @@ document.addEventListener(
                 item.id !== id
         );
 
-
-    saveIncomes();
-
     renderIncomeTable();
 
 }
@@ -3253,12 +2860,7 @@ document.addEventListener(
 // ============================================================
 // 13. PRESUPUESTOS
 // ============================================================
-
-let budgets = JSON.parse(
-    localStorage.getItem("finanzasPresupuestos")
-) || [];
-
-
+let budgets = [];
 // ------------------------------------------------------------
 // ELEMENTOS DEL FORMULARIO
 // ------------------------------------------------------------
@@ -3297,15 +2899,6 @@ const budgetTableContainer =
 // ------------------------------------------------------------
 // GUARDAR PRESUPUESTOS
 // ------------------------------------------------------------
-
-function saveBudgets() {
-
-    localStorage.setItem(
-        "finanzasPresupuestos",
-        JSON.stringify(budgets)
-    );
-
-}
 
 // ============================================================
 // SUPABASE - PRESUPUESTOS
@@ -3361,102 +2954,6 @@ async function initializeBudgets() {
         const supabaseBudgets =
             data || [];
 
-
-        // ----------------------------------------------------
-        // BUSCAR PRESUPUESTOS LOCALES QUE AÚN NO EXISTEN
-        // EN SUPABASE
-        // ----------------------------------------------------
-
-        const existingIds =
-            new Set(
-                supabaseBudgets.map(
-                    budget =>
-                        budget.id
-                )
-            );
-
-
-        const budgetsToMigrate =
-            budgets.filter(
-                budget =>
-                    !existingIds.has(
-                        budget.id
-                    )
-            );
-
-
-        if (
-            budgetsToMigrate.length > 0
-        ) {
-
-            const rows =
-                budgetsToMigrate.map(
-                    budget => ({
-
-                        id:
-                            budget.id,
-
-                        user_id:
-                            user.id,
-
-                        month:
-                            `${budget.month}-01`,
-
-                        category_id:
-                            budget.categoryId,
-
-                        category_name:
-                            budget.categoryName,
-
-                        amount:
-                            budget.amount,
-
-                        created_at:
-                            budget.createdAt ||
-                            new Date().toISOString(),
-
-                        updated_at:
-                            budget.updatedAt ||
-                            new Date().toISOString()
-
-                    })
-                );
-
-
-            const {
-                data: migratedData,
-                error: migrationError
-            } = await supabaseClient
-                .from("presupuestos")
-                .insert(rows)
-                .select(`
-                    id,
-                    month,
-                    category_id,
-                    category_name,
-                    amount,
-                    created_at,
-                    updated_at
-                `);
-
-
-            if (migrationError) {
-                throw migrationError;
-            }
-
-
-            supabaseBudgets.push(
-                ...(migratedData || [])
-            );
-
-
-            console.log(
-                `${budgetsToMigrate.length} presupuesto(s) local(es) migrado(s) a Supabase.`
-            );
-
-        }
-
-
         // ----------------------------------------------------
         // SUPABASE ES AHORA LA FUENTE PRINCIPAL
         // ----------------------------------------------------
@@ -3496,9 +2993,6 @@ async function initializeBudgets() {
                 })
             );
 
-
-        saveBudgets();
-
         renderBudgetTable();
 
 
@@ -3519,19 +3013,6 @@ async function initializeBudgets() {
     }
 
 }
-
-// ------------------------------------------------------------
-// OBTENER GASTOS
-// ------------------------------------------------------------
-
-function getStoredExpenses() {
-
-    return JSON.parse(
-        localStorage.getItem("finanzasGastos")
-    ) || [];
-
-}
-
 
 // ------------------------------------------------------------
 // POPULAR CATEGORÍAS
@@ -3882,11 +3363,17 @@ if (budgetForm) {
                     duplicate.categoryName =
                         data.category_name;
 
+                    duplicate.amount =
+                        Number(
+                        data.amount
+                                  );
+
+                    duplicate.categoryName =
+                        data.category_name;
+
                     duplicate.updatedAt =
                         data.updated_at;
 
-
-                    saveBudgets();
 
                     renderBudgetTable();
 
@@ -4066,25 +3553,22 @@ if (budgetForm) {
 
                 if (index !== -1) {
 
-                    budgets[index] =
-                        savedBudget;
+    budgets[index] =
+        savedBudget;
 
-                } else {
+} else {
 
-                    budgets.push(
-                        savedBudget
-                    );
+    budgets.push(
+        savedBudget
+    );
 
-                }
+}
 
+renderBudgetTable();
 
-                saveBudgets();
+updateDashboard();
 
-                renderBudgetTable();
-
-                updateDashboard();
-
-                closeBudgetForm();
+closeBudgetForm();
 
 
                 alert(
@@ -4122,11 +3606,13 @@ function getSpentForBudget(
     categoryId
 ) {
 
-    const expenses =
-        getStoredExpenses();
+    const expensesList =
+    Array.isArray(expenses)
+        ? expenses
+        : [];
 
 
-    return expenses.reduce(
+        return expensesList.reduce(
         (total, expense) => {
 
             if (
@@ -4167,7 +3653,6 @@ function getSpentForBudget(
     );
 
 }
-
 
 // ------------------------------------------------------------
 // FORMATEAR MES
@@ -4621,15 +4106,12 @@ document.addEventListener(
 
 
                 budgets =
-                    budgets.filter(
-                        item =>
-                            item.id !== id
-                    );
+    budgets.filter(
+        item =>
+            item.id !== id
+    );
 
-
-                saveBudgets();
-
-                renderBudgetTable();
+            renderBudgetTable();
 
 
                 alert(
@@ -4669,22 +4151,6 @@ renderBudgetTable();
 // ============================================================
 
 let expenses = [];
-
-try {
-
-    expenses =
-        JSON.parse(
-            localStorage.getItem(
-                "finanzasGastos"
-            )
-        ) || [];
-
-} catch {
-
-    expenses = [];
-
-}
-
 
 // ============================================================
 // ELEMENTOS
@@ -4805,15 +4271,6 @@ expensePaymentMethod?.addEventListener("change", () => {
 // GUARDAR GASTOS
 // ============================================================
 
-function saveExpenses() {
-
-    localStorage.setItem(
-        "finanzasGastos",
-        JSON.stringify(expenses)
-    );
-
-}
-
 // ============================================================
 // SUPABASE - GASTOS
 // ============================================================
@@ -4875,126 +4332,6 @@ async function initializeExpenses() {
 
         const supabaseExpenses =
             data || [];
-
-
-        // ====================================================
-        // BUSCAR GASTOS LOCALES QUE AÚN NO EXISTEN
-        // EN SUPABASE
-        // ====================================================
-
-        const existingIds =
-            new Set(
-                supabaseExpenses.map(
-                    expense =>
-                        expense.id
-                )
-            );
-
-
-        const expensesToMigrate =
-            expenses.filter(
-                expense =>
-                    !existingIds.has(
-                        expense.id
-                    )
-            );
-
-
-        if (
-            expensesToMigrate.length > 0
-        ) {
-
-            const rows =
-                expensesToMigrate.map(
-                    expense => ({
-
-                        id:
-                            expense.id,
-
-                        user_id:
-                            user.id,
-
-                        date:
-                            expense.date,
-
-                        description:
-                            expense.description,
-
-                        category_id:
-                            expense.categoryId,
-
-                        category_name:
-                            expense.categoryName,
-
-                        currency:
-                            expense.currency,
-
-                        amount:
-                            expense.amount,
-
-                        exchange_rate:
-                            expense.exchangeRate || 1,
-
-                        amount_gtq:
-                            expense.amountGTQ,
-
-                        exchange_rate_source:
-                            expense.exchangeRateSource || null,
-
-                        notes:
-                            expense.notes || null,
-
-                        created_at:
-                            expense.createdAt ||
-                            new Date().toISOString(),
-
-                        updated_at:
-                            expense.updatedAt ||
-                            new Date().toISOString()
-
-                    })
-                );
-
-
-            const {
-                data: migratedData,
-                error: migrationError
-            } = await supabaseClient
-                .from("gastos")
-                .insert(rows)
-                .select(`
-                    id,
-                    date,
-                    description,
-                    category_id,
-                    category_name,
-                    currency,
-                    amount,
-                    exchange_rate,
-                    amount_gtq,
-                    exchange_rate_source,
-                    notes,
-                    created_at,
-                    updated_at
-                `);
-
-
-            if (migrationError) {
-                throw migrationError;
-            }
-
-
-            supabaseExpenses.push(
-                ...(migratedData || [])
-            );
-
-
-            console.log(
-                `${expensesToMigrate.length} gasto(s) local(es) migrado(s) a Supabase.`
-            );
-
-        }
-
 
         // ====================================================
         // SUPABASE ES AHORA LA FUENTE PRINCIPAL
@@ -5066,19 +4403,11 @@ async function initializeExpenses() {
                 })
             );
 
-
-        // localStorage queda temporalmente
-        // como respaldo.
-
-        saveExpenses();
-
         renderExpenseTable();
-
 
         console.log(
             "Gastos sincronizados correctamente con Supabase."
         );
-
 
     } catch (error) {
 
@@ -5086,9 +4415,6 @@ async function initializeExpenses() {
             "Error sincronizando gastos con Supabase:",
             error
         );
-
-        // Si Supabase falla, conservamos
-        // los datos locales como respaldo.
 
         renderExpenseTable();
 
@@ -6017,20 +5343,13 @@ const statementDates =
                             item.id !== id
                     );
 
-
                 expenses.push(
                     expenseData
                 );
 
-
-                saveExpenses();
-
                 renderExpenseTable();
-
                 updateDashboard();
-
                 closeExpenseForm();
-
 
                 alert(
                     existingExpense
@@ -6542,14 +5861,11 @@ document.addEventListener(
                 }
 
 
-                expenses =
-                    expenses.filter(
-                        item =>
-                            item.id !== id
-                    );
-
-
-                saveExpenses();
+               expenses =
+    expenses.filter(
+        item =>
+            item.id !== id
+    );
 
 renderExpenseTable();
 
@@ -7493,10 +6809,9 @@ function populateYearSelectors() {
     // --------------------------------------------------------
 
     const storedExpenses =
-        JSON.parse(
-            localStorage.getItem("finanzasGastos")
-        ) || [];
-
+    Array.isArray(expenses)
+        ? expenses
+        : [];
 
     storedExpenses.forEach(expense => {
 
@@ -7521,12 +6836,9 @@ function populateYearSelectors() {
     // --------------------------------------------------------
 
     const storedBudgets =
-        JSON.parse(
-            localStorage.getItem(
-                "finanzasPresupuestos"
-            )
-        ) || [];
-
+    Array.isArray(budgets)
+        ? budgets
+        : [];
 
     storedBudgets.forEach(budget => {
 
@@ -7697,11 +7009,9 @@ function getDashboardExpenses(
 ) {
 
     const storedExpenses =
-        JSON.parse(
-            localStorage.getItem(
-                "finanzasGastos"
-            )
-        ) || [];
+    Array.isArray(expenses)
+        ? expenses
+        : [];
 
 
     return storedExpenses.reduce(
@@ -7748,11 +7058,9 @@ function getDashboardFixedExpenses(
         );
 
         const storedFixedExpenses =
-    JSON.parse(
-        localStorage.getItem(
-            "finanzasGastosFijos"
-        )
-    ) || [];
+    Array.isArray(fixedExpenses)
+        ? fixedExpenses
+        : [];
 
 
     return storedFixedExpenses.reduce(
@@ -7973,12 +7281,9 @@ function getMonthlyDashboardData(
 ) {
 
     const storedExpenses =
-        JSON.parse(
-            localStorage.getItem(
-                "finanzasGastos"
-            )
-        ) || [];
-
+    Array.isArray(expenses)
+        ? expenses
+        : [];
 
     const months =
         Array.from(
@@ -8234,12 +7539,9 @@ function getExpenseCategoryData(
 ) {
 
     const storedExpenses =
-        JSON.parse(
-            localStorage.getItem(
-                "finanzasGastos"
-            )
-        ) || [];
-
+    Array.isArray(expenses)
+        ? expenses
+        : [];
 
     const totals = {};
 
@@ -8806,10 +8108,7 @@ populateYearSelectors();
 // 13. GASTOS FIJOS
 // ============================================================
 
-let fixedExpenses =
-    JSON.parse(
-        localStorage.getItem("finanzasGastosFijos")
-    ) || [];
+let fixedExpenses = [];
 
 // ------------------------------------------------------------
 // INICIALIZAR DASHBOARD
@@ -8965,16 +8264,6 @@ const fixedExpenseTableContainer =
         "fixedExpenseTableContainer"
     );
 
-
-function saveFixedExpenses() {
-
-    localStorage.setItem(
-        "finanzasGastosFijos",
-        JSON.stringify(fixedExpenses)
-    );
-
-}
-
 // ============================================================
 // SUPABASE - GASTOS FIJOS
 // ============================================================
@@ -9011,6 +8300,7 @@ async function initializeFixedExpenses() {
     category_name,
     currency,
     amount,
+    exchange_rate,
     amount_gtq,
     expense_type,
     purchase_date,
@@ -9034,149 +8324,12 @@ async function initializeFixedExpenses() {
             );
 
 
-        if (error) {
+                if (error) {
             throw error;
         }
 
-
         const supabaseFixedExpenses =
             data || [];
-
-
-        const existingIds =
-            new Set(
-                supabaseFixedExpenses.map(
-                    expense =>
-                        expense.id
-                )
-            );
-
-
-        const expensesToMigrate =
-            fixedExpenses.filter(
-                expense =>
-                    !existingIds.has(
-                        expense.id
-                    )
-            );
-
-
-        if (
-            expensesToMigrate.length > 0
-        ) {
-
-            const rows =
-                expensesToMigrate.map(
-                    expense => ({
-
-                        id:
-                            expense.id,
-
-                        user_id:
-                            user.id,
-
-                        name:
-                            expense.name,
-
-                        category_id:
-                            expense.categoryId,
-
-                        category_name:
-                            expense.categoryName,
-
-                        currency:
-                            expense.currency,
-
-                        amount:
-                            expense.amount,
-
-                        exchange_rate:
-                            expense.exchangeRate ||
-                            1,
-
-                        amount_gtq:
-    expense.amountGTQ,
-
-expense_type:
-    expense.expenseType,
-
-start_date:
-    expense.startDate,
-
-total_installments:
-    expense.totalInstallments,
-
-frequency:
-    expense.frequency,
-
-                        due_day:
-                            expense.dueDay,
-
-                        active:
-                            expense.active !== false,
-
-                        notes:
-                            expense.notes ||
-                            null,
-
-                        created_at:
-                            expense.createdAt ||
-                            new Date().toISOString(),
-
-                        updated_at:
-                            expense.updatedAt ||
-                            new Date().toISOString()
-
-                    })
-                );
-
-
-            const {
-                data: migratedData,
-                error: migrationError
-            } = await supabaseClient
-                .from("gastos_fijos")
-                .insert(rows)
-                .select(`
-                    id,
-                    name,
-                    category_id,
-                    category_name,
-                    currency,
-                    amount,
-                    exchange_rate,
-                    amount_gtq,
-                    expense_type,
-                    start_date,
-                    total_installments,
-                    frequency,
-                    due_day,
-                    payment_method,
-                    credit_card_id,
-                    charge_day,
-                    active,
-                    notes,
-                    created_at,
-                    updated_at
-                `);
-
-
-            if (migrationError) {
-                throw migrationError;
-            }
-
-
-            supabaseFixedExpenses.push(
-                ...(migratedData || [])
-            );
-
-
-            console.log(
-                `${expensesToMigrate.length} gasto(s) fijo(s) local(es) migrado(s) a Supabase.`
-            );
-
-        }
-
 
         fixedExpenses =
             supabaseFixedExpenses.map(
@@ -9254,9 +8407,6 @@ frequency:
 
                 })
             );
-
-
-        saveFixedExpenses();
 
         renderFixedExpenseTable();
 
@@ -10313,9 +9463,6 @@ active:
 
             }
 
-
-            saveFixedExpenses();
-
             renderFixedExpenseTable();
 
             closeFixedExpenseForm();
@@ -10333,7 +9480,6 @@ active:
     );
 
 }
-
 
 function renderFixedExpenseTable() {
 
@@ -10724,8 +9870,6 @@ if (fixedExpenseTableContainer) {
                 item.id !== id
         );
 
-    saveFixedExpenses();
-
     renderFixedExpenseTable();
 
     if (
@@ -10833,36 +9977,27 @@ function reportDateMatches(
 
 }
 
-
 function getReportExpenses() {
 
-    return JSON.parse(
-        localStorage.getItem(
-            "finanzasGastos"
-        )
-    ) || [];
+    return Array.isArray(expenses)
+        ? expenses
+        : [];
 
 }
-
 
 function getReportFixedExpenses() {
 
-    return JSON.parse(
-        localStorage.getItem(
-            "finanzasGastosFijos"
-        )
-    ) || [];
+    return Array.isArray(fixedExpenses)
+        ? fixedExpenses
+        : [];
 
 }
 
-
 function getReportBudgets() {
 
-    return JSON.parse(
-        localStorage.getItem(
-            "finanzasPresupuestos"
-        )
-    ) || [];
+    return Array.isArray(budgets)
+        ? budgets
+        : [];
 
 }
 
@@ -11926,10 +11061,12 @@ async function initializeAppData() {
     renderIncomeTable();
     updateDashboard();
 
-    // El presupuesto termina de cargar sin retrasar el panel de tarjetas.
+        // Esperar a que los presupuestos también estén cargados.
     await budgetsLoad;
-}
 
+    // Actualizar la tabla con los gastos y presupuestos ya disponibles.
+    renderBudgetTable();
+}
 
 // Iniciar aplicación
 initializeAppData();

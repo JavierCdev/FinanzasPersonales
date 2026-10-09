@@ -1825,7 +1825,11 @@ body {
    FORMULARIO DE INGRESOS - DISEÑO MODERNO
    ============================================================ */
 
-.income-form-panel {
+/* Separación uniforme de los formularios respecto a la tarjeta siguiente */
+#incomeFormPanel,
+#expenseFormPanel,
+#budgetFormPanel,
+#fixedExpenseFormPanel {
     margin-bottom: 20px;
 }
 
@@ -2764,6 +2768,7 @@ body {
 .report-period-label {
     font-size: 12px;
     color: #64748b;
+    font-weight: 600;
 }
 
 @media (max-width: 1000px) {
@@ -3800,4 +3805,8 @@ body {
     #incomeTableContainer .income-detail-group .income-detail-item {
         padding: 10px;
     }
+}
+/* Separación entre tarjetas de Reportes */
+#reportes .panel {
+    margin-bottom: 20px;
 }
