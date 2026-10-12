@@ -872,19 +872,27 @@
 <section
     id="gastos"
     class="page-section">
+<div class="section-header expenses-section-header">
 
-    <div class="section-header expenses-section-header">
-
-        <button
-            type="button"
-            class="primary-button"
-            id="newExpenseButton">
-
-            + Nuevo gasto
-
-        </button>
-
+    <div class="expense-audit-search">
+        <input
+            type="search"
+            id="expenseAuditSearch"
+            placeholder="Buscar gastos..."
+            autocomplete="off"
+            aria-label="Buscar gastos">
     </div>
+
+    <button
+        type="button"
+        class="primary-button"
+        id="newExpenseButton">
+
+        + Nuevo gasto
+
+    </button>
+
+</div>
 
 
     <!-- FORMULARIO DE GASTOS -->
@@ -1143,10 +1151,10 @@
 
     </div>
 
+<!-- TABLA DE GASTOS -->
 
-    <!-- TABLA DE GASTOS -->
+<div class="panel expense-history-panel">
 
-    <div class="panel expense-history-panel">
 
         <div class="panel-header">
 

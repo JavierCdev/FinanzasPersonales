@@ -5399,16 +5399,51 @@ const selectedYear =
     dashboardYear?.value ||
     String(new Date().getFullYear());
 
+
+const searchTerm =
+    (document.getElementById("expenseAuditSearch")?.value || "")
+        .trim()
+        .toLowerCase();
+
 const monthlyExpenses = expenses.filter(expense => {
     if (!expense.date) return false;
 
     const [expenseYear, expenseMonth] =
         expense.date.split("-");
 
-    return (
+    const matchesPeriod =
         expenseYear === selectedYear &&
-        expenseMonth === selectedMonth
+        expenseMonth === selectedMonth;
+
+    if (!matchesPeriod) return false;
+
+    if (!searchTerm) return true;
+
+    const category = categories.expense.find(
+        item => item.id === expense.categoryId
     );
+
+    const card = creditCards.find(
+        item =>
+            String(item.id) === String(expense.creditCardId)
+    );
+
+    const searchableText = [
+        expense.description || "",
+        expense.notes || "",
+        expense.categoryName || "",
+        category?.name || "",
+        expense.amount,
+        expense.amountGTQ,
+        expense.currency || "GTQ",
+        expense.paymentMethod === "card"
+            ? "tarjeta credito"
+            : "efectivo",
+        card?.bank || "",
+        card?.name || ""
+    ].join(" ").toLowerCase();
+
+    return searchableText.includes(searchTerm);
 });
 
 if (monthlyExpenses.length === 0) {
@@ -6941,6 +6976,20 @@ function getDashboardMonth() {
         new Date().getMonth() + 1
     ).padStart(2, "0");
 }
+
+/* ============================================================
+   BUSCADOR TEMPORAL DE GASTOS
+   Filtra la tabla principal mientras se escribe.
+   Solo lectura: no modifica gastos ni datos de Supabase.
+   Respeta el mes y año seleccionados.
+   ============================================================ */
+
+expenseAuditSearch?.addEventListener("input", () => {
+    renderExpenseTable();
+});
+
+// Refrescar el buscador cuando cambie el mes o se carguen gastos.
+
 
 
 // ------------------------------------------------------------
