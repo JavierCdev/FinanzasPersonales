@@ -593,18 +593,20 @@ function renderCategoryList(type, container) {
             ? categories[type]
             : [];
 
+    
+const sortedList = [...list].sort((a, b) =>
+    a.name.localeCompare(b.name, "es", {
+        sensitivity: "base"
+    })
+);
+    
+const active = sortedList.filter(
+    category => category.active !== false
+);
 
-    const active =
-        list.filter(
-            category => category.active !== false
-        );
-
-
-    const inactive =
-        list.filter(
-            category => category.active === false
-        );
-
+const inactive = sortedList.filter(
+    category => category.active === false
+);
 
     const visible =
         showInactive[type]

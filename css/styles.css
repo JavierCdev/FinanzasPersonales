@@ -3979,3 +3979,19 @@ body {
         padding: 10px 12px;
     }
 }
+/* Efecto visual para categorías de ingresos y egresos */
+.category-item {
+    border: 1px solid #dce5ef;
+    border-radius: 14px;
+    background: #ffffff;
+    transition:
+        border-color 0.25s ease,
+        box-shadow 0.25s ease,
+        transform 0.25s ease;
+}
+
+.category-item:hover {
+    border-color: #bfd7f2;
+    box-shadow: 0 8px 24px rgba(30, 90, 150, 0.08);
+    transform: translateY(-2px);
+}
