@@ -1130,9 +1130,7 @@ body {
         flex: 1;
     }
 
-}
-
-.topbar {
+    .topbar {
     align-items: flex-start;
 }
 
@@ -1141,6 +1139,9 @@ body {
     margin-left: 0;
     justify-content: flex-start;
 }
+
+}
+
 /* ========================================
    SECCIONES INTERNAS
 ======================================== */
@@ -2578,6 +2579,27 @@ body {
     }
 
 }
+
+.fixed-expense-table input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    margin: 0 8px 0 0;
+    accent-color: var(--primary);
+    cursor: pointer;
+    vertical-align: middle;
+}
+
+.fixed-expense-table td label {
+    display: flex;
+    align-items: center;
+    margin: 0;
+    cursor: pointer;
+}
+
+.fixed-expense-table tbody tr:has(input[type="checkbox"]:checked) {
+    background-color: #edf5ff;
+}
 /* ============================================================
    REPORTES
 ============================================================ */
@@ -3386,6 +3408,8 @@ body {
     justify-content: flex-end;
 }
 
+
+
 /* Gastos: vista compacta para tablets y móviles */
 #expenseTableContainer .expense-mobile-summary-cell,
 #expenseTableContainer .expense-details-row {
@@ -3420,11 +3444,13 @@ body {
     }
 
     #expenseTableContainer .expense-main-row > .expense-mobile-summary-cell {
-        display: block;
-        width: 100%;
-        padding: 0;
-        border-bottom: 1px solid #edf0f3;
-    }
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 0;
+    border-bottom: 1px solid #edf0f3;
+}
 
     #expenseTableContainer .expense-details-row[hidden] {
         display: none !important;
@@ -3445,7 +3471,7 @@ body {
 
     #expenseTableContainer .expense-mobile-toggle {
         display: grid;
-        grid-template-columns: 82px minmax(0, 1fr) minmax(110px, auto) 18px;
+        grid-template-columns: 76px minmax(0, 1fr) auto 14px;
         grid-template-areas: "date description category chevron";
         align-items: center;
         gap: 12px;
@@ -3458,6 +3484,17 @@ body {
         cursor: pointer;
         transition: background-color 0.2s ease;
     }
+
+    #expenseTableContainer .expense-select-checkbox-mobile {
+    display: block;
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    margin-left: 12px;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
 
     #expenseTableContainer .expense-mobile-toggle:hover,
     #expenseTableContainer .expense-mobile-toggle[aria-expanded="true"] {
@@ -3635,14 +3672,29 @@ body {
     }
 
     #incomeTableContainer .income-main-row > .income-mobile-summary-cell {
-        display: block;
+        display: flex;
+        align-items: center;
+        gap: 8px;
         width: 100%;
         padding: 0;
         border-bottom: 1px solid #edf0f3;
     }
 
-    #incomeTableContainer .income-details-row[hidden] {
-        display: none !important;
+    #incomeTableContainer .income-mobile-select-checkbox {
+        display: block;
+        flex: 0 0 18px;
+        width: 18px;
+        height: 18px;
+        min-width: 18px;
+        margin: 0 0 0 12px;
+        accent-color: var(--primary);
+        cursor: pointer;
+    }
+
+    #incomeTableContainer .income-mobile-summary-cell .income-mobile-toggle {
+        flex: 1 1 0;
+        width: auto;
+        min-width: 0;
     }
 
     #incomeTableContainer .income-details-row:not([hidden]) {
@@ -3994,4 +4046,541 @@ body {
     border-color: #bfd7f2;
     box-shadow: 0 8px 24px rgba(30, 90, 150, 0.08);
     transform: translateY(-2px);
+}
+
+
+
+/* ========================================
+   SELECCIÓN Y ELIMINACIÓN MÚLTIPLE
+======================================== */
+
+.data-table input[type="checkbox"] {
+    appearance: auto;
+    -webkit-appearance: checkbox;
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    margin: 0;
+    accent-color: var(--primary);
+    cursor: pointer;
+    vertical-align: middle;
+    opacity: 1;
+    visibility: visible;
+}
+
+.data-table th:has(input[type="checkbox"]),
+.data-table td:has(input[type="checkbox"]) {
+    width: 44px;
+    min-width: 44px;
+    padding: 12px 10px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.data-table tbody tr:has(input[type="checkbox"]:checked) {
+    background-color: #edf5ff;
+}
+
+#deleteSelectedExpenses,
+#deleteSelectedIncomes,
+#deleteSelectedBudgets,
+#deleteSelectedFixedExpenses {
+    min-height: 36px;
+    padding: 8px 14px;
+    border: 1px solid #f0caca;
+    border-radius: 9px;
+    background: #fff5f5;
+    color: #c53030;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease,
+                border-color 0.2s ease,
+                opacity 0.2s ease;
+}
+
+#deleteSelectedExpenses:hover:not(:disabled),
+#deleteSelectedIncomes:hover:not(:disabled),
+#deleteSelectedBudgets:hover:not(:disabled),
+#deleteSelectedFixedExpenses:hover:not(:disabled) {
+    background: #fee2e2;
+    border-color: #eaa6a6;
+}
+
+#deleteSelectedExpenses:disabled,
+#deleteSelectedIncomes:disabled,
+#deleteSelectedBudgets:disabled,
+#deleteSelectedFixedExpenses:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+    .data-table th:has(input[type="checkbox"]),
+    .data-table td:has(input[type="checkbox"]) {
+        width: 38px;
+        min-width: 38px;
+        padding: 10px 6px;
+    }
+
+    .data-table input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+
+/* Barra de selección múltiple */
+.expense-bulk-actions,
+.income-bulk-actions,
+.budget-bulk-actions,
+.fixed-expense-bulk-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #fff;
+}
+
+#selectedExpenseCount,
+#selectedIncomeCount,
+#selectedBudgetCount,
+#selectedFixedExpenseCount {
+    color: var(--text-light);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+@media (max-width: 600px) {
+    .expense-bulk-actions,
+    .income-bulk-actions,
+    .budget-bulk-actions,
+    .fixed-expense-bulk-actions {
+        gap: 8px;
+        padding: 10px;
+    }
+
+    .expense-bulk-actions button,
+    .income-bulk-actions button,
+    .budget-bulk-actions button,
+    .fixed-expense-bulk-actions button {
+        max-width: 100%;
+        white-space: normal;
+    }
+}
+
+/* Barra de selección múltiple integrada al contenedor de la tabla */
+.table-container .expense-bulk-actions,
+.table-container .income-bulk-actions,
+.table-container .budget-bulk-actions {
+    margin: 0;
+    padding: 10px 14px;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    background: #f7f9fb;
+}
+
+@media (max-width: 600px) {
+    .table-container .expense-bulk-actions,
+    .table-container .income-bulk-actions,
+    .table-container .budget-bulk-actions {
+        padding: 10px 12px;
+    }
+}
+
+/* Alinear casillas del encabezado y de las filas */
+.data-table th:has(input[type="checkbox"]),
+.data-table td:has(input[type="checkbox"]) {
+    text-align: left;
+    white-space: nowrap;
+}
+
+.data-table th input[type="checkbox"],
+.data-table td input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+/* Gastos fijos: mismo diseño que Ingresos, Gastos y Presupuestos */
+.fixed-expense-table-wrapper {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background-color: #ffffff;
+}
+
+.fixed-expense-table-wrapper .fixed-expense-bulk-actions {
+    position: sticky;
+    left: 0;
+    margin: 0;
+    padding: 10px 14px;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    background: #f7f9fb;
+}
+
+.fixed-expense-table thead {
+    background-color: #f7f9fb;
+}
+
+/* Casilla del encabezado alineada con las de las filas */
+.fixed-expense-table th input[type="checkbox"] {
+    margin-right: 4px;
+}
+
+@media (max-width: 600px) {
+    .fixed-expense-table-wrapper .fixed-expense-bulk-actions {
+        padding: 10px 12px;
+    }
+}
+
+/* Gastos fijos: mismo estilo de tabla y botones que las demás secciones */
+.fixed-expense-table {
+    font-size: 13px;
+}
+
+.fixed-expense-table th {
+    padding: 13px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-light);
+    font-size: 11px;
+    text-transform: none;
+    white-space: nowrap;
+}
+
+.fixed-expense-table td {
+    padding: 14px;
+    border-bottom: 1px solid #edf0f3;
+    color: var(--text);
+    white-space: nowrap;
+}
+
+.fixed-expense-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.fixed-expense-table tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+.fixed-expense-table .fixed-expense-category,
+.fixed-expense-table .fixed-expense-frequency {
+    color: var(--text);
+    font-size: 13px;
+}
+
+/* Botones de acciones iguales a .table-action-button */
+.fixed-expense-table .fixed-expense-actions .fixed-expense-action-button {
+    border: 1px solid var(--border);
+    background-color: #ffffff;
+    color: var(--text);
+    padding: 7px 10px;
+    border-radius: 7px;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.fixed-expense-table .fixed-expense-actions .fixed-expense-action-button:hover {
+    background-color: #f1f4f7;
+    border-color: #cfd8e2;
+}
+
+.fixed-expense-table .fixed-expense-actions .fixed-expense-action-button.delete {
+    color: var(--expense);
+}
+
+.fixed-expense-table .fixed-expense-actions .fixed-expense-action-button.delete:hover {
+    background-color: #fceaea;
+    border-color: #f3caca;
+}
+
+/* ============================================================
+   VISTA COMPACTA (tablet y móvil): Presupuestos y Gastos fijos
+============================================================ */
+
+#budgetTableContainer {
+    --compact-accent: var(--primary);
+}
+
+#fixedExpenseTableContainer {
+    --compact-accent: var(--fixed);
+}
+
+/* Escritorio: la celda resumen y el detalle no se muestran */
+.compact-table .compact-summary-cell,
+.compact-table .compact-details-row {
+    display: none;
+}
+
+@media (max-width: 1024px) {
+    table.compact-table {
+        display: block;
+        width: 100%;
+        min-width: 0;
+        border-collapse: separate;
+    }
+
+    .compact-table thead {
+        display: none;
+    }
+
+    .compact-table tbody {
+        display: block;
+        width: 100%;
+    }
+
+    .compact-table tbody tr.compact-main-row,
+    .compact-table tbody tr.compact-details-row {
+        display: block;
+        width: 100%;
+    }
+
+    .compact-table .compact-main-row > td:not(.compact-summary-cell) {
+        display: none;
+    }
+
+    .compact-table .compact-main-row > .compact-summary-cell {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        padding: 0;
+        border-bottom: 1px solid #edf0f3;
+        background: #fff;
+        white-space: normal;
+    }
+
+    .compact-table .compact-main-row:has(input:checked) > .compact-summary-cell {
+        background: #edf5ff;
+    }
+
+    .compact-table .compact-summary-cell:has(.compact-toggle[aria-expanded="true"]) {
+        background: #f8fafc;
+    }
+
+    .compact-table .compact-summary-cell input[type="checkbox"] {
+        display: block;
+        flex: 0 0 18px;
+        width: 18px;
+        height: 18px;
+        min-width: 18px;
+        margin: 0 0 0 12px;
+        accent-color: var(--primary);
+        cursor: pointer;
+    }
+
+    .compact-table .compact-toggle {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1 1 0;
+        width: auto;
+        min-width: 0;
+        padding: 15px;
+        border: 0;
+        background: transparent;
+        color: var(--text);
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .compact-table .compact-toggle:focus-visible {
+        outline: 2px solid var(--primary);
+        outline-offset: -2px;
+    }
+
+    .compact-table .compact-lead {
+        flex: 0 0 120px;
+        min-width: 0;
+        overflow: hidden;
+        color: var(--text-light);
+        font-size: 12px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .compact-table .compact-title {
+        flex: 1 1 0;
+        min-width: 0;
+        overflow: hidden;
+        font-size: 14px;
+        font-weight: 500;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .compact-table .compact-amount {
+        flex: 0 0 auto;
+        font-size: 13px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .compact-table .compact-badge {
+        flex: 0 0 auto;
+        padding: 5px 9px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .compact-table .compact-badge.normal {
+        background: #edf8f2;
+        color: #16a34a;
+    }
+
+    .compact-table .compact-badge.warning {
+        background: #fef3c7;
+        color: #b45309;
+    }
+
+    .compact-table .compact-badge.danger {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .compact-table .compact-chevron {
+        flex: 0 0 18px;
+        color: var(--text-light);
+        font-size: 18px;
+        text-align: center;
+        transition: transform 0.2s ease;
+    }
+
+    .compact-table .compact-toggle[aria-expanded="true"] .compact-chevron {
+        transform: rotate(180deg);
+    }
+
+    .compact-table .compact-details-row:not([hidden]) {
+        display: block;
+        background: #f8fafc;
+    }
+
+    .compact-table .compact-details-row > td {
+        display: block;
+        width: 100%;
+        padding: 14px 12px 16px;
+        border-bottom: 1px solid #edf0f3;
+        white-space: normal;
+    }
+
+    .compact-table .compact-details-panel {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 14px;
+        padding: 18px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 4px 12px rgb(15 23 42 / 5%);
+    }
+
+    .compact-table .compact-detail-group {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .compact-table .compact-detail-item {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        min-width: 0;
+    }
+
+    .compact-table .compact-detail-item > span {
+        color: var(--text-light);
+        font-size: 11px;
+    }
+
+    .compact-table .compact-detail-item > strong {
+        overflow-wrap: anywhere;
+        color: var(--text);
+        font-size: 13px;
+    }
+
+    .compact-table .compact-detail-group .compact-detail-item,
+    .compact-table .compact-detail-box {
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--compact-accent);
+        border-radius: 10px;
+        background: #fff;
+    }
+
+    .compact-table .compact-details-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        padding-top: 12px;
+        border-top: 1px solid #edf0f3;
+    }
+}
+
+@media (max-width: 600px) {
+    .compact-table .compact-toggle {
+        flex-wrap: wrap;
+        row-gap: 6px;
+    }
+
+    .compact-table .compact-lead {
+        order: 5;
+        flex: 1 1 100%;
+    }
+
+    .compact-table .compact-details-panel {
+        padding: 14px;
+    }
+
+    .compact-table .compact-detail-group {
+        gap: 8px;
+    }
+
+    .compact-table .compact-detail-group .compact-detail-item,
+    .compact-table .compact-detail-box {
+        padding: 10px;
+    }
+}
+
+/* Ingresos y Gastos: la zona de la casilla toma el mismo fondo que la fila expandida */
+#incomeTableContainer .income-mobile-summary-cell:has(.income-mobile-toggle[aria-expanded="true"]),
+#expenseTableContainer .expense-mobile-summary-cell:has(.expense-mobile-toggle[aria-expanded="true"]) {
+    background: #f8fafc;
+}
+
+/* "Seleccionar todos" de la barra: solo en la vista compacta */
+.bulk-select-all-mobile {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-light);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.bulk-select-all-mobile input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
+@media (max-width: 1024px) {
+    .bulk-select-all-mobile {
+        display: inline-flex;
+    }
 }

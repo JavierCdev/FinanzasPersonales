@@ -1404,6 +1404,9 @@ document.addEventListener(
 
 let incomes = [];
 
+// Selección múltiple de ingresos
+const selectedIncomeIds = new Set();
+
 // ============================================================
 // SUPABASE - INGRESOS
 // ============================================================
@@ -2520,6 +2523,11 @@ const monthlyIncomes = incomes.filter(income => {
     );
 });
 
+keepOnlyVisibleSelection(
+    selectedIncomeIds,
+    monthlyIncomes.map(income => income.id)
+);
+
 if (monthlyIncomes.length === 0) {
     incomeTableContainer.innerHTML = `
         <div class="empty-table">
@@ -2538,6 +2546,27 @@ const sorted =
 
 
     let html = `
+    <div class="income-bulk-actions">
+    <label class="bulk-select-all-mobile">
+    <input
+        type="checkbox"
+        id="selectAllIncomesMobile"
+        aria-label="Seleccionar todos los ingresos">
+    Todos
+</label>
+        <span id="selectedIncomeCount">
+            ${selectedIncomeIds.size} seleccionados
+        </span>
+
+        <button
+            type="button"
+            id="deleteSelectedIncomes"
+            class="table-action-button delete"
+            ${selectedIncomeIds.size === 0 ? "disabled" : ""}
+        >
+            Eliminar seleccionados
+        </button>
+    </div>
 
         <table class="data-table">
 
@@ -2545,7 +2574,16 @@ const sorted =
 
                 <tr>
 
-                    <th>Fecha</th>
+                    <th>
+    <label>
+        <input
+            type="checkbox"
+            id="selectAllIncomes"
+            aria-label="Seleccionar todos los ingresos visibles"
+        >
+        Fecha
+    </label>
+</th>
 
                     <th>Descripción</th>
 
@@ -2586,7 +2624,18 @@ const sorted =
 
                 html += `
             <tr class="income-main-row">
-                <td>${formatDate(income.date)}</td>
+                <td>
+    <label>
+        <input
+            type="checkbox"
+            class="income-select-checkbox"
+            data-income-select-id="${income.id}"
+            aria-label="Seleccionar ingreso"
+            ${selectedIncomeIds.has(income.id) ? "checked" : ""}
+        >
+        ${formatDate(income.date)}
+    </label>
+</td>
                 <td>${escapeHtml(income.description || "")}</td>
                 <td>${escapeHtml(categoryName)}</td>
                 <td>${escapeHtml(income.currency || "GTQ")}</td>
@@ -2616,6 +2665,17 @@ const sorted =
                 </td>
 
                 <td class="income-mobile-summary-cell" colspan="7">
+    <input
+        type="checkbox"
+        class="income-select-checkbox income-mobile-select-checkbox"
+        data-income-select-id="${income.id}"
+        aria-label="Seleccionar ingreso"
+        ${selectedIncomeIds.has(income.id) ? "checked" : ""}>
+
+    <button
+        type="button"
+        class="income-mobile-toggle"
+
                     <button
                         type="button"
                         class="income-mobile-toggle"
@@ -2754,6 +2814,77 @@ incomeTableContainer?.addEventListener("click", event => {
     }
 });
 
+// Selección individual y selección de todos los ingresos
+bindBulkSelection({
+    container: incomeTableContainer,
+    checkboxSelector: ".income-select-checkbox",
+    selectAllId: "selectAllIncomes",
+    idKey: "incomeSelectId",
+    selectedIds: selectedIncomeIds,
+    counterId: "selectedIncomeCount",
+    deleteButtonId: "deleteSelectedIncomes"
+});
+
+// ============================================================
+// ELIMINACIÓN MÚLTIPLE DE INGRESOS
+// ============================================================
+
+document.addEventListener("click", async event => {
+    const button = event.target.closest("#deleteSelectedIncomes");
+
+    if (!button) return;
+
+        const ids = getVisibleSelectedIds(
+        incomeTableContainer,
+        ".income-select-checkbox",
+        "incomeSelectId",
+        selectedIncomeIds
+    );
+
+    if (ids.length === 0) {
+        alert("Selecciona al menos un ingreso.");
+        return;
+    }
+
+        const confirmed = confirm(
+        `¿Seguro que quieres eliminar ${ids.length} ingreso(s) de ${getSelectedPeriodLabel()}? Esta acción no se puede deshacer.`
+    );
+
+    if (!confirmed) return;
+
+    button.disabled = true;
+
+    const { data, error } = await supabaseClient
+        .from("ingresos")
+        .delete()
+        .in("id", ids)
+        .select("id");
+
+    if (error) {
+        console.error("Error eliminando ingresos:", error);
+        alert("No se pudieron eliminar los ingresos seleccionados.");
+        button.disabled = false;
+        return;
+    }
+
+    const deletedIds = new Set((data || []).map(item => item.id));
+
+    if (deletedIds.size === 0) {
+        alert("Supabase no eliminó ningún ingreso. Revisa los permisos de DELETE.");
+        button.disabled = false;
+        return;
+    }
+
+    incomes = incomes.filter(income => !deletedIds.has(income.id));
+
+    deletedIds.forEach(id => selectedIncomeIds.delete(id));
+
+    renderIncomeTable();
+    updateDashboard();
+
+    alert(`Se eliminaron ${deletedIds.size} ingreso(s).`);
+});
+
 // ============================================================
 // 13. EDITAR / ELIMINAR INGRESOS
 // ============================================================
@@ -2863,6 +2994,9 @@ document.addEventListener(
 // 13. PRESUPUESTOS
 // ============================================================
 let budgets = [];
+
+const selectedBudgetIds = new Set();
+
 // ------------------------------------------------------------
 // ELEMENTOS DEL FORMULARIO
 // ------------------------------------------------------------
@@ -3727,47 +3861,58 @@ function renderBudgetTable() {
 
 
     let html = `
+    <div class="budget-bulk-actions">
+<label class="bulk-select-all-mobile">
+    <input
+        type="checkbox"
+        id="selectAllBudgetsMobile"
+        aria-label="Seleccionar todos los presupuestos">
+    Todos
+</label>
+        <span id="selectedBudgetCount">
+            ${selectedBudgetIds.size} seleccionados
+        </span>
 
-        <table class="data-table">
+        <button
+            type="button"
+            id="deleteSelectedBudgets"
+            class="table-action-button delete"
+            ${selectedBudgetIds.size === 0 ? "disabled" : ""}>
+            Eliminar seleccionados
+        </button>
+    </div>
 
-            <thead>
+    <table class="data-table compact-table">
 
-                <tr>
+        <thead>
 
-                    <th>
-                        Mes
-                    </th>
+            <tr>
 
-                    <th>
-                        Categoría
-                    </th>
+                <th>
+                    <input
+                        type="checkbox"
+                        id="selectAllBudgets"
+                        aria-label="Seleccionar todos los presupuestos">
+                    Mes
+                </th>
 
-                    <th>
-                        Presupuesto
-                    </th>
+                <th>Categoría</th>
 
-                    <th>
-                        Gastado
-                    </th>
+                <th>Presupuesto</th>
 
-                    <th>
-                        Disponible
-                    </th>
+                <th>Gastado</th>
 
-                    <th>
-                        Progreso
-                    </th>
+                <th>Disponible</th>
 
-                    <th>
-                        Acciones
-                    </th>
+                <th>Progreso</th>
 
-                </tr>
+                <th>Acciones</th>
 
-            </thead>
+            </tr>
 
-            <tbody>
+        </thead>
 
+        <tbody>
     `;
 
 
@@ -3788,7 +3933,7 @@ function renderBudgetTable() {
                 "Categoría eliminada";
 
 
-            const budgetAmount =
+            const amountValue =
                 parseFloat(
                     budget.amount
                 ) || 0;
@@ -3802,13 +3947,13 @@ function renderBudgetTable() {
 
 
             const remaining =
-                budgetAmount -
+                amountValue -
                 spent;
 
 
             const percentage =
-                budgetAmount > 0
-                    ? (spent / budgetAmount) * 100
+                amountValue > 0
+                    ? (spent / amountValue) * 100
                     : 0;
 
 
@@ -3857,128 +4002,150 @@ function renderBudgetTable() {
             }
 
 
+            const monthLabel =
+                formatBudgetMonth(budget.month);
+
+            const isSelected =
+                selectedBudgetIds.has(String(budget.id));
+
+            const progressHtml = `
+                <div class="budget-progress">
+                    <div class="budget-progress-bar">
+                        <div
+                            class="budget-progress-fill ${progressClass}"
+                            style="width: ${progressWidth}%"></div>
+                    </div>
+                    <div class="budget-percentage">
+                        ${percentage.toFixed(1)}%
+                    </div>
+                </div>
+            `;
+
+
             html += `
 
-                <tr>
+                <tr class="compact-main-row">
 
                     <td class="budget-month">
+                        <input
+                            type="checkbox"
+                            class="budget-select-checkbox"
+                            data-budget-select-id="${budget.id}"
+                            aria-label="Seleccionar presupuesto"
+                            ${isSelected ? "checked" : ""}>
 
-                        ${formatBudgetMonth(
-                            budget.month
-                        )}
-
+                        ${monthLabel}
                     </td>
 
+                    <td>${escapeHtml(categoryName)}</td>
+
+                    <td>${formatCurrency(amountValue, "GTQ")}</td>
+
+                    <td>${formatCurrency(spent, "GTQ")}</td>
 
                     <td>
-
-                        ${escapeHtml(
-                            categoryName
-                        )}
-
-                    </td>
-
-
-                    <td>
-
-                        ${formatCurrency(
-                            budgetAmount,
-                            "GTQ"
-                        )}
-
-                    </td>
-
-
-                    <td>
-
-                        ${formatCurrency(
-                            spent,
-                            "GTQ"
-                        )}
-
-                    </td>
-
-
-                    <td>
-
-                        <span
-                            class="budget-remaining ${remainingClass}"
-                        >
-
-                            ${formatCurrency(
-                                remaining,
-                                "GTQ"
-                            )}
-
+                        <span class="budget-remaining ${remainingClass}">
+                            ${formatCurrency(remaining, "GTQ")}
                         </span>
-
                     </td>
 
+                    <td>${progressHtml}</td>
 
                     <td>
-
-                        <div
-                            class="budget-progress"
-                        >
-
-                            <div
-                                class="budget-progress-bar"
-                            >
-
-                                <div
-                                    class="budget-progress-fill ${progressClass}"
-                                    style="width: ${progressWidth}%"
-                                ></div>
-
-                            </div>
-
-
-                            <div
-                                class="budget-percentage"
-                            >
-
-                                ${percentage.toFixed(1)}%
-
-                            </div>
-
-                        </div>
-
-                    </td>
-
-
-                    <td>
-
-                        <div
-                            class="table-actions"
-                        >
-
+                        <div class="table-actions">
                             <button
                                 type="button"
                                 class="table-action-button"
                                 data-budget-action="edit"
-                                data-budget-id="${budget.id}"
-                            >
-
+                                data-budget-id="${budget.id}">
                                 Editar
-
                             </button>
-
 
                             <button
                                 type="button"
                                 class="table-action-button delete"
                                 data-budget-action="delete"
-                                data-budget-id="${budget.id}"
-                            >
-
+                                data-budget-id="${budget.id}">
                                 Eliminar
-
                             </button>
-
                         </div>
-
                     </td>
 
+                    <td class="compact-summary-cell" colspan="7">
+                        <input
+                            type="checkbox"
+                            class="budget-select-checkbox compact-select-checkbox"
+                            data-budget-select-id="${budget.id}"
+                            aria-label="Seleccionar presupuesto"
+                            ${isSelected ? "checked" : ""}>
+
+                        <button
+                            type="button"
+                            class="compact-toggle"
+                            data-budget-toggle="${budget.id}"
+                            aria-expanded="false">
+                            <span class="compact-lead">${monthLabel}</span>
+                            <span class="compact-title">${escapeHtml(categoryName)}</span>
+                            <span class="compact-badge ${progressClass}">
+                                ${percentage.toFixed(1)}%
+                            </span>
+                            <span class="compact-chevron" aria-hidden="true">⌄</span>
+                        </button>
+                    </td>
+
+                </tr>
+
+                <tr
+                    class="compact-details-row"
+                    data-budget-details="${budget.id}"
+                    hidden>
+                    <td colspan="7">
+                        <div class="compact-details-panel">
+
+                            <div class="compact-detail-group">
+                                <div class="compact-detail-item">
+                                    <span>Presupuesto</span>
+                                    <strong>${formatCurrency(amountValue, "GTQ")}</strong>
+                                </div>
+
+                                <div class="compact-detail-item">
+                                    <span>Gastado</span>
+                                    <strong>${formatCurrency(spent, "GTQ")}</strong>
+                                </div>
+                            </div>
+
+                            <div class="compact-detail-item compact-detail-box">
+                                <span>Disponible</span>
+                                <strong class="budget-remaining ${remainingClass}">
+                                    ${formatCurrency(remaining, "GTQ")}
+                                </strong>
+                            </div>
+
+                            <div class="compact-detail-item">
+                                <span>Progreso</span>
+                                ${progressHtml}
+                            </div>
+
+                            <div class="compact-details-actions">
+                                <button
+                                    type="button"
+                                    class="table-action-button"
+                                    data-budget-action="edit"
+                                    data-budget-id="${budget.id}">
+                                    Editar
+                                </button>
+
+                                <button
+                                    type="button"
+                                    class="table-action-button delete"
+                                    data-budget-action="delete"
+                                    data-budget-id="${budget.id}">
+                                    Eliminar
+                                </button>
+                            </div>
+
+                        </div>
+                    </td>
                 </tr>
 
             `;
@@ -3989,9 +4156,9 @@ function renderBudgetTable() {
 
     html += `
 
-            </tbody>
+        </tbody>
 
-        </table>
+    </table>
 
     `;
 
@@ -4001,6 +4168,21 @@ function renderBudgetTable() {
 
 }
 
+bindBulkSelection({
+    container: budgetTableContainer,
+    checkboxSelector: ".budget-select-checkbox",
+    selectAllId: "selectAllBudgets",
+    idKey: "budgetSelectId",
+    selectedIds: selectedBudgetIds,
+    counterId: "selectedBudgetCount",
+    deleteButtonId: "deleteSelectedBudgets"
+});
+
+bindAccordion({
+    container: budgetTableContainer,
+    toggleAttr: "data-budget-toggle",
+    detailsAttr: "data-budget-details"
+});
 
 // ------------------------------------------------------------
 // EDITAR / ELIMINAR
@@ -4054,7 +4236,6 @@ document.addEventListener(
 
             return;
         }
-
 
         // ------------------------------------------------
         // ELIMINAR
@@ -4140,6 +4321,81 @@ document.addEventListener(
     }
 );
 
+document.addEventListener("click", async event => {
+    const button = event.target.closest("#deleteSelectedBudgets");
+
+    if (!button) {
+        return;
+    }
+
+    const ids = [...selectedBudgetIds];
+
+    if (ids.length === 0) {
+        return;
+    }
+
+    const confirmed = confirm(
+        `¿Seguro que quieres eliminar ${ids.length} presupuesto(s) seleccionado(s)? Esta acción no se puede deshacer.`
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    const user = await getCurrentUser();
+
+    if (!user) {
+        alert("No hay un usuario autenticado.");
+        return;
+    }
+
+    button.disabled = true;
+
+    try {
+        const { data, error } = await supabaseClient
+            .from("presupuestos")
+            .delete()
+            .in("id", ids)
+            .select("id");
+
+        if (error) {
+            throw error;
+        }
+
+        const deletedIds = new Set(
+            (data || []).map(item => String(item.id))
+        );
+
+        budgets = budgets.filter(
+            item => !deletedIds.has(String(item.id))
+        );
+
+        selectedBudgetIds.clear();
+
+        renderBudgetTable();
+
+        if (typeof updateDashboard === "function") {
+            updateDashboard();
+        }
+
+        alert(
+            `${deletedIds.size} presupuesto(s) eliminado(s).`
+        );
+    } catch (error) {
+        console.error(
+            "Error eliminando presupuestos seleccionados:",
+            error
+        );
+
+        alert(
+            "No se pudieron eliminar los presupuestos seleccionados."
+        );
+
+        button.disabled = false;
+    }
+});
+
+
 // ------------------------------------------------------------
 // INICIALIZAR PRESUPUESTOS
 // ------------------------------------------------------------
@@ -4153,6 +4409,9 @@ renderBudgetTable();
 // ============================================================
 
 let expenses = [];
+
+const selectedExpenseIds = new Set();
+
 
 // ============================================================
 // ELEMENTOS
@@ -5448,6 +5707,11 @@ const monthlyExpenses = expenses.filter(expense => {
     return searchableText.includes(searchTerm);
 });
 
+keepOnlyVisibleSelection(
+    selectedExpenseIds,
+    monthlyExpenses.map(expense => expense.id)
+);
+
 if (monthlyExpenses.length === 0) {
     expenseTableContainer.innerHTML = `
         <div class="empty-table">
@@ -5465,36 +5729,49 @@ const sorted =
     );
 
 
-    let html = `
+    
+let html = `
+    <div class="expense-bulk-actions">
+<label class="bulk-select-all-mobile">
+    <input
+        type="checkbox"
+        id="selectAllExpensesMobile"
+        aria-label="Seleccionar todos los gastos">
+    Todos
+</label>
+        <span id="selectedExpenseCount">
+            ${selectedExpenseIds.size} seleccionados
+        </span>
 
-        <table class="data-table">
+        <button
+            type="button"
+            id="deleteSelectedExpenses"
+            class="table-action-button delete"
+            ${selectedExpenseIds.size === 0 ? "disabled" : ""}>
+            Eliminar seleccionados
+        </button>
+    </div>
 
-            <thead>
-
-                <tr>
-
-                    <th>Fecha</th>
-
-                    <th>Descripción</th>
-
-                    <th>Categoría</th>
-
-                    <th>Moneda</th>
-
-                    <th>Monto</th>
-
-                    <th>Equivalente GTQ</th>
-
-                    <th>Acciones</th>
-
-                </tr>
-
-            </thead>
-
-            <tbody>
-
-    `;
-
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>
+                    <input
+                        type="checkbox"
+                        id="selectAllExpenses"
+                        aria-label="Seleccionar todos los gastos">
+                    Fecha
+                </th>
+                <th>Descripción</th>
+                <th>Categoría</th>
+                <th>Moneda</th>
+                <th>Monto</th>
+                <th>Equivalente GTQ</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+`;
 
     sorted.forEach(
         expense => {
@@ -5515,7 +5792,16 @@ const sorted =
 
                         html += `
                 <tr class="expense-main-row">
-                    <td>${formatDate(expense.date)}</td>
+                    
+<td>
+    <input
+        type="checkbox"
+        class="expense-select-checkbox"
+        data-expense-select-id="${expense.id}"
+        aria-label="Seleccionar gasto">
+    ${formatDate(expense.date)}
+</td>
+
                     <td>${escapeHtml(expense.description || "")}</td>
                     <td>${escapeHtml(categoryName)}</td>
                     <td>${escapeHtml(expense.currency || "GTQ")}</td>
@@ -5545,6 +5831,13 @@ const sorted =
                     </td>
 
                     <td class="expense-mobile-summary-cell" colspan="7">
+
+<input
+    type="checkbox"
+    class="expense-select-checkbox expense-select-checkbox-mobile"
+    data-expense-select-id="${expense.id}"
+    aria-label="Seleccionar gasto">
+                    
                         <button
                             type="button"
                             class="expense-mobile-toggle"
@@ -5646,6 +5939,18 @@ const sorted =
         html;
 
 }
+
+
+bindBulkSelection({
+    container: expenseTableContainer,
+    checkboxSelector: ".expense-select-checkbox",
+    selectAllId: "selectAllExpenses",
+    idKey: "expenseSelectId",
+    selectedIds: selectedExpenseIds,
+    counterId: "selectedExpenseCount",
+    deleteButtonId: "deleteSelectedExpenses"
+});
+
 
 expenseTableContainer?.addEventListener("click", event => {
     const toggle = event.target.closest("[data-expense-toggle]");
@@ -5926,6 +6231,79 @@ updateDashboard();
 
     }
 );
+
+
+document.addEventListener("click", async event => {
+    const button = event.target.closest("#deleteSelectedExpenses");
+
+    if (!button) {
+        return;
+    }
+
+        const ids = getVisibleSelectedIds(
+        expenseTableContainer,
+        ".expense-select-checkbox",
+        "expenseSelectId",
+        selectedExpenseIds
+    );
+
+    if (ids.length === 0) {
+        alert("Selecciona al menos un gasto.");
+        return;
+    }
+
+        const confirmed = confirm(
+        `¿Seguro que quieres eliminar ${ids.length} gasto(s) de ${getSelectedPeriodLabel()}? Esta acción no se puede deshacer.`
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    const user = await getCurrentUser();
+
+    if (!user) {
+        alert("No hay un usuario autenticado.");
+        return;
+    }
+
+    button.disabled = true;
+
+    const { data, error } = await supabaseClient
+        .from("gastos")
+        .delete()
+        .in("id", ids)
+        .select("id");
+
+    if (error) {
+        console.error("Error eliminando gastos seleccionados:", error);
+        alert("No se pudieron eliminar los gastos seleccionados.");
+        button.disabled = false;
+        return;
+    }
+
+    const deletedIds = new Set(
+        (data || []).map(item => String(item.id))
+    );
+
+    if (deletedIds.size === 0) {
+        alert("Supabase no confirmó la eliminación de ningún gasto.");
+        button.disabled = false;
+        return;
+    }
+
+    expenses = expenses.filter(
+        expense => !deletedIds.has(String(expense.id))
+    );
+
+    deletedIds.forEach(id => selectedExpenseIds.delete(id));
+
+    renderExpenseTable();
+    updateDashboard();
+
+    alert(`Se eliminaron ${deletedIds.size} gasto(s).`);
+});
+
 
 // ============================================================
 // 14. DASHBOARD
@@ -8161,6 +8539,8 @@ populateYearSelectors();
 
 let fixedExpenses = [];
 
+const selectedFixedExpenseIds = new Set();
+
 // ------------------------------------------------------------
 // INICIALIZAR DASHBOARD
 // ------------------------------------------------------------
@@ -9584,51 +9964,62 @@ function renderFixedExpenseTable() {
 
     let html = `
 
-        <div class="fixed-expense-table-wrapper">
+<div class="fixed-expense-table-wrapper">
 
-            <table class="fixed-expense-table">
+    <div class="fixed-expense-bulk-actions">
+<label class="bulk-select-all-mobile">
+    <input
+        type="checkbox"
+        id="selectAllFixedExpensesMobile"
+        aria-label="Seleccionar todos los gastos fijos">
+    Todos
+</label>
+        <span id="selectedFixedExpenseCount">
+            ${selectedFixedExpenseIds.size} seleccionados
+        </span>
 
-                <thead>
+        <button
+            type="button"
+            id="deleteSelectedFixedExpenses"
+            class="table-action-button delete"
+            ${selectedFixedExpenseIds.size === 0 ? "disabled" : ""}>
+            Eliminar seleccionados
+        </button>
+    </div>
 
-                    <tr>
+    <table class="fixed-expense-table compact-table">
 
-                        <th>
-                            Nombre
-                        </th>
+        <thead>
 
-                        <th>
-                            Categoría
-                        </th>
+            <tr>
 
-                        <th>
-                            Monto
-                        </th>
+                <th>
+                    <input
+                        type="checkbox"
+                        id="selectAllFixedExpenses"
+                        aria-label="Seleccionar todos los gastos fijos">
+                    Nombre
+                </th>
 
-                        <th>
-                            Frecuencia
-                        </th>
+                <th>Categoría</th>
 
-                        <th>
-                            Equivalente mensual
-                        </th>
+                <th>Monto</th>
 
-                        <th>
-                            Día
-                        </th>
+                <th>Frecuencia</th>
 
-                        <th>
-                            Estado
-                        </th>
+                <th>Equivalente mensual</th>
 
-                        <th>
-                            Acciones
-                        </th>
+                <th>Día</th>
 
-                    </tr>
+                <th>Estado</th>
 
-                </thead>
+                <th>Acciones</th>
 
-                <tbody>
+            </tr>
+
+        </thead>
+
+        <tbody>
     `;
 
 
@@ -9640,83 +10031,37 @@ function renderFixedExpenseTable() {
             );
 
         const installmentProgress =
-    getFixedExpenseInstallmentProgress(
-        expense
-    );    
+            getFixedExpenseInstallmentProgress(
+                expense
+            );
 
         const installmentFinished =
-    expense.expenseType === "installment" &&
-    installmentProgress &&
-    installmentProgress.current >=
-        installmentProgress.total;
+            expense.expenseType === "installment" &&
+            installmentProgress &&
+            installmentProgress.current >=
+                installmentProgress.total;
 
-const statusClass =
-    installmentFinished
-        ? "inactive"
-        : expense.active
-            ? "active"
-            : "inactive";
+        const statusClass =
+            installmentFinished
+                ? "inactive"
+                : expense.active
+                    ? "active"
+                    : "inactive";
 
         const statusText =
-    installmentFinished
-        ? "Finalizado"
-        : expense.active
-            ? "Activo"
-            : "Inactivo";
+            installmentFinished
+                ? "Finalizado"
+                : expense.active
+                    ? "Activo"
+                    : "Inactivo";
 
+        const categoryText =
+            expense.categoryName ||
+            getFixedExpenseCategoryName(
+                expense.categoryId
+            );
 
-        html += `
-
-            <tr>
-
-                <td>
-
-                    <div class="fixed-expense-name">
-
-                        ${escapeHtml(
-                            expense.name
-                        )}
-
-                    </div>
-
-                </td>
-
-
-                <td>
-
-                    <div class="fixed-expense-category">
-
-                        ${escapeHtml(
-                            expense.categoryName ||
-                            getFixedExpenseCategoryName(
-                                expense.categoryId
-                            )
-                        )}
-
-                    </div>
-
-                </td>
-
-
-                <td>
-
-                    <div class="fixed-expense-amount">
-
-                        ${formatCurrency(
-                            expense.amount,
-                            expense.currency
-                        )}
-
-                    </div>
-
-                </td>
-
-
-
-                    <td>
-    <div class="fixed-expense-frequency">
-
-        ${
+        const frequencyText =
             expense.expenseType === "installment"
                 ? `${formatFixedExpenseFrequency(
                     expense.frequency
@@ -9727,83 +10072,206 @@ const statusClass =
                 }`
                 : formatFixedExpenseFrequency(
                     expense.frequency
-                )
-        }
+                );
 
-    </div>
-</td>
+        const dayText =
+            expense.expenseType === "recurring" &&
+            expense.paymentMethod === "card"
+                ? expense.chargeDay
+                    ? `Día ${expense.chargeDay}`
+                    : "—"
+                : expense.dueDay
+                    ? `Día ${expense.dueDay}`
+                    : "—";
 
+        const isSelected =
+            selectedFixedExpenseIds.has(
+                String(expense.id)
+            );
+
+
+        html += `
+
+            <tr class="compact-main-row">
 
                 <td>
 
-                    <div class="fixed-expense-monthly">
+                    <label>
+                        <input
+                            type="checkbox"
+                            class="fixed-expense-select-checkbox"
+                            data-fixed-expense-select-id="${expense.id}"
+                            aria-label="Seleccionar gasto fijo"
+                            ${isSelected ? "checked" : ""}
+                        >
 
+                        <div class="fixed-expense-name">
+                            ${escapeHtml(expense.name)}
+                        </div>
+                    </label>
+
+                </td>
+
+                <td>
+                    <div class="fixed-expense-category">
+                        ${escapeHtml(categoryText)}
+                    </div>
+                </td>
+
+                <td>
+                    <div class="fixed-expense-amount">
+                        ${formatCurrency(
+                            expense.amount,
+                            expense.currency
+                        )}
+                    </div>
+                </td>
+
+                <td>
+                    <div class="fixed-expense-frequency">
+                        ${frequencyText}
+                    </div>
+                </td>
+
+                <td>
+                    <div class="fixed-expense-monthly">
                         ${formatCurrency(
                             monthlyAmount,
                             "GTQ"
                         )}
-
                     </div>
-
                 </td>
 
-
                 <td>
-
-                    ${expense.expenseType === "recurring" &&
-  expense.paymentMethod === "card"
-    ? expense.chargeDay
-        ? `Día ${expense.chargeDay}`
-        : "—"
-    : expense.dueDay
-        ? `Día ${expense.dueDay}`
-        : "—"}
-
+                    ${dayText}
                 </td>
 
-
                 <td>
-
                     <span
                         class="fixed-expense-status ${statusClass}">
-
                         ${statusText}
-
                     </span>
-
                 </td>
 
-
                 <td>
-
-                    <div
-                        class="fixed-expense-actions">
+                    <div class="fixed-expense-actions">
 
                         <button
                             type="button"
                             class="fixed-expense-action-button edit"
                             data-action="edit"
                             data-id="${expense.id}">
-
                             Editar
-
                         </button>
-
 
                         <button
                             type="button"
                             class="fixed-expense-action-button delete"
                             data-action="delete"
                             data-id="${expense.id}">
-
                             Eliminar
-
                         </button>
 
                     </div>
-
                 </td>
 
+                <td class="compact-summary-cell" colspan="8">
+                    <input
+                        type="checkbox"
+                        class="fixed-expense-select-checkbox compact-select-checkbox"
+                        data-fixed-expense-select-id="${expense.id}"
+                        aria-label="Seleccionar gasto fijo"
+                        ${isSelected ? "checked" : ""}>
+
+                    <button
+                        type="button"
+                        class="compact-toggle"
+                        data-fixed-expense-toggle="${expense.id}"
+                        aria-expanded="false">
+                        <span class="compact-lead">
+                            <span class="fixed-expense-status ${statusClass}">
+                                ${statusText}
+                            </span>
+                        </span>
+                        <span class="compact-title">${escapeHtml(expense.name)}</span>
+                        <span class="compact-amount">
+                            ${formatCurrency(monthlyAmount, "GTQ")}
+                        </span>
+                        <span class="compact-chevron" aria-hidden="true">⌄</span>
+                    </button>
+                </td>
+
+            </tr>
+
+            <tr
+                class="compact-details-row"
+                data-fixed-expense-details="${expense.id}"
+                hidden>
+                <td colspan="8">
+                    <div class="compact-details-panel">
+
+                        <div class="compact-detail-group">
+                            <div class="compact-detail-item">
+                                <span>Categoría</span>
+                                <strong>${escapeHtml(categoryText)}</strong>
+                            </div>
+
+                            <div class="compact-detail-item">
+                                <span>Frecuencia</span>
+                                <strong>${frequencyText}</strong>
+                            </div>
+
+                            <div class="compact-detail-item">
+                                <span>Monto</span>
+                                <strong>
+                                    ${formatCurrency(expense.amount, expense.currency)}
+                                </strong>
+                            </div>
+
+                            <div class="compact-detail-item">
+                                <span>Equivalente mensual</span>
+                                <strong>
+                                    ${formatCurrency(monthlyAmount, "GTQ")}
+                                </strong>
+                            </div>
+
+                            <div class="compact-detail-item">
+                                <span>Día</span>
+                                <strong>${dayText}</strong>
+                            </div>
+                        </div>
+
+                        ${
+                            expense.notes
+                                ? `
+                                    <div class="compact-detail-item compact-detail-box">
+                                        <span>Notas</span>
+                                        <strong>${escapeHtml(expense.notes)}</strong>
+                                    </div>
+                                `
+                                : ""
+                        }
+
+                        <div class="fixed-expense-actions compact-details-actions">
+                            <button
+                                type="button"
+                                class="fixed-expense-action-button edit"
+                                data-action="edit"
+                                data-id="${expense.id}">
+                                Editar
+                            </button>
+
+                            <button
+                                type="button"
+                                class="fixed-expense-action-button delete"
+                                data-action="delete"
+                                data-id="${expense.id}">
+                                Eliminar
+                            </button>
+                        </div>
+
+                    </div>
+                </td>
             </tr>
 
         `;
@@ -9813,11 +10281,11 @@ const statusClass =
 
     html += `
 
-                </tbody>
+        </tbody>
 
-            </table>
+    </table>
 
-        </div>
+</div>
 
     `;
 
@@ -9826,6 +10294,23 @@ const statusClass =
         html;
 
 }
+
+
+bindBulkSelection({
+    container: fixedExpenseTableContainer,
+    checkboxSelector: ".fixed-expense-select-checkbox",
+    selectAllId: "selectAllFixedExpenses",
+    idKey: "fixedExpenseSelectId",
+    selectedIds: selectedFixedExpenseIds,
+    counterId: "selectedFixedExpenseCount",
+    deleteButtonId: "deleteSelectedFixedExpenses"
+});
+
+bindAccordion({
+    container: fixedExpenseTableContainer,
+    toggleAttr: "data-fixed-expense-toggle",
+    detailsAttr: "data-fixed-expense-details"
+});
 
 
 if (fixedExpenseTableContainer) {
@@ -9939,6 +10424,93 @@ if (fixedExpenseTableContainer) {
 
 }
 
+
+document.addEventListener("click", async event => {
+    const button = event.target.closest("#deleteSelectedFixedExpenses");
+
+    if (!button) return;
+
+    console.log("IDs seleccionados:", [...selectedFixedExpenseIds]);
+console.log("IDs de gastos fijos:", fixedExpenses.map(expense => expense.id));
+console.log("Tipos de IDs:", fixedExpenses.map(expense => typeof expense.id));
+
+    const ids = [...selectedFixedExpenseIds].filter(id =>
+        fixedExpenses.some(expense => String(expense.id) === String(id))
+    );
+
+    if (ids.length === 0) {
+        alert("Selecciona al menos un gasto fijo.");
+        return;
+    }
+
+    const confirmed = confirm(
+        `¿Seguro que quieres eliminar ${ids.length} gasto(s) fijo(s) seleccionado(s)? Esta acción no se puede deshacer.`
+    );
+
+    if (!confirmed) return;
+
+    const user = await getCurrentUser();
+
+    if (!user) {
+        alert("Tu sesión ha expirado. Inicia sesión nuevamente.");
+        return;
+    }
+
+    button.disabled = true;
+
+    try {
+        const { data, error } = await supabaseClient
+            .from("gastos_fijos")
+            .delete()
+            .in("id", ids)
+            .eq("user_id", user.id)
+            .select("id");
+
+        if (error) throw error;
+
+        const deletedIds = new Set(
+            (data || []).map(item => String(item.id))
+        );
+
+        if (deletedIds.size === 0) {
+            alert(
+                "No se eliminó ningún gasto fijo. Revisa los permisos de DELETE en Supabase."
+            );
+            button.disabled = false;
+            return;
+        }
+
+        fixedExpenses = fixedExpenses.filter(
+            expense => !deletedIds.has(String(expense.id))
+        );
+
+        deletedIds.forEach(id => selectedFixedExpenseIds.delete(id));
+
+        renderFixedExpenseTable();
+
+        if (typeof updateDashboard === "function") {
+            updateDashboard();
+        }
+
+        alert(`${deletedIds.size} gasto(s) fijo(s) eliminado(s).`);
+
+    
+} catch (error) {
+    console.error(
+        "Error eliminando gastos fijos seleccionados:",
+        error
+    );
+
+    alert(
+        `Error al eliminar gastos fijos: ${
+            error.message || JSON.stringify(error)
+        }`
+    );
+
+    button.disabled = false;
+}
+
+});
 
 populateFixedExpenseCategories();
 
@@ -11083,6 +11655,217 @@ function escapeHtml(
             "&#039;"
         );
 
+}
+
+// ============================================================
+// SELECCIÓN LIMITADA A LO QUE SE ESTÁ VIENDO (mes, año y búsqueda)
+// ============================================================
+ 
+// Quita de la selección los registros que ya no se muestran
+function keepOnlyVisibleSelection(selectedIds, visibleIds) {
+    const visible = new Set(visibleIds.map(String));
+ 
+    [...selectedIds].forEach(id => {
+        if (!visible.has(String(id))) {
+            selectedIds.delete(id);
+        }
+    });
+}
+ 
+// Ids seleccionados que están en pantalla en este momento
+function getVisibleSelectedIds(container, checkboxSelector, idKey, selectedIds) {
+    const visible = new Set(
+        [...container.querySelectorAll(checkboxSelector)].map(
+            item => String(item.dataset[idKey])
+        )
+    );
+ 
+    return [...selectedIds].filter(id => visible.has(String(id)));
+}
+ 
+// Texto del periodo seleccionado, por ejemplo "Octubre 2026"
+function getSelectedPeriodLabel() {
+    const monthText =
+        dashboardMonth?.selectedOptions?.[0]?.textContent?.trim() || "";
+ 
+    return `${monthText} ${dashboardYear?.value || ""}`.trim();
+}
+
+// ============================================================
+// SELECCIÓN MÚLTIPLE Y ACORDEÓN (compartidos)
+// ============================================================
+
+// Sincroniza la casilla de escritorio y la móvil del mismo registro.
+// "Seleccionar todos" tiene dos casillas: la del encabezado (escritorio,
+// id = selectAllId) y la de la barra (móvil, id = selectAllId + "Mobile").
+function bindBulkSelection({
+    container,
+    checkboxSelector,
+    selectAllId,
+    idKey,
+    selectedIds,
+    counterId,
+    deleteButtonId
+}) {
+    const selectAllIds = [selectAllId, `${selectAllId}Mobile`];
+
+    container?.addEventListener("change", event => {
+        const checkbox = event.target;
+        const isSelectAll = selectAllIds.includes(checkbox.id);
+
+        if (!isSelectAll && !checkbox.matches(checkboxSelector)) {
+            return;
+        }
+
+        const checkboxes = [
+            ...container.querySelectorAll(checkboxSelector)
+        ];
+
+        checkboxes.forEach(item => {
+            if (
+                isSelectAll ||
+                item.dataset[idKey] === checkbox.dataset[idKey]
+            ) {
+                item.checked = checkbox.checked;
+            }
+        });
+
+        checkboxes.forEach(item => {
+            const id = String(item.dataset[idKey]);
+
+            if (item.checked) {
+                selectedIds.add(id);
+            } else {
+                selectedIds.delete(id);
+            }
+        });
+
+        const visibleIds = new Set(
+            checkboxes.map(item => String(item.dataset[idKey]))
+        );
+
+        const selectedCount = [...visibleIds].filter(
+            id => selectedIds.has(id)
+        ).length;
+
+        selectAllIds.forEach(id => {
+            const selectAll = container.querySelector(`#${id}`);
+
+            if (selectAll) {
+                selectAll.checked =
+                    visibleIds.size > 0 &&
+                    selectedCount === visibleIds.size;
+
+                selectAll.indeterminate =
+                    selectedCount > 0 &&
+                    selectedCount < visibleIds.size;
+            }
+        });
+
+        const counter = container.querySelector(`#${counterId}`);
+        const deleteButton = container.querySelector(`#${deleteButtonId}`);
+
+        if (counter) {
+            counter.textContent = `${selectedIds.size} seleccionados`;
+        }
+
+        if (deleteButton) {
+            deleteButton.disabled = selectedIds.size === 0;
+        }
+    });
+}
+
+
+// Abre/cierra el detalle de un registro (solo uno abierto a la vez)
+function bindAccordion({
+    container,
+    toggleAttr,
+    detailsAttr
+}) {
+    container?.addEventListener("click", event => {
+        const toggle = event.target.closest(`[${toggleAttr}]`);
+
+        if (!toggle || !container.contains(toggle)) {
+            return;
+        }
+
+        const id = toggle.getAttribute(toggleAttr);
+
+        const rows = [
+            ...container.querySelectorAll(`[${detailsAttr}]`)
+        ];
+
+        const target = rows.find(
+            row => row.getAttribute(detailsAttr) === id
+        );
+
+        if (!target) {
+            return;
+        }
+
+        const shouldOpen = target.hidden;
+
+        rows.forEach(row => {
+            row.hidden = true;
+        });
+
+        container
+            .querySelectorAll(`[${toggleAttr}]`)
+            .forEach(button => {
+                button.setAttribute("aria-expanded", "false");
+            });
+
+        if (shouldOpen) {
+            target.hidden = false;
+            toggle.setAttribute("aria-expanded", "true");
+        }
+    });
+}
+
+// Abre/cierra el detalle de un registro (solo uno abierto a la vez)
+function bindAccordion({
+    container,
+    toggleAttr,
+    detailsAttr
+}) {
+    container?.addEventListener("click", event => {
+        const toggle = event.target.closest(`[${toggleAttr}]`);
+
+        if (!toggle || !container.contains(toggle)) {
+            return;
+        }
+
+        const id = toggle.getAttribute(toggleAttr);
+
+        const rows = [
+            ...container.querySelectorAll(`[${detailsAttr}]`)
+        ];
+
+        const target = rows.find(
+            row => row.getAttribute(detailsAttr) === id
+        );
+
+        if (!target) {
+            return;
+        }
+
+        const shouldOpen = target.hidden;
+
+        rows.forEach(row => {
+            row.hidden = true;
+        });
+
+        container
+            .querySelectorAll(`[${toggleAttr}]`)
+            .forEach(button => {
+                button.setAttribute("aria-expanded", "false");
+            });
+
+        if (shouldOpen) {
+            target.hidden = false;
+            toggle.setAttribute("aria-expanded", "true");
+        }
+    });
 }
 
 
