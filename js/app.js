@@ -300,7 +300,8 @@ function createId(type) {
 
 }
 
-
+let cardPayments = [];
+let cardPaymentsReady = false;
 let bankAccounts = [];
 let accountTransfers = [];
 let accountsSchemaReady = false;
@@ -446,6 +447,10 @@ function calculateBankAccountBalance(account) {
         if (String(transfer.fromAccountId) === String(account.id)) balance -= Number(transfer.sentAmount) || 0;
         if (String(transfer.toAccountId) === String(account.id)) balance += Number(transfer.receivedAmount) || 0;
     });
+        cardPayments.forEach(payment => {
+        if (String(payment.accountId) !== String(account.id) || !afterOpening(payment.date)) return;
+        balance -= Number(payment.amount) || 0;
+    });
     return balance;
 }
 
@@ -480,6 +485,7 @@ function renderAccounts() {
     }
     fillAccountSelect(accountAssignSelect, accountAssignSelect?.value || "");
     renderTransfersTable();
+    renderCardPaymentsTable();
 }
 
 function updateTransferCurrencyHints() {
@@ -753,6 +759,357 @@ document.addEventListener("click", async event => {
     accountTransfers = accountTransfers.filter(transfer => transfer.id !== id);
     renderAccounts();
 });
+
+// ============================================================
+// PAGO DE TARJETAS DE CRÉDITO
+// ============================================================
+
+const cardPaymentDialog = document.getElementById("cardPaymentDialog");
+const cardPaymentForm = document.getElementById("cardPaymentForm");
+const cardPaymentCard = document.getElementById("cardPaymentCard");
+const cardPaymentDate = document.getElementById("cardPaymentDate");
+const cardPaymentAccount = document.getElementById("cardPaymentAccount");
+const cardPaymentAmount = document.getElementById("cardPaymentAmount");
+const cardPaymentAmountGTQ = document.getElementById("cardPaymentAmountGTQ");
+const cardPaymentNotes = document.getElementById("cardPaymentNotes");
+const cardPaymentStatementInfo = document.getElementById("cardPaymentStatementInfo");
+const cardPaymentAmountHint = document.getElementById("cardPaymentAmountHint");
+let cardPaymentContext = { cutoffDate: null, dueDate: null, pending: 0 };
+
+async function initializeCardPayments() {
+    cardPaymentsReady = false;
+    cardPayments = [];
+    if (!accountsSchemaReady) return false;
+    try {
+        const { data, error } = await supabaseClient.from("pagos_tarjeta")
+            .select("id,credit_card_id,account_id,date,amount,amount_gtq,statement_cutoff_date,statement_due_date,notes,created_at,updated_at")
+            .order("date", { ascending: false });
+        if (error) throw error;
+        cardPayments = (data || []).map(row => ({
+            id: String(row.id),
+            creditCardId: String(row.credit_card_id),
+            accountId: String(row.account_id),
+            date: row.date,
+            amount: Number(row.amount) || 0,
+            amountGTQ: Number(row.amount_gtq) || 0,
+            statementCutoffDate: row.statement_cutoff_date || null,
+            statementDueDate: row.statement_due_date || null,
+            notes: row.notes || "",
+            createdAt: row.created_at,
+            updatedAt: row.updated_at
+        }));
+        cardPaymentsReady = true;
+        return true;
+    } catch (error) {
+        console.warn("El pago de tarjetas requiere su migración de Supabase:", error);
+        return false;
+    }
+}
+
+// Total abonado (GTQ) a un estado de cuenta concreto
+function getStatementPaidGTQ(creditCardId, cutoffDate, dueDate) {
+    return cardPayments.reduce((total, payment) =>
+        String(payment.creditCardId) === String(creditCardId) &&
+        payment.statementCutoffDate === cutoffDate &&
+        payment.statementDueDate === dueDate
+            ? total + payment.amountGTQ
+            : total,
+    0);
+}
+
+// Agrupa cargos de tarjeta en estados de cuenta (corte + pago)
+function groupCardCharges(charges) {
+    const statements = new Map();
+    charges.forEach(charge => {
+        const key = [charge.creditCardId, charge.statementCutoffDate, charge.statementDueDate].join("|");
+        let statement = statements.get(key);
+        if (!statement) {
+            statement = {
+                creditCardId: charge.creditCardId,
+                cutoffDate: charge.statementCutoffDate,
+                dueDate: charge.statementDueDate,
+                totalGTQ: 0,
+                projectedGTQ: 0
+            };
+            statements.set(key, statement);
+        }
+        const amountGTQ = Number(charge.amountGTQ) || 0;
+        statement.totalGTQ += amountGTQ;
+        if (charge.isProjected) statement.projectedGTQ += amountGTQ;
+    });
+    return [...statements.values()].sort((a, b) =>
+        a.dueDate.localeCompare(b.dueDate) || a.cutoffDate.localeCompare(b.cutoffDate));
+}
+
+// Tabla compartida por el Dashboard y la sección Gastos
+function buildStatementsTableHtml(statements) {
+    const rows = statements.map(statement => {
+        const card = creditCards.find(item => String(item.id) === String(statement.creditCardId));
+        const cardName = card ? `${card.bank} - ${card.name}` : "Tarjeta de crédito";
+        const paid = getStatementPaidGTQ(statement.creditCardId, statement.cutoffDate, statement.dueDate);
+        const pending = Math.max(statement.totalGTQ - paid, 0);
+        const isPaid = statement.totalGTQ > 0 && pending < 0.01;
+        const statusLine = isPaid
+            ? '<small class="card-paid-badge">✓ Pagada</small>'
+            : `<small class="card-pending-note">Pendiente ${formatCurrency(pending, "GTQ")}</small>`;
+        const action = cardPaymentsReady && !isPaid
+            ? `<button type="button" class="table-action-button" data-card-pay
+                   data-card-id="${escapeHtml(statement.creditCardId)}"
+                   data-cutoff="${escapeHtml(statement.cutoffDate)}"
+                   data-due="${escapeHtml(statement.dueDate)}"
+                   data-pending="${pending.toFixed(2)}">Pagar</button>`
+            : "";
+        return `
+            <tr>
+                <td>${escapeHtml(cardName)}</td>
+                <td>${formatDate(statement.cutoffDate)}</td>
+                <td>${formatDate(statement.dueDate)}</td>
+                <td class="income-amount">${formatCurrency(statement.totalGTQ, "GTQ")}</td>
+                <td>${formatCurrency(statement.projectedGTQ, "GTQ")}</td>
+                <td>${formatCurrency(paid, "GTQ")}${statusLine}</td>
+                <td>${action}</td>
+            </tr>`;
+    }).join("");
+
+    return `
+        <table class="data-table card-statements-table">
+            <thead>
+                <tr>
+                    <th>Tarjeta</th>
+                    <th>Fecha de corte</th>
+                    <th>Fecha de pago</th>
+                    <th>Monto total (GTQ)</th>
+                    <th>Previsto (GTQ)</th>
+                    <th>Pagado (GTQ)</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+        </table>`;
+}
+
+function renderCardPaymentsTable() {
+    const container = document.getElementById("cardPaymentsTable");
+    if (!container) return;
+    if (!cardPaymentsReady) {
+        container.innerHTML = '<div class="empty-table">Ejecuta la migración <strong>20261030_card_payments.sql</strong> en Supabase para registrar pagos de tarjeta.</div>';
+        return;
+    }
+    if (!cardPayments.length) {
+        container.innerHTML = '<div class="empty-table">Todavía no has registrado pagos de tarjeta.</div>';
+        return;
+    }
+    const rows = [...cardPayments]
+        .sort((a, b) => String(b.date).localeCompare(String(a.date)))
+        .map(payment => {
+            const account = getBankAccount(payment.accountId);
+            if (!account) return "";
+            const card = creditCards.find(item => String(item.id) === String(payment.creditCardId));
+            const cardName = card ? `${card.bank} - ${card.name}` : "Tarjeta eliminada";
+            const statementText = payment.statementDueDate
+                ? `Pago del ${formatDate(payment.statementDueDate)}`
+                : "Pago libre";
+            const accountName = account.institution ? `${account.institution} · ${account.name}` : account.name;
+            const gtqLine = account.currency !== "GTQ"
+                ? `<br><span class="account-transfer-arrow">↓ ${formatCurrency(payment.amountGTQ, "GTQ")} a la tarjeta</span>`
+                : "";
+            return `<tr>
+                <td>${escapeHtml(formatDate(payment.date))}</td>
+                <td>${escapeHtml(cardName)}</td>
+                <td>${escapeHtml(accountName)}</td>
+                <td>${escapeHtml(statementText)}</td>
+                <td><strong>${formatCurrency(payment.amount, account.currency)}</strong>${gtqLine}</td>
+                <td><button type="button" class="icon-button account-transfer-delete" data-cardpay-action="delete" data-cardpay-id="${escapeHtml(payment.id)}" aria-label="Eliminar pago">×</button></td>
+            </tr>`;
+        }).join("");
+    container.innerHTML = `<div class="account-transfer-table-wrap"><table class="data-table account-transfer-table"><thead><tr><th>Fecha</th><th>Tarjeta</th><th>Desde</th><th>Estado de cuenta</th><th>Monto</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+function updateCardPaymentCurrency() {
+    const account = getBankAccount(cardPaymentAccount.value);
+    const wasMirrored = cardPaymentAmountGTQ.readOnly;
+    const isGTQ = account?.currency === "GTQ";
+    cardPaymentAmountGTQ.readOnly = isGTQ;
+
+    if (cardPaymentAmountHint) {
+        cardPaymentAmountHint.textContent = !account
+            ? "Moneda de la cuenta elegida"
+            : isGTQ
+                ? "Se descontará en GTQ."
+                : `Se descontará en ${account.currency}. Indica a la derecha cuántos quetzales se abonaron.`;
+    }
+
+    if (isGTQ) {
+        if (!cardPaymentAmount.value) cardPaymentAmount.value = cardPaymentAmountGTQ.value;
+        cardPaymentAmountGTQ.value = cardPaymentAmount.value;
+    } else if (account && wasMirrored) {
+        cardPaymentAmount.value = "";
+        cardPaymentAmountGTQ.value = cardPaymentContext.pending > 0
+            ? cardPaymentContext.pending.toFixed(2)
+            : "";
+    }
+}
+
+function openCardPaymentDialog({ creditCardId = "", cutoffDate = null, dueDate = null, pending = 0 } = {}) {
+    if (!accountsSchemaReady || !cardPaymentsReady) {
+        alert("Primero aplica la migración 20261030_card_payments.sql en Supabase y recarga la app.");
+        return;
+    }
+    const activeAccounts = bankAccounts.filter(account => account.isActive !== false);
+    if (!activeAccounts.length) {
+        alert("Primero agrega al menos una cuenta activa.");
+        return;
+    }
+    const cards = creditCards.filter(card =>
+        card.active !== false || String(card.id) === String(creditCardId));
+    if (!cards.length) {
+        alert("Primero registra una tarjeta de crédito en Configuración.");
+        return;
+    }
+
+    cardPaymentForm.reset();
+    cardPaymentContext = { cutoffDate, dueDate, pending: Number(pending) || 0 };
+
+    cardPaymentCard.replaceChildren(new Option("Selecciona una tarjeta", ""));
+    cards.forEach(card => cardPaymentCard.add(new Option(`${card.bank} - ${card.name}`, String(card.id))));
+    cardPaymentCard.value = creditCardId
+        ? String(creditCardId)
+        : (cards.length === 1 ? String(cards[0].id) : "");
+    cardPaymentCard.disabled = Boolean(dueDate);
+
+    cardPaymentStatementInfo.textContent = dueDate
+        ? `Estado con corte el ${formatDate(cutoffDate)} y pago el ${formatDate(dueDate)}. Pendiente: ${formatCurrency(cardPaymentContext.pending, "GTQ")}.`
+        : "Pago libre: no queda asociado a un estado de cuenta específico.";
+
+    cardPaymentDate.value = getTodayISO();
+    fillAccountSelect(cardPaymentAccount, activeAccounts.length === 1 ? activeAccounts[0].id : "");
+    cardPaymentAmount.value = "";
+    cardPaymentAmountGTQ.readOnly = false;
+    cardPaymentAmountGTQ.value = cardPaymentContext.pending > 0
+        ? cardPaymentContext.pending.toFixed(2)
+        : "";
+    updateCardPaymentCurrency();
+
+    cardPaymentDialog.hidden = false;
+    refreshDatePicker("cardPaymentDate");
+}
+
+function closeCardPaymentDialog() {
+    if (cardPaymentDialog) cardPaymentDialog.hidden = true;
+    cardPaymentForm?.reset();
+    if (cardPaymentCard) cardPaymentCard.disabled = false;
+}
+
+document.getElementById("newCardPaymentButton")?.addEventListener("click", () => openCardPaymentDialog());
+document.getElementById("closeCardPaymentButton")?.addEventListener("click", closeCardPaymentDialog);
+document.getElementById("cancelCardPaymentButton")?.addEventListener("click", closeCardPaymentDialog);
+cardPaymentDialog?.addEventListener("click", event => {
+    if (event.target === cardPaymentDialog) closeCardPaymentDialog();
+});
+document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && cardPaymentDialog && !cardPaymentDialog.hidden) {
+        closeCardPaymentDialog();
+    }
+});
+cardPaymentAccount?.addEventListener("change", updateCardPaymentCurrency);
+cardPaymentAmount?.addEventListener("input", () => {
+    if (cardPaymentAmountGTQ.readOnly) cardPaymentAmountGTQ.value = cardPaymentAmount.value;
+});
+
+cardPaymentForm?.addEventListener("submit", async event => {
+    event.preventDefault();
+    const card = creditCards.find(item => String(item.id) === String(cardPaymentCard.value));
+    const account = getBankAccount(cardPaymentAccount.value);
+    const date = cardPaymentDate.value;
+    const amount = Number(cardPaymentAmount.value);
+    const amountGTQ = account?.currency === "GTQ" ? amount : Number(cardPaymentAmountGTQ.value);
+
+    if (!card) return alert("Selecciona la tarjeta que vas a pagar.");
+    if (!account || account.isActive === false) return alert("Selecciona una cuenta activa.");
+    if (!date) return alert("Selecciona la fecha del pago.");
+    if (!Number.isFinite(amount) || amount <= 0) return alert("Ingresa el monto que sale de la cuenta.");
+    if (!Number.isFinite(amountGTQ) || amountGTQ <= 0) return alert("Ingresa cuántos quetzales se abonaron a la tarjeta.");
+    if (
+        cardPaymentContext.dueDate &&
+        amountGTQ > cardPaymentContext.pending + 0.009 &&
+        !confirm(`El pago (${formatCurrency(amountGTQ, "GTQ")}) supera lo pendiente de este estado (${formatCurrency(cardPaymentContext.pending, "GTQ")}). ¿Registrarlo de todos modos?`)
+    ) return;
+
+    const user = await getCurrentUser();
+    if (!user) return alert("Tu sesión ha expirado. Inicia sesión nuevamente.");
+
+    const id = createId("cardpay");
+    const now = new Date().toISOString();
+    const memory = {
+        id,
+        creditCardId: String(card.id),
+        accountId: account.id,
+        date,
+        amount,
+        amountGTQ,
+        statementCutoffDate: cardPaymentContext.cutoffDate,
+        statementDueDate: cardPaymentContext.dueDate,
+        notes: cardPaymentNotes.value.trim(),
+        createdAt: now,
+        updatedAt: now
+    };
+    const database = {
+        id,
+        user_id: user.id,
+        credit_card_id: memory.creditCardId,
+        account_id: memory.accountId,
+        date,
+        amount,
+        amount_gtq: amountGTQ,
+        statement_cutoff_date: memory.statementCutoffDate,
+        statement_due_date: memory.statementDueDate,
+        notes: memory.notes,
+        created_at: now,
+        updated_at: now
+    };
+
+    try {
+        const { error } = await supabaseClient.from("pagos_tarjeta").insert(database);
+        if (error) throw error;
+        cardPayments.unshift(memory);
+        closeCardPaymentDialog();
+        renderAccounts();
+        renderCreditCardStatements();
+        renderDashboardCardPayments();
+    } catch (error) {
+        console.error("No se pudo registrar el pago de la tarjeta:", error);
+        alert("No se pudo registrar el pago. Revisa la conexión y la migración de Supabase.");
+    }
+});
+
+document.addEventListener("click", async event => {
+    const payButton = event.target.closest("[data-card-pay]");
+    if (payButton) {
+        openCardPaymentDialog({
+            creditCardId: payButton.dataset.cardId,
+            cutoffDate: payButton.dataset.cutoff,
+            dueDate: payButton.dataset.due,
+            pending: Number(payButton.dataset.pending) || 0
+        });
+        return;
+    }
+
+    const deleteButton = event.target.closest("[data-cardpay-action='delete']");
+    if (!deleteButton) return;
+    if (!confirm("¿Eliminar este pago? El saldo de la cuenta y el pendiente de la tarjeta se recalcularán.")) return;
+    const id = deleteButton.dataset.cardpayId;
+    const { error } = await supabaseClient.from("pagos_tarjeta").delete().eq("id", id);
+    if (error) {
+        console.error("No se pudo eliminar el pago:", error);
+        alert("No se pudo eliminar el pago.");
+        return;
+    }
+    cardPayments = cardPayments.filter(payment => payment.id !== id);
+    renderAccounts();
+    renderCreditCardStatements();
+    renderDashboardCardPayments();
+});
+
 function createDefaultCategories(type) {
 
     return defaultCategories[type].map(name => {
@@ -6376,26 +6733,23 @@ function renderCreditCardStatements() {
     }
 
     const selectedPeriod =
-    `${getDashboardYear()}-${getDashboardMonth()}-`;
+        `${getDashboardYear()}-${getDashboardMonth()}-`;
 
-const actualCardExpenses = expenses.filter(
-    expense =>
-        expense.paymentMethod === "card" &&
-        expense.creditCardId &&
-        expense.statementCutoffDate &&
-        expense.statementDueDate &&
-        expense.statementDueDate.startsWith(selectedPeriod)
-);
+    const actualCardExpenses = expenses.filter(
+        expense =>
+            expense.paymentMethod === "card" &&
+            expense.creditCardId &&
+            expense.statementCutoffDate &&
+            expense.statementDueDate &&
+            expense.statementDueDate.startsWith(selectedPeriod)
+    );
 
-const projectedCardExpenses =
-    getProjectedFixedCardCharges(selectedPeriod);
+    const charges = [
+        ...actualCardExpenses,
+        ...getProjectedFixedCardCharges(selectedPeriod)
+    ];
 
-const cardExpenses = [
-    ...actualCardExpenses,
-    ...projectedCardExpenses
-];
-
-    if (cardExpenses.length === 0) {
+    if (charges.length === 0) {
         creditCardStatementsContainer.innerHTML = `
             <div class="empty-table">
                 No hay gastos registrados con tarjeta de crédito.
@@ -6404,87 +6758,8 @@ const cardExpenses = [
         return;
     }
 
-    const statements = new Map();
-
-    cardExpenses.forEach(expense => {
-        const key = [
-            expense.creditCardId,
-            expense.statementCutoffDate,
-            expense.statementDueDate
-        ].join("|");
-
-        let statement = statements.get(key);
-
-        if (!statement) {
-            statement = {
-                creditCardId: expense.creditCardId,
-                cutoffDate: expense.statementCutoffDate,
-                dueDate: expense.statementDueDate,
-                totalGTQ: 0,
-                projectedGTQ: 0
-            };
-
-            statements.set(key, statement);
-        }
-
-        const amountGTQ =
-    Number(expense.amountGTQ) || 0;
-
-statement.totalGTQ += amountGTQ;
-
-if (expense.isProjected) {
-    statement.projectedGTQ += amountGTQ;
-}
-    });
-
-    const sortedStatements =
-        [...statements.values()].sort(
-            (a, b) =>
-                a.dueDate.localeCompare(b.dueDate) ||
-                a.cutoffDate.localeCompare(b.cutoffDate)
-        );
-
-    let html = `
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Tarjeta</th>
-                    <th>Fecha de corte</th>
-                    <th>Fecha de pago</th>
-                    <th>Total a pagar (GTQ)</th>
-                    <th>Previsto (GTQ)</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
-
-    sortedStatements.forEach(statement => {
-        const card = creditCards.find(
-            item => item.id === statement.creditCardId
-        );
-
-        const cardName = card
-            ? `${card.bank} - ${card.name}`
-            : "Tarjeta de crédito";
-
-        html += `
-            <tr>
-                <td>${escapeHtml(cardName)}</td>
-                <td>${formatDate(statement.cutoffDate)}</td>
-                <td>${formatDate(statement.dueDate)}</td>
-                <td class="income-amount">
-                    ${formatCurrency(statement.totalGTQ, "GTQ")}</td>
-                <td>${formatCurrency(statement.projectedGTQ, "GTQ")}</td>
-            </tr>
-        `;
-    });
-
-    html += `
-            </tbody>
-        </table>
-    `;
-
-    creditCardStatementsContainer.innerHTML = html;
+    creditCardStatementsContainer.innerHTML =
+        buildStatementsTableHtml(groupCardCharges(charges));
 }
 
 // ============================================================
@@ -8863,13 +9138,47 @@ function renderDashboardCardPayments() {
         `${getDashboardYear()}-${getDashboardMonth()}-`;
 
     const actualDueExpenses = expenses.filter(
-    expense =>
-        expense.paymentMethod === "card" &&
-        expense.creditCardId &&
-        expense.statementCutoffDate &&
-        expense.statementDueDate &&
-        expense.statementDueDate.startsWith(selectedPeriod)
-);
+        expense =>
+            expense.paymentMethod === "card" &&
+            expense.creditCardId &&
+            expense.statementCutoffDate &&
+            expense.statementDueDate &&
+            expense.statementDueDate.startsWith(selectedPeriod)
+    );
+
+    const charges = [
+        ...actualDueExpenses,
+        ...getProjectedFixedCardCharges(selectedPeriod)
+    ];
+
+    if (charges.length === 0) {
+        dashboardCardPayments.innerHTML = `
+            <div class="empty-table">
+                No hay pagos de tarjetas programados para este mes.
+            </div>
+        `;
+        return;
+    }
+
+    const statements = groupCardCharges(charges);
+
+    const totalPending = statements.reduce((total, statement) => {
+        const paid = getStatementPaidGTQ(
+            statement.creditCardId,
+            statement.cutoffDate,
+            statement.dueDate
+        );
+        return total + Math.max(statement.totalGTQ - paid, 0);
+    }, 0);
+
+    dashboardCardPayments.innerHTML = `
+        <div class="dashboard-payment-summary">
+            <span>Pendiente por pagar este mes</span>
+            <strong>${formatCurrency(totalPending, "GTQ")}</strong>
+        </div>
+        ${buildStatementsTableHtml(statements)}
+    `;
+}
 
 const projectedDueExpenses =
     getProjectedFixedCardCharges(selectedPeriod);
@@ -12471,7 +12780,7 @@ function formatDate(dateString) {
     return `${day}/${month}/${year}`;
 }
 
-function initializeSpanishDatePicker(inputId) {
+function inputId) {
     const input = document.getElementById(inputId);
     if (!input || datePickerInstances.has(inputId)) return;
 
@@ -12754,6 +13063,7 @@ initializeSpanishDatePicker("expenseDate");
 initializeSpanishDatePicker("fixedExpensePurchaseDate");
 initializeSpanishDatePicker("accountOpeningDate");
 initializeSpanishDatePicker("transferDate");
+initializeSpanishDatePicker("cardPaymentDate");
 function escapeHtml(
     value
 ) {
@@ -13019,6 +13329,7 @@ async function initializeAppData() {
         if (appDataInitializedForUserId === user.id) return true;
 
         const accountsReady = await initializeAccounts();
+                await initializeCardPayments();
         const creditCardsLoad = initializeCreditCards();
         const categoriesReady = await initializeCategories();
         const budgetsLoad = initializeBudgets();
