@@ -4,7 +4,6 @@
 
 <head>
 
-```
 <meta charset="UTF-8">
 
 <meta
@@ -16,8 +15,6 @@
 <link
     rel="stylesheet"
     href="css/styles.css">
-```
-
 </head>
 
 <body>
@@ -110,8 +107,11 @@
 
         <div class="logo">
 
-            <div class="logo-icon">
-                ₲
+            <div class="logo-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H20v14H6.5A2.5 2.5 0 0 1 4 16.5v-9Z"/>
+                    <path d="M4 8h16M15.5 12h2"/>
+                </svg>
             </div>
 
             <div class="logo-text">
@@ -181,6 +181,14 @@
 
             </button>
 
+
+            <button
+                type="button"
+                class="menu-item"
+                data-section="cuentas">
+                <span class="menu-icon">▣</span>
+                <span>Cuentas</span>
+            </button>
 
             <button
                 type="button"
@@ -313,42 +321,47 @@
 
             </div>
 
- <div class="year-selector">
-
-    <label for="month">
-        Mes
-    </label>
-
-    <select id="month">
-
-        <option value="01">Enero</option>
-        <option value="02">Febrero</option>
-        <option value="03">Marzo</option>
-        <option value="04">Abril</option>
-        <option value="05">Mayo</option>
-        <option value="06">Junio</option>
-        <option value="07">Julio</option>
-        <option value="08">Agosto</option>
-        <option value="09">Septiembre</option>
-        <option value="10">Octubre</option>
-        <option value="11">Noviembre</option>
-        <option value="12">Diciembre</option>
-
-    </select>
-
-
-    <label for="year">
-        Año
-    </label>
-
-    <select id="year">
-
-        <option value="2026">2026</option>
-        <option value="2025">2025</option>
-        <option value="2024">2024</option>
-
-    </select>
-
+ <div class="year-selector period-selector" role="group" aria-label="Periodo del dashboard">
+    <div class="period-field">
+        <label id="monthPickerLabel" for="monthPickerButton">Mes</label>
+        <select id="month" class="period-native-select" aria-hidden="true" tabindex="-1">
+            <option value="01">Enero</option>
+            <option value="02">Febrero</option>
+            <option value="03">Marzo</option>
+            <option value="04">Abril</option>
+            <option value="05">Mayo</option>
+            <option value="06">Junio</option>
+            <option value="07">Julio</option>
+            <option value="08">Agosto</option>
+            <option value="09">Septiembre</option>
+            <option value="10">Octubre</option>
+            <option value="11">Noviembre</option>
+            <option value="12">Diciembre</option>
+        </select>
+        <div class="period-control">
+            <button id="monthPickerButton" class="period-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="monthPickerOptions">
+                <span id="monthPickerValue">Mes</span>
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg>
+            </button>
+            <div id="monthPickerOptions" class="period-options" role="listbox" aria-labelledby="monthPickerLabel" hidden></div>
+        </div>
+    </div>
+    <span class="period-divider" aria-hidden="true"></span>
+    <div class="period-field">
+        <label id="yearPickerLabel" for="yearPickerButton">Año</label>
+        <select id="year" class="period-native-select" aria-hidden="true" tabindex="-1">
+            <option value="2026">2026</option>
+            <option value="2025">2025</option>
+            <option value="2024">2024</option>
+        </select>
+        <div class="period-control">
+            <button id="yearPickerButton" class="period-trigger period-trigger-year" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="yearPickerOptions">
+                <span id="yearPickerValue">2026</span>
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg>
+            </button>
+            <div id="yearPickerOptions" class="period-options period-options-year" role="listbox" aria-labelledby="yearPickerLabel" hidden></div>
+        </div>
+    </div>
 </div>
 
         </header>
@@ -370,6 +383,7 @@
 
                 <article
                     class="summary-card income">
+                    <span class="summary-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 16l5-5 3 3 8-8"/><path d="M14 6h6v6"/></svg></span>
 
                     <span class="card-label">
                         Ingresos
@@ -390,6 +404,7 @@
 
                 <article
                     class="summary-card expense">
+                    <span class="summary-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v16"/><path d="m5 13 7 7 7-7"/></svg></span>
 
                     <span class="card-label">
                         Gastos
@@ -410,6 +425,7 @@
 
                 <article
                     class="summary-card fixed">
+                    <span class="summary-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="5" width="17" height="16" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg></span>
 
                     <span class="card-label">
                         Gastos fijos
@@ -430,6 +446,7 @@
 
                 <article
                     class="summary-card balance">
+                    <span class="summary-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H20v14H6.5A2.5 2.5 0 0 1 4 16.5v-9Z"/><path d="M4 8h16M15.5 12h2"/></svg></span>
 
                     <span class="card-label">
                         Disponible
@@ -448,6 +465,23 @@
 
             </div>
 
+<article class="financial-insight" id="dashboardFinancialInsight" data-tone="neutral" aria-live="polite">
+    <div class="insight-symbol" aria-hidden="true"><span>✦</span><i></i></div>
+    <div class="financial-insight-copy">
+        <div class="insight-meta">
+            <span class="insight-kicker">LECTURA DEL MES</span>
+            <span class="insight-period" id="dashboardInsightPeriod">Mes seleccionado</span>
+        </div>
+        <h2 id="dashboardInsightTitle">Tu balance se está preparando</h2>
+        <p id="dashboardInsightDescription">Cuando cargues tus movimientos, aquí verás una lectura clara de tu flujo.</p>
+    </div>
+    <div class="financial-insight-meter">
+        <span id="dashboardInsightRateLabel">Porción disponible</span>
+        <strong id="dashboardSavingRate">—</strong>
+        <div class="insight-track" aria-hidden="true"><span id="dashboardSavingRateBar"></span></div>
+    </div>
+    <div class="insight-decoration" aria-hidden="true"></div>
+</article>
 <article class="panel dashboard-card-payments-panel">
 
     <div class="panel-header">
@@ -607,14 +641,11 @@
 
                         <div class="form-group">
 
-                            <label for="incomeDate">
+                            <label for="incomeDatePickerButton">
                                 Fecha
                             </label>
 
-                            <input
-                                type="date"
-                                id="incomeDate"
-                                required>
+                            <input type="hidden" id="incomeDate" aria-hidden="true">
 
                         </div>
 
@@ -699,6 +730,11 @@
 
                         </div>
 
+
+                        <div class="form-group" id="incomeAccountGroup" hidden>
+                            <label for="incomeAccountId">Cuenta receptora</label>
+                            <select id="incomeAccountId"><option value="">Selecciona una cuenta</option></select>
+                        </div>
 
                         <!-- TIPO DE CAMBIO -->
 
@@ -883,19 +919,96 @@
             aria-label="Buscar gastos">
     </div>
 
-    <button
-        type="button"
-        class="primary-button"
-        id="newExpenseButton">
-
-        + Nuevo gasto
-
+    <div class="section-actions">
+    <button type="button" class="secondary-button" id="importStatementButton">
+        <span aria-hidden="true">↥</span>
+        Importar estado de cuenta
     </button>
+    <button type="button" class="primary-button" id="newExpenseButton">+ Nuevo gasto</button>
+</div>
 
 </div>
 
-
-    <!-- FORMULARIO DE GASTOS -->
+<div class="statement-import-overlay" id="statementImportDialog" role="dialog" aria-modal="true" aria-labelledby="statementImportTitle" aria-describedby="statementImportDescription" hidden>
+    <section class="statement-import-dialog">
+        <header class="statement-import-header">
+            <div>
+                <span class="eyebrow">IMPORTACIÓN SEGURA</span>
+                <h2 id="statementImportTitle">Conciliar estado de cuenta</h2>
+                <p id="statementImportDescription">El PDF se procesa en tu navegador. Revisa los movimientos antes de guardarlos.</p>
+                <nav class="statement-stepper" aria-label="Pasos de conciliación">
+                    <span id="statementStepUpload" class="is-current"><b>01</b> PDF</span>
+                    <i aria-hidden="true"></i>
+                    <span id="statementStepReview"><b>02</b> Revisar</span>
+                    <i aria-hidden="true"></i>
+                    <span id="statementStepSave"><b>03</b> Conciliar</span>
+                </nav>
+            </div>
+            <button type="button" class="icon-button" id="closeStatementImportButton" aria-label="Cerrar importación">×</button>
+        </header>
+        <div class="statement-import-body">
+            <label class="statement-upload" for="statementPdfFile">
+                <span class="statement-upload-icon" aria-hidden="true">PDF</span>
+                <strong>Selecciona tu estado de cuenta</strong>
+                <span>PDF con texto seleccionable · hasta 20 MB</span>
+                <input type="file" id="statementPdfFile" accept="application/pdf,.pdf">
+            </label>
+            <p class="statement-privacy-note">El archivo no se sube ni se almacena. Solo se guardan los movimientos que confirmes.</p>
+            <div class="statement-import-status" id="statementImportStatus" role="status" aria-live="polite">Aún no has seleccionado un archivo.</div>
+            <div class="statement-import-settings" id="statementImportSettings" hidden>
+                <div class="form-group">
+                    <label for="statementImportPaymentMethod">Tipo de cuenta</label>
+                    <select id="statementImportPaymentMethod">
+                        <option value="cash">Cuenta bancaria / débito</option>
+                        <option value="card">Tarjeta de crédito</option>
+                    </select>
+                </div>
+                <div class="form-group" id="statementImportAccountGroup" hidden>
+                    <label for="statementImportAccount">Cuenta bancaria</label>
+                    <select id="statementImportAccount"><option value="">Selecciona una cuenta</option></select>
+                </div>
+                <div class="form-group" id="statementImportCardGroup" hidden>
+                    <label for="statementImportCard">Tarjeta</label>
+                    <select id="statementImportCard"><option value="">Selecciona una tarjeta</option></select>
+                </div>
+                <div class="form-group">
+                    <label for="statementImportCurrency">Moneda del estado</label>
+                    <select id="statementImportCurrency">
+                        <option value="GTQ">GTQ · Quetzales</option>
+                        <option value="USD">USD · Dólares</option>
+                    </select>
+                </div>
+                <div class="form-group" id="statementImportRateGroup" hidden>
+                    <label for="statementImportRate">Tipo de cambio a GTQ</label>
+                    <input type="number" id="statementImportRate" min="0.00001" step="0.00001" value="" placeholder="Ej. 7.80" inputmode="decimal">
+                </div>
+            </div>
+            <div class="statement-preview" id="statementPreview" hidden>
+                <div class="statement-preview-heading">
+                    <div>
+                        <h3>Movimientos detectados</h3>
+                        <p id="statementPreviewSummary">Revisa fecha, tipo, categoría y monto.</p>
+                    </div>
+                    <label class="statement-select-all"><input type="checkbox" id="statementSelectAll" checked> Incluir todos</label>
+                </div>
+                <div class="statement-preview-table-wrap">
+                    <table class="statement-preview-table">
+                        <thead><tr><th>Guardar</th><th>Fecha</th><th>Descripción</th><th>Monto</th><th>Tipo</th><th>Categoría</th><th>Acción</th><th>Estado</th></tr></thead>
+                        <tbody id="statementPreviewRows"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <footer class="statement-import-footer">
+            <span id="statementImportFooterHint">No se guardará nada hasta que confirmes.</span>
+            <div class="statement-import-actions">
+                <button type="button" class="secondary-button" id="cancelStatementImportButton">Cancelar</button>
+                <button type="button" class="primary-button" id="confirmStatementImportButton" disabled>Importar movimientos</button>
+            </div>
+        </footer>
+    </section>
+</div>
+<!-- FORMULARIO DE GASTOS -->
 
     <div
         class="panel"
@@ -933,14 +1046,11 @@
 
                 <div class="form-group">
 
-                    <label for="expenseDate">
+                    <label for="expenseDatePickerButton">
                         Fecha
                     </label>
 
-                    <input
-                        type="date"
-                        id="expenseDate"
-                        required>
+                    <input type="hidden" id="expenseDate" aria-hidden="true">
 
                 </div>
 
@@ -1022,6 +1132,11 @@
                         required>
 
                 </div>
+
+<div class="form-group" id="expenseAccountGroup" hidden>
+    <label for="expenseAccountId">Cuenta de cargo</label>
+    <select id="expenseAccountId"><option value="">Selecciona una cuenta</option></select>
+</div>
 
                 <!-- FORMA DE PAGO -->
 <div class="form-group">
@@ -1212,6 +1327,77 @@
      PRESUPUESTO
 ========================================= -->
 
+<!-- ========================================
+     CUENTAS
+========================================= -->
+<section id="cuentas" class="page-section">
+    <div class="section-header account-section-header">
+        <div><p>Administra saldos, movimientos y transferencias entre tus cuentas.</p></div>
+        <div class="section-actions">
+            <button type="button" class="secondary-button" id="newTransferButton">↔ Transferir</button>
+            <button type="button" class="primary-button" id="newAccountButton">+ Nueva cuenta</button>
+        </div>
+    </div>
+
+    <div class="panel account-migration-notice" id="accountMigrationNotice" hidden>
+        <h2>Prepara la base de datos de cuentas</h2>
+        <p>En Supabase, abre SQL Editor, pega el contenido del archivo de migración que se indica abajo y pulsa Run. Luego recarga la app.</p>
+        <p class="account-migration-path">supabase/migrations/20261028_bank_accounts.sql</p>
+    </div>
+
+    <div id="accountFeatureContent" hidden>
+        <div class="account-card-grid" id="accountCards"></div>
+        <div class="panel account-unassigned-notice" id="accountUnassignedNotice" hidden>
+            <strong>Hay movimientos sin cuenta</strong>
+            <p id="accountUnassignedDescription"></p>
+        </div>
+
+        <div class="panel" id="accountFormPanel" hidden>
+            <div class="panel-header">
+                <div><h2 id="accountFormTitle">Nueva cuenta</h2><p>El saldo que ingreses corresponde al cierre de la fecha seleccionada.</p></div>
+            </div>
+            <form id="accountForm">
+                <input type="hidden" id="accountEditId">
+                <div class="form-grid">
+                    <div class="form-group" id="accountInstitutionGroup"><label for="accountInstitution">Banco o institución</label><input type="text" id="accountInstitution" placeholder="Ej. Banrural" autocomplete="organization"></div>
+                    <div class="form-group"><label for="accountName">Nombre de la cuenta</label><input type="text" id="accountName" placeholder="Ej. Cuenta principal" required maxlength="80"></div>
+                    <div class="form-group"><label for="accountType">Tipo de cuenta</label><select id="accountType" required><option value="checking">Monetaria</option><option value="savings">Ahorro</option><option value="cash">Efectivo</option></select></div>
+                    <div class="form-group"><label for="accountCurrency">Moneda</label><select id="accountCurrency" required><option value="GTQ">GTQ · Quetzales</option><option value="USD">USD · Dólares</option></select></div>
+                    <div class="form-group"><label for="accountOpeningBalance">Saldo al cierre (GTQ o USD)</label><input type="number" id="accountOpeningBalance" step="0.01" value="0" inputmode="decimal" required></div>
+                    <div class="form-group"><label for="accountOpeningDatePickerButton">Fecha de ese saldo</label><input type="hidden" id="accountOpeningDate" required></div>
+                    <div class="form-group form-group-full"><small class="field-help">Los movimientos posteriores a esta fecha se sumarán o restarán del saldo. Los históricos quedan sin vincular hasta que los asignes.</small></div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="secondary-button" id="cancelAccountButton">Cancelar</button>
+                    <button type="submit" class="primary-button">Guardar cuenta</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="panel" id="transferFormPanel" hidden>
+            <div class="panel-header"><div><h2>Nueva transferencia</h2><p>El movimiento cambia los saldos de ambas cuentas, sin alterar tus ingresos ni gastos.</p></div></div>
+            <form id="transferForm">
+                <div class="form-grid">
+                    <div class="form-group"><label for="transferDatePickerButton">Fecha</label><input type="hidden" id="transferDate" required></div>
+                    <div class="form-group"><label for="transferDescription">Descripción</label><input type="text" id="transferDescription" placeholder="Ej. Ahorro mensual" maxlength="120"></div>
+                    <div class="form-group"><label for="transferFromAccount">Desde</label><select id="transferFromAccount" required><option value="">Selecciona la cuenta de origen</option></select></div>
+                    <div class="form-group"><label for="transferToAccount">Hacia</label><select id="transferToAccount" required><option value="">Selecciona la cuenta de destino</option></select></div>
+                    <div class="form-group"><label for="transferSentAmount">Monto debitado</label><input type="number" id="transferSentAmount" min="0.01" step="0.01" placeholder="0.00" inputmode="decimal" required><small id="transferSentCurrency" class="field-help">Moneda de la cuenta de origen</small></div>
+                    <div class="form-group"><label for="transferReceivedAmount">Monto acreditado</label><input type="number" id="transferReceivedAmount" min="0.01" step="0.01" placeholder="0.00" inputmode="decimal" required><small id="transferReceivedCurrency" class="field-help">Moneda de la cuenta de destino</small></div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="secondary-button" id="cancelTransferButton">Cancelar</button>
+                    <button type="submit" class="primary-button">Registrar transferencia</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header"><div><h2>Transferencias entre cuentas</h2><p>Se muestran por separado de los ingresos y gastos.</p></div></div>
+            <div class="table-container" id="transfersTable"><div class="empty-table">Todavía no has registrado transferencias.</div></div>
+        </div>
+    </div>
+</section>
 <section
     id="presupuesto"
     class="page-section">
@@ -1269,39 +1455,66 @@
 
                 <!-- MES -->
 
-                <div class="form-group">
+                <div class="form-group form-group-full budget-period-group">
+    <div class="budget-period-controls">
+        <div class="period-field budget-period-field">
+            <label id="budgetMonthPickerLabel" for="budgetMonthPickerButton">Mes</label>
+            <select id="budgetMonthSelect" class="period-native-select" aria-hidden="true" tabindex="-1">
+                <option value="01">Enero</option>
+                <option value="02">Febrero</option>
+                <option value="03">Marzo</option>
+                <option value="04">Abril</option>
+                <option value="05">Mayo</option>
+                <option value="06">Junio</option>
+                <option value="07">Julio</option>
+                <option value="08">Agosto</option>
+                <option value="09">Septiembre</option>
+                <option value="10">Octubre</option>
+                <option value="11">Noviembre</option>
+                <option value="12">Diciembre</option>
+            </select>
+            <div class="period-control">
+                <button id="budgetMonthPickerButton" class="period-trigger budget-period-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="budgetMonthPickerOptions">
+                    <span id="budgetMonthPickerValue">Mes</span>
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg>
+                </button>
+                <div id="budgetMonthPickerOptions" class="period-options" role="listbox" aria-labelledby="budgetMonthPickerLabel" hidden></div>
+            </div>
+        </div>
 
-                    <label for="budgetMonth">
-                        Mes
-                    </label>
-
-                    <input
-                        type="month"
-                        id="budgetMonth"
-                        required>
-
-                </div>
+        <div class="period-field budget-period-field">
+            <label id="budgetYearPickerLabel" for="budgetYearPickerButton">Año</label>
+            <select id="budgetYearSelect" class="period-native-select" aria-hidden="true" tabindex="-1"></select>
+            <div class="period-control">
+                <button id="budgetYearPickerButton" class="period-trigger period-trigger-year budget-period-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="budgetYearPickerOptions">
+                    <span id="budgetYearPickerValue">Año</span>
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg>
+                </button>
+                <div id="budgetYearPickerOptions" class="period-options period-options-year" role="listbox" aria-labelledby="budgetYearPickerLabel" hidden></div>
+            </div>
+        </div>
+    </div>
+    <input type="month" id="budgetMonth" class="period-native-select" aria-hidden="true" tabindex="-1" required>
+</div>
 
 
                 <!-- CATEGORÍA -->
 
                 <div class="form-group">
-
-                    <label for="budgetCategory">
-                        Categoría
-                    </label>
-
-                    <select
-                        id="budgetCategory"
-                        required>
-
-                        <option value="">
-                            Selecciona una categoría
-                        </option>
-
-                    </select>
-
-                </div>
+    <div class="period-field budget-period-field">
+        <label id="budgetCategoryPickerLabel" for="budgetCategoryPickerButton">Categoría</label>
+        <select id="budgetCategory" class="period-native-select" aria-hidden="true" tabindex="-1">
+            <option value="">Selecciona una categoría</option>
+        </select>
+        <div class="period-control">
+            <button id="budgetCategoryPickerButton" class="period-trigger budget-period-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="budgetCategoryPickerOptions" aria-required="true">
+                <span id="budgetCategoryPickerValue">Selecciona una categoría</span>
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg>
+            </button>
+            <div id="budgetCategoryPickerOptions" class="period-options budget-category-picker-options" role="listbox" aria-labelledby="budgetCategoryPickerLabel" hidden></div>
+        </div>
+    </div>
+</div>
 
 
                 <!-- MONTO -->
@@ -1650,13 +1863,11 @@
 
     <div class="form-group">
 
-        <label for="fixedExpensePurchaseDate">
+        <label for="fixedExpensePurchaseDatePickerButton">
             Fecha de compra
         </label>
 
-        <input
-            type="date"
-            id="fixedExpensePurchaseDate">
+        <input type="hidden" id="fixedExpensePurchaseDate" aria-hidden="true">
 
     </div>
 
@@ -1741,7 +1952,55 @@
 
                 </div>
 
-                <!-- ESTADO -->
+                <div class="form-group form-group-full fixed-expense-start-month-group" id="fixedExpenseStartMonthGroup" hidden>
+
+    <div class="budget-period-controls fixed-start-month-controls">
+        <div class="period-field budget-period-field">
+            <label id="fixedExpenseStartMonthMonthLabel" for="fixedExpenseStartMonthMonthButton">Mes de inicio</label>
+            <select id="fixedExpenseStartMonthMonth" class="period-native-select" aria-hidden="true" tabindex="-1">
+                <option value="01">Enero</option>
+                <option value="02">Febrero</option>
+                <option value="03">Marzo</option>
+                <option value="04">Abril</option>
+                <option value="05">Mayo</option>
+                <option value="06">Junio</option>
+                <option value="07">Julio</option>
+                <option value="08">Agosto</option>
+                <option value="09">Septiembre</option>
+                <option value="10">Octubre</option>
+                <option value="11">Noviembre</option>
+                <option value="12">Diciembre</option>
+            </select>
+            <div class="period-control">
+                <button id="fixedExpenseStartMonthMonthButton" class="period-trigger budget-period-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="fixedExpenseStartMonthMonthOptions">
+                    <span id="fixedExpenseStartMonthMonthValue">Mes</span>
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg>
+                </button>
+                <div id="fixedExpenseStartMonthMonthOptions" class="period-options" role="listbox" aria-labelledby="fixedExpenseStartMonthMonthLabel" hidden></div>
+            </div>
+        </div>
+
+        <div class="period-field budget-period-field">
+            <label id="fixedExpenseStartMonthYearLabel" for="fixedExpenseStartMonthYearButton">Año</label>
+            <select id="fixedExpenseStartMonthYear" class="period-native-select" aria-hidden="true" tabindex="-1"></select>
+            <div class="period-control">
+                <button id="fixedExpenseStartMonthYearButton" class="period-trigger period-trigger-year budget-period-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="fixedExpenseStartMonthYearOptions">
+                    <span id="fixedExpenseStartMonthYearValue">Año</span>
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg>
+                </button>
+                <div id="fixedExpenseStartMonthYearOptions" class="period-options period-options-year" role="listbox" aria-labelledby="fixedExpenseStartMonthYearLabel" hidden></div>
+            </div>
+        </div>
+    </div>
+
+    <input type="month" id="fixedExpenseStartMonth" class="period-native-select" aria-hidden="true" tabindex="-1">
+
+    <small class="field-help">
+        Este gasto se incluirá desde el mes seleccionado.
+    </small>
+
+</div>
+<!-- ESTADO -->
 
                 <div class="form-group">
 
@@ -1883,58 +2142,51 @@
 
 
             <div class="form-group">
-
-                <label for="reportYear">
-                    Año
-                </label>
-
-                <select id="reportYear">
-
-                    <option value="2026">
-                        2026
-                    </option>
-
-                    <option value="2025">
-                        2025
-                    </option>
-
-                    <option value="2024">
-                        2024
-                    </option>
-
-                </select>
-
-            </div>
+    <div class="period-field report-period-field">
+        <label id="reportYearPickerLabel" for="reportYearPickerButton">Año</label>
+        <select id="reportYear" class="period-native-select" aria-hidden="true" tabindex="-1">
+            <option value="2026">2026</option>
+            <option value="2025">2025</option>
+            <option value="2024">2024</option>
+        </select>
+        <div class="period-control">
+            <button id="reportYearPickerButton" class="period-trigger period-trigger-year report-filter-period-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="reportYearPickerOptions">
+                <span id="reportYearPickerValue">2026</span>
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg>
+            </button>
+            <div id="reportYearPickerOptions" class="period-options period-options-year" role="listbox" aria-labelledby="reportYearPickerLabel" hidden></div>
+        </div>
+    </div>
+</div>
 
 
             <div class="form-group">
-
-                <label for="reportMonth">
-                    Mes
-                </label>
-
-                <select id="reportMonth">
-
-                    <option value="all">
-                        Todos los meses
-                    </option>
-
-                    <option value="01">Enero</option>
-                    <option value="02">Febrero</option>
-                    <option value="03">Marzo</option>
-                    <option value="04">Abril</option>
-                    <option value="05">Mayo</option>
-                    <option value="06">Junio</option>
-                    <option value="07">Julio</option>
-                    <option value="08">Agosto</option>
-                    <option value="09">Septiembre</option>
-                    <option value="10">Octubre</option>
-                    <option value="11">Noviembre</option>
-                    <option value="12">Diciembre</option>
-
-                </select>
-
-            </div>
+    <div class="period-field report-period-field">
+        <label id="reportMonthPickerLabel" for="reportMonthPickerButton">Mes</label>
+        <select id="reportMonth" class="period-native-select" aria-hidden="true" tabindex="-1">
+            <option value="all">Todos los meses</option>
+            <option value="01">Enero</option>
+            <option value="02">Febrero</option>
+            <option value="03">Marzo</option>
+            <option value="04">Abril</option>
+            <option value="05">Mayo</option>
+            <option value="06">Junio</option>
+            <option value="07">Julio</option>
+            <option value="08">Agosto</option>
+            <option value="09">Septiembre</option>
+            <option value="10">Octubre</option>
+            <option value="11">Noviembre</option>
+            <option value="12">Diciembre</option>
+        </select>
+        <div class="period-control">
+            <button id="reportMonthPickerButton" class="period-trigger report-filter-period-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="reportMonthPickerOptions">
+                <span id="reportMonthPickerValue">Todos los meses</span>
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg>
+            </button>
+            <div id="reportMonthPickerOptions" class="period-options" role="listbox" aria-labelledby="reportMonthPickerLabel" hidden></div>
+        </div>
+    </div>
+</div>
 
 
         </div>
@@ -1946,61 +2198,35 @@
 
     <div class="report-summary-cards">
 
+    <article class="report-summary-card summary-card balance">
+        <span class="summary-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H20v14H6.5A2.5 2.5 0 0 1 4 16.5v-9Z"/><path d="M4 8h16M15.5 12h2"/></svg></span>
+        <span class="card-label">Balance</span>
+        <strong id="reportBalance">Q 0.00</strong>
+        <small>Ingresos menos gastos</small>
+    </article>
 
-        <article class="report-summary-card income">
+    <article class="report-summary-card summary-card income">
+        <span class="summary-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 16l5-5 3 3 8-8"/><path d="M14 6h6v6"/></svg></span>
+        <span class="card-label">Ingresos</span>
+        <strong id="reportIncome">Q 0.00</strong>
+        <small>Total del período seleccionado</small>
+    </article>
 
-            <span>
-                Ingresos
-            </span>
+    <article class="report-summary-card summary-card expense">
+        <span class="summary-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v16"/><path d="m5 13 7 7 7-7"/></svg></span>
+        <span class="card-label">Gastos</span>
+        <strong id="reportExpenses">Q 0.00</strong>
+        <small>Total del período seleccionado</small>
+    </article>
 
-            <strong id="reportIncome">
-                Q 0.00
-            </strong>
+    <article class="report-summary-card summary-card fixed">
+        <span class="summary-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="5" width="17" height="16" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg></span>
+        <span class="card-label">Gastos fijos</span>
+        <strong id="reportFixed">Q 0.00</strong>
+        <small>Gastos recurrentes</small>
+    </article>
 
-        </article>
-
-
-        <article class="report-summary-card expense">
-
-            <span>
-                Gastos
-            </span>
-
-            <strong id="reportExpenses">
-                Q 0.00
-            </strong>
-
-        </article>
-
-
-        <article class="report-summary-card balance">
-
-            <span>
-                Balance
-            </span>
-
-            <strong id="reportBalance">
-                Q 0.00
-            </strong>
-
-        </article>
-
-
-        <article class="report-summary-card fixed">
-
-            <span>
-                Gastos fijos
-            </span>
-
-            <strong id="reportFixed">
-                Q 0.00
-            </strong>
-
-        </article>
-
-
-    </div>
-
+</div>
 
     <!-- PRESUPUESTO -->
 
@@ -2107,6 +2333,33 @@
             class="page-section">
 
             <div class="settings-grid">
+
+    <div class="panel settings-preferences-panel">
+        <div class="settings-header">
+            <div>
+                <h3>Preferencias regionales</h3>
+                <p>Elige cómo quieres ver las fechas en tus movimientos e informes.</p>
+            </div>
+        </div>
+        <fieldset class="date-format-fieldset">
+            <legend>Formato de fecha</legend>
+            <div class="date-format-options" role="radiogroup" aria-label="Formato de fecha">
+                <label class="date-format-option">
+                    <input type="radio" name="dateFormatPreference" value="DD/MM/YYYY" checked>
+                    <span><strong>27/10/2026</strong><small>Día / mes / año</small></span>
+                </label>
+                <label class="date-format-option">
+                    <input type="radio" name="dateFormatPreference" value="MM/DD/YYYY">
+                    <span><strong>10/27/2026</strong><small>Mes / día / año</small></span>
+                </label>
+                <label class="date-format-option">
+                    <input type="radio" name="dateFormatPreference" value="YYYY-MM-DD">
+                    <span><strong>2026-10-27</strong><small>Año - mes - día</small></span>
+                </label>
+            </div>
+        </fieldset>
+        <small class="settings-note">Se guarda en este navegador. El calendario y los nombres de mes se muestran en español.</small>
+    </div>
 
                 <!-- TARJETAS DE CRÉDITO -->
 <div class="panel">
@@ -2384,6 +2637,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/app.js"></script>
+<script src="js/statement-import.js"></script>
 
 </body>
 
