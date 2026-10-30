@@ -184,21 +184,18 @@ loginForm?.addEventListener(
 
 // Detectar cambios de sesión
 
-supabaseClient.auth.onAuthStateChange(
-    (_event, session) => {
-
-        if (session) {
-
-            hideLogin();
-
-        } else {
-
-            showLogin();
-
-        }
-
+supabaseClient.auth.onAuthStateChange((_event, session) => {
+    if (session) {
+        hideLogin();
+        window.setTimeout(() => {
+            initializeAppData().catch(error => {
+                console.error("No se pudieron cargar los datos de la aplicación:", error);
+            });
+        }, 0);
+    } else {
+        showLogin();
     }
-);
+});
 
 
 // Comprobar sesión al cargar
@@ -217,6 +214,7 @@ const sectionTitles = {
     dashboard: "Dashboard",
     ingresos: "Ingresos",
     gastos: "Gastos",
+    cuentas: "Cuentas bancarias",
     presupuesto: "Presupuesto",
     fijos: "Gastos Fijos",
     reportes: "Reportes",
@@ -303,6 +301,408 @@ function createId(type) {
 }
 
 
+let bankAccounts = [];
+let accountTransfers = [];
+let accountsSchemaReady = false;
+let accountsSchemaError = null;
+
+const accountMigrationNotice = document.getElementById("accountMigrationNotice");
+const accountFeatureContent = document.getElementById("accountFeatureContent");
+const accountCardsContainer = document.getElementById("accountCards");
+const accountUnassignedNotice = document.getElementById("accountUnassignedNotice");
+const accountUnassignedDescription = document.getElementById("accountUnassignedDescription");
+const accountFormPanel = document.getElementById("accountFormPanel");
+const accountForm = document.getElementById("accountForm");
+const accountEditId = document.getElementById("accountEditId");
+const accountInstitution = document.getElementById("accountInstitution");
+const accountInstitutionGroup = document.getElementById("accountInstitutionGroup");
+const accountName = document.getElementById("accountName");
+const accountType = document.getElementById("accountType");
+const accountCurrency = document.getElementById("accountCurrency");
+const accountOpeningBalance = document.getElementById("accountOpeningBalance");
+const accountOpeningDate = document.getElementById("accountOpeningDate");
+const accountFormTitle = document.getElementById("accountFormTitle");
+const accountTransferFormPanel = document.getElementById("transferFormPanel");
+const transferForm = document.getElementById("transferForm");
+const transferDate = document.getElementById("transferDate");
+const transferDescription = document.getElementById("transferDescription");
+const transferFromAccount = document.getElementById("transferFromAccount");
+const transferToAccount = document.getElementById("transferToAccount");
+const transferSentAmount = document.getElementById("transferSentAmount");
+const transferReceivedAmount = document.getElementById("transferReceivedAmount");
+const transferSentCurrency = document.getElementById("transferSentCurrency");
+const transferReceivedCurrency = document.getElementById("transferReceivedCurrency");
+const transfersTable = document.getElementById("transfersTable");
+const accountTypeLabels = { checking: "Monetaria", savings: "Ahorro", cash: "Efectivo" };
+
+function getBankAccount(id) {
+    return bankAccounts.find(account => String(account.id) === String(id)) || null;
+}
+
+function fillAccountSelect(select, selectedId = "", currency = "", includeInactive = false) {
+    if (!select) return;
+    const placeholder = select.dataset.placeholder || "Selecciona una cuenta";
+    select.replaceChildren(new Option(placeholder, ""));
+    bankAccounts.filter(account =>
+        (includeInactive || account.isActive !== false) && (!currency || account.currency === currency)
+    ).forEach(account => {
+        select.add(new Option(
+            `${account.institution ? `${account.institution} · ` : ""}${account.name} · ${account.currency}`,
+            String(account.id)
+        ));
+    });
+    if (selectedId && [...select.options].some(option => option.value === String(selectedId))) {
+        select.value = String(selectedId);
+    }
+}
+
+function getSingleAccountId(currency) {
+    const matches = bankAccounts.filter(account => account.isActive !== false && account.currency === currency);
+    return matches.length === 1 ? String(matches[0].id) : "";
+}
+
+function populateTransactionAccountSelectors() {
+    const incomeSelect = document.getElementById("incomeAccountId");
+    const expenseSelect = document.getElementById("expenseAccountId");
+    fillAccountSelect(incomeSelect, incomeSelect?.value || "", document.getElementById("incomeCurrency")?.value || "GTQ");
+    fillAccountSelect(expenseSelect, expenseSelect?.value || "", document.getElementById("expenseCurrency")?.value || "GTQ");
+    const incomeGroup = document.getElementById("incomeAccountGroup");
+    const expenseGroup = document.getElementById("expenseAccountGroup");
+    const isCard = document.getElementById("expensePaymentMethod")?.value === "card";
+    if (incomeGroup) incomeGroup.hidden = !accountsSchemaReady;
+    if (expenseGroup) expenseGroup.hidden = !accountsSchemaReady || isCard;
+    if (incomeSelect) incomeSelect.required = accountsSchemaReady;
+    if (expenseSelect) expenseSelect.required = accountsSchemaReady && !isCard;
+}
+
+function populateTransferAccountSelectors(fromId = transferFromAccount?.value || "", toId = transferToAccount?.value || "") {
+    fillAccountSelect(transferFromAccount, fromId);
+    fillAccountSelect(transferToAccount, toId);
+    updateTransferCurrencyHints();
+}
+
+async function initializeAccounts() {
+    accountsSchemaReady = false;
+    accountsSchemaError = null;
+    const user = await getCurrentUser();
+    if (!user) return false;
+    try {
+        const [{ data: accountRows, error: accountError }, { data: transferRows, error: transferError }] = await Promise.all([
+            supabaseClient.from("cuentas_bancarias")
+                .select("id,institution,name,account_type,currency,opening_balance,opening_date,is_active,notes,created_at,updated_at")
+                .order("created_at", { ascending: true }),
+            supabaseClient.from("transferencias_cuentas")
+                .select("id,date,description,from_account_id,to_account_id,sent_amount,received_amount,notes,created_at,updated_at")
+                .order("date", { ascending: false })
+        ]);
+        if (accountError) throw accountError;
+        if (transferError) throw transferError;
+        bankAccounts = (accountRows || []).map(row => ({
+            id: String(row.id), institution: row.institution || "", name: row.name || "Cuenta",
+            type: row.account_type, currency: row.currency || "GTQ",
+            openingBalance: Number(row.opening_balance) || 0,
+            openingDate: String(row.opening_date || getTodayISO()).slice(0, 10),
+            isActive: row.is_active !== false, notes: row.notes || "",
+            createdAt: row.created_at, updatedAt: row.updated_at
+        }));
+        accountTransfers = (transferRows || []).map(row => ({
+            id: String(row.id), date: row.date, description: row.description || "Transferencia",
+            fromAccountId: String(row.from_account_id), toAccountId: String(row.to_account_id),
+            sentAmount: Number(row.sent_amount) || 0, receivedAmount: Number(row.received_amount) || 0,
+            notes: row.notes || "", createdAt: row.created_at, updatedAt: row.updated_at
+        }));
+        accountsSchemaReady = true;
+        if (accountMigrationNotice) accountMigrationNotice.hidden = true;
+        if (accountFeatureContent) accountFeatureContent.hidden = false;
+        populateTransactionAccountSelectors();
+        populateTransferAccountSelectors();
+        renderAccounts();
+        return true;
+    } catch (error) {
+        accountsSchemaError = error;
+        bankAccounts = [];
+        accountTransfers = [];
+        console.warn("La sección de cuentas requiere su migración de Supabase:", error);
+        if (accountMigrationNotice) accountMigrationNotice.hidden = false;
+        if (accountFeatureContent) accountFeatureContent.hidden = true;
+        populateTransactionAccountSelectors();
+        return false;
+    }
+}
+
+function calculateBankAccountBalance(account) {
+    let balance = Number(account.openingBalance) || 0;
+    const afterOpening = date => String(date || "") > String(account.openingDate || "");
+    incomes.forEach(income => {
+        if (String(income.accountId || "") !== String(account.id) || !afterOpening(income.date) || income.currency !== account.currency) return;
+        balance += Number(income.amount) || 0;
+    });
+    expenses.forEach(expense => {
+        if (expense.paymentMethod === "card" || String(expense.accountId || "") !== String(account.id) || !afterOpening(expense.date) || expense.currency !== account.currency) return;
+        balance -= Number(expense.amount) || 0;
+    });
+    accountTransfers.forEach(transfer => {
+        if (!afterOpening(transfer.date)) return;
+        if (String(transfer.fromAccountId) === String(account.id)) balance -= Number(transfer.sentAmount) || 0;
+        if (String(transfer.toAccountId) === String(account.id)) balance += Number(transfer.receivedAmount) || 0;
+    });
+    return balance;
+}
+
+function renderAccounts() {
+    if (!accountsSchemaReady || !accountCardsContainer) return;
+    const totals = new Map();
+    bankAccounts.forEach(account => totals.set(account.currency, (totals.get(account.currency) || 0) + calculateBankAccountBalance(account)));
+    const totalCards = [...totals.entries()].map(([currency, amount]) => `
+        <div class="account-total-card"><span>Saldo total en ${escapeHtml(currency)}</span><strong>${formatCurrency(amount, currency)}</strong></div>
+    `).join("");
+    const cards = bankAccounts.map(account => `
+        <article class="account-card ${account.isActive ? "" : "is-archived"}">
+            <div class="account-card-top"><span class="account-institution">${escapeHtml(account.institution || "Efectivo")}</span><span class="account-status ${account.isActive ? "is-active" : ""}">${account.isActive ? "Activa" : "Archivada"}</span></div>
+            <h3>${escapeHtml(account.name)}</h3>
+            <span class="account-type-label">${escapeHtml(accountTypeLabels[account.type] || "Cuenta")} · ${escapeHtml(account.currency)}</span>
+            <strong class="account-balance">${formatCurrency(calculateBankAccountBalance(account), account.currency)}</strong>
+            <small>Saldo al ${escapeHtml(formatDate(account.openingDate))} + movimientos posteriores</small>
+            <div class="account-card-actions">
+                <button type="button" class="secondary-button" data-account-action="edit" data-account-id="${escapeHtml(account.id)}">Editar</button>
+                <button type="button" class="secondary-button" data-account-action="toggle" data-account-id="${escapeHtml(account.id)}">${account.isActive ? "Archivar" : "Reactivar"}</button>
+            </div>
+        </article>
+    `).join("");
+    accountCardsContainer.innerHTML = bankAccounts.length
+        ? `${totalCards}${cards}`
+        : `${totalCards}<div class="panel account-empty-state"><h2>Aún no tienes cuentas</h2><p>Agrega una cuenta bancaria, de ahorro o efectivo para empezar a separar tus saldos.</p></div>`;
+
+    const unassigned = incomes.filter(item => !item.accountId).length + expenses.filter(item => item.paymentMethod !== "card" && !item.accountId).length;
+    if (accountUnassignedNotice) accountUnassignedNotice.hidden = unassigned === 0;
+    if (accountUnassignedDescription && unassigned) {
+        accountUnassignedDescription.textContent = `${unassigned} movimientos históricos no tienen una cuenta vinculada. Edítalos desde Ingresos o Gastos para incluirlos en los saldos.`;
+    }
+    renderTransfersTable();
+}
+
+function updateTransferCurrencyHints() {
+    const from = getBankAccount(transferFromAccount?.value);
+    const to = getBankAccount(transferToAccount?.value);
+    if (transferSentCurrency) transferSentCurrency.textContent = from ? `Se descontará en ${from.currency}` : "Moneda de la cuenta de origen";
+    if (transferReceivedCurrency) transferReceivedCurrency.textContent = to ? `Se acreditará en ${to.currency}` : "Moneda de la cuenta de destino";
+    if (!transferReceivedAmount) return;
+    const wasReadOnly = transferReceivedAmount.readOnly;
+    const sameCurrency = Boolean(from && to && from.currency === to.currency);
+    transferReceivedAmount.readOnly = sameCurrency;
+    if (sameCurrency && transferSentAmount) transferReceivedAmount.value = transferSentAmount.value;
+    else if (wasReadOnly) transferReceivedAmount.value = "";
+}
+
+function renderTransfersTable() {
+    if (!transfersTable) return;
+    if (!accountTransfers.length) {
+        transfersTable.innerHTML = '<div class="empty-table">Todavía no has registrado transferencias.</div>';
+        return;
+    }
+    const rows = [...accountTransfers].sort((a, b) => String(b.date).localeCompare(String(a.date))).map(transfer => {
+        const from = getBankAccount(transfer.fromAccountId);
+        const to = getBankAccount(transfer.toAccountId);
+        if (!from || !to) return "";
+        return `<tr><td>${escapeHtml(formatDate(transfer.date))}</td><td>${escapeHtml(transfer.description)}</td><td>${escapeHtml(from.institution ? `${from.institution} · ${from.name}` : from.name)}</td><td>${escapeHtml(to.institution ? `${to.institution} · ${to.name}` : to.name)}</td><td><strong>${formatCurrency(transfer.sentAmount, from.currency)}</strong><br><span class="account-transfer-arrow">↓ ${formatCurrency(transfer.receivedAmount, to.currency)}</span></td><td><button type="button" class="icon-button account-transfer-delete" data-transfer-action="delete" data-transfer-id="${escapeHtml(transfer.id)}" aria-label="Eliminar transferencia">×</button></td></tr>`;
+    }).join("");
+    transfersTable.innerHTML = `<div class="account-transfer-table-wrap"><table class="data-table account-transfer-table"><thead><tr><th>Fecha</th><th>Descripción</th><th>Desde</th><th>Hacia</th><th>Montos</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+function updateAccountInstitutionVisibility() {
+    const isCash = accountType?.value === "cash";
+    if (accountInstitutionGroup) accountInstitutionGroup.hidden = isCash;
+    if (accountInstitution) accountInstitution.required = !isCash;
+}
+
+function openAccountForm(account = null) {
+    if (!accountFormPanel || !accountForm) return;
+    accountForm.reset();
+    accountEditId.value = account?.id || "";
+    accountFormTitle.textContent = account ? "Editar cuenta" : "Nueva cuenta";
+    accountInstitution.value = account?.institution || "";
+    accountName.value = account?.name || "";
+    accountType.value = account?.type || "checking";
+    accountCurrency.value = account?.currency || "GTQ";
+    accountOpeningBalance.value = String(account?.openingBalance ?? 0);
+    accountOpeningDate.value = account?.openingDate || getTodayISO();
+    updateAccountInstitutionVisibility();
+    const hasActivity = account && (
+        incomes.some(item => String(item.accountId || "") === String(account.id)) ||
+        expenses.some(item => String(item.accountId || "") === String(account.id)) ||
+        accountTransfers.some(item => String(item.fromAccountId) === String(account.id) || String(item.toAccountId) === String(account.id))
+    );
+    accountCurrency.disabled = Boolean(hasActivity);
+    accountFormPanel.hidden = false;
+    refreshDatePicker("accountOpeningDate");
+    accountFormPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function closeAccountForm() {
+    if (accountFormPanel) accountFormPanel.hidden = true;
+    accountForm?.reset();
+    if (accountCurrency) accountCurrency.disabled = false;
+}
+
+function openTransferForm() {
+    if (!bankAccounts.some(account => account.isActive !== false)) {
+        alert("Primero agrega al menos una cuenta activa.");
+        return;
+    }
+    transferForm?.reset();
+    transferDate.value = getTodayISO();
+    transferDescription.value = "";
+    transferSentAmount.value = "";
+    transferReceivedAmount.value = "";
+    populateTransferAccountSelectors("", "");
+    if (accountTransferFormPanel) accountTransferFormPanel.hidden = false;
+    refreshDatePicker("transferDate");
+    accountTransferFormPanel?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function closeTransferForm() {
+    if (accountTransferFormPanel) accountTransferFormPanel.hidden = true;
+    transferForm?.reset();
+    if (transferReceivedAmount) transferReceivedAmount.readOnly = false;
+}
+
+const newAccountButton = document.getElementById("newAccountButton");
+const cancelAccountButton = document.getElementById("cancelAccountButton");
+const newTransferButton = document.getElementById("newTransferButton");
+const cancelTransferButton = document.getElementById("cancelTransferButton");
+newAccountButton?.addEventListener("click", () => openAccountForm());
+cancelAccountButton?.addEventListener("click", closeAccountForm);
+newTransferButton?.addEventListener("click", openTransferForm);
+cancelTransferButton?.addEventListener("click", closeTransferForm);
+accountType?.addEventListener("change", updateAccountInstitutionVisibility);
+transferFromAccount?.addEventListener("change", () => {
+    if (transferToAccount.value === transferFromAccount.value) transferToAccount.value = "";
+    updateTransferCurrencyHints();
+});
+transferToAccount?.addEventListener("change", updateTransferCurrencyHints);
+transferSentAmount?.addEventListener("input", updateTransferCurrencyHints);
+
+accountForm?.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (!accountsSchemaReady) return alert("Primero aplica la migración de cuentas en Supabase y recarga la app.");
+    const user = await getCurrentUser();
+    if (!user) return alert("Tu sesión ha expirado. Inicia sesión nuevamente.");
+    const institution = accountInstitution.value.trim();
+    const name = accountName.value.trim();
+    const type = accountType.value;
+    const currency = accountCurrency.value;
+    const openingBalance = Number(accountOpeningBalance.value);
+    const openingDate = accountOpeningDate.value;
+    if (!name || !openingDate || !Number.isFinite(openingBalance)) return alert("Completa el nombre, saldo y fecha de la cuenta.");
+    if (type !== "cash" && !institution) return alert("Indica el banco o institución.");
+    const existing = bankAccounts.find(account => String(account.id) === String(accountEditId.value));
+    const id = existing?.id || createId("account");
+    const now = new Date().toISOString();
+    const memory = {
+        id, institution, name, type, currency, openingBalance, openingDate,
+        isActive: existing?.isActive !== false, notes: existing?.notes || "",
+        createdAt: existing?.createdAt || now, updatedAt: now
+    };
+    const database = {
+        id, user_id: user.id, institution, name, account_type: type, currency,
+        opening_balance: openingBalance, opening_date: openingDate,
+        is_active: memory.isActive, notes: memory.notes,
+        created_at: memory.createdAt, updated_at: now
+    };
+    try {
+        const { error } = await supabaseClient.from("cuentas_bancarias").upsert(database);
+        if (error) throw error;
+        if (existing) bankAccounts = bankAccounts.map(account => account.id === existing.id ? memory : account);
+        else bankAccounts.push(memory);
+        populateTransactionAccountSelectors();
+        populateTransferAccountSelectors();
+        renderAccounts();
+        closeAccountForm();
+    } catch (error) {
+        console.error("No se pudo guardar la cuenta:", error);
+        alert("No se pudo guardar la cuenta. Revisa la conexión y la migración de Supabase.");
+    }
+});
+
+transferForm?.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (!accountsSchemaReady) return alert("La base de datos de cuentas aún no está configurada.");
+    const from = getBankAccount(transferFromAccount.value);
+    const to = getBankAccount(transferToAccount.value);
+    const sentAmount = Number(transferSentAmount.value);
+    const receivedAmount = Number(transferReceivedAmount.value);
+    const date = transferDate.value;
+    if (!from || !to) return alert("Selecciona las cuentas de origen y destino.");
+    if (from.id === to.id) return alert("La cuenta de origen y destino deben ser distintas.");
+    if (from.isActive === false || to.isActive === false) return alert("Solo puedes transferir entre cuentas activas.");
+    if (!date || !Number.isFinite(sentAmount) || sentAmount <= 0) return alert("Ingresa fecha y un monto debitado válido.");
+    if (!Number.isFinite(receivedAmount) || receivedAmount <= 0) return alert("Ingresa el monto que se acreditó en la cuenta destino.");
+    if (from.currency === to.currency && Math.abs(sentAmount - receivedAmount) > 0.009) return alert("Las cuentas usan la misma moneda; los montos deben coincidir.");
+    const user = await getCurrentUser();
+    if (!user) return alert("Tu sesión ha expirado. Inicia sesión nuevamente.");
+    const id = createId("transfer");
+    const now = new Date().toISOString();
+    const memory = {
+        id, date, description: transferDescription.value.trim() || "Transferencia entre cuentas",
+        fromAccountId: from.id, toAccountId: to.id, sentAmount, receivedAmount,
+        notes: "", createdAt: now, updatedAt: now
+    };
+    const database = {
+        id, user_id: user.id, date, description: memory.description,
+        from_account_id: from.id, to_account_id: to.id,
+        sent_amount: sentAmount, received_amount: receivedAmount,
+        notes: memory.notes, created_at: now, updated_at: now
+    };
+    try {
+        const { error } = await supabaseClient.from("transferencias_cuentas").insert(database);
+        if (error) throw error;
+        accountTransfers.unshift(memory);
+        renderAccounts();
+        closeTransferForm();
+    } catch (error) {
+        console.error("No se pudo registrar la transferencia:", error);
+        alert("No se pudo registrar la transferencia. Revisa las cuentas y la migración de Supabase.");
+    }
+});
+
+document.addEventListener("click", async event => {
+    const accountButton = event.target.closest("[data-account-action]");
+    if (accountButton) {
+        const account = getBankAccount(accountButton.dataset.accountId);
+        if (!account) return;
+        if (accountButton.dataset.accountAction === "edit") openAccountForm(account);
+        if (accountButton.dataset.accountAction === "toggle") {
+            const user = await getCurrentUser();
+            if (!user) return;
+            const isActive = !account.isActive;
+            const updatedAt = new Date().toISOString();
+            const { error } = await supabaseClient.from("cuentas_bancarias")
+                .update({ is_active: isActive, updated_at: updatedAt }).eq("id", account.id);
+            if (error) {
+                console.error("No se pudo actualizar el estado de la cuenta:", error);
+                alert("No se pudo actualizar la cuenta.");
+                return;
+            }
+            bankAccounts = bankAccounts.map(item => item.id === account.id ? { ...item, isActive, updatedAt } : item);
+            populateTransactionAccountSelectors();
+            populateTransferAccountSelectors();
+            renderAccounts();
+        }
+        return;
+    }
+    const transferButton = event.target.closest("[data-transfer-action='delete']");
+    if (!transferButton) return;
+    if (!confirm("¿Eliminar esta transferencia? Los saldos de ambas cuentas se recalcularán.")) return;
+    const id = transferButton.dataset.transferId;
+    const { error } = await supabaseClient.from("transferencias_cuentas").delete().eq("id", id);
+    if (error) {
+        console.error("No se pudo eliminar la transferencia:", error);
+        alert("No se pudo eliminar la transferencia.");
+        return;
+    }
+    accountTransfers = accountTransfers.filter(transfer => transfer.id !== id);
+    renderAccounts();
+});
 function createDefaultCategories(type) {
 
     return defaultCategories[type].map(name => {
@@ -321,6 +721,7 @@ let categories = {
     income: [],
     expense: []
 };
+let categoryLoadError = null;
 
 // ============================================================
 // SUPABASE - CATEGORÍAS
@@ -350,6 +751,7 @@ async function getCurrentUser() {
 
 async function initializeCategories() {
 
+    categoryLoadError = null;
     const user = await getCurrentUser();
 
     if (!user) {
@@ -360,7 +762,7 @@ async function initializeCategories() {
 
         renderCategories();
 
-        return;
+        return false;
     }
 
 
@@ -398,7 +800,7 @@ async function initializeCategories() {
                 income: data
                     .filter(
                         category =>
-                            category.type === "income"
+                            ["income", "ingreso"].includes(String(category.type || "").toLowerCase())
                     )
                     .map(category => ({
 
@@ -414,7 +816,7 @@ async function initializeCategories() {
                 expense: data
                     .filter(
                         category =>
-                            category.type === "expense"
+                            ["expense", "gasto"].includes(String(category.type || "").toLowerCase())
                     )
                     .map(category => ({
 
@@ -435,7 +837,7 @@ async function initializeCategories() {
                 "Categorías cargadas desde Supabase."
             );
 
-            return;
+            return true;
         }
 
         // ----------------------------------------------------
@@ -510,6 +912,8 @@ console.log(
     "Categorías predeterminadas creadas en Supabase."
 );
 
+return true;
+
     } catch (error) {
 
         console.error(
@@ -518,7 +922,8 @@ console.log(
         );
 
         renderCategories();
-
+        categoryLoadError = error;
+        return false;
 
     }
 
@@ -1447,7 +1852,7 @@ async function initializeIncomes() {
                 exchange_rate_source,
                 notes,
                 created_at,
-                updated_at
+                updated_at${accountsSchemaReady ? ", account_id" : ""}
             `)
             .order(
                 "date",
@@ -1513,6 +1918,9 @@ async function initializeIncomes() {
                     notes:
                         income.notes ||
                         "",
+
+                    accountId:
+                        income.account_id || null,
 
                     createdAt:
                         income.created_at,
@@ -1598,6 +2006,8 @@ const incomeAmount =
     document.getElementById(
         "incomeAmount"
     );
+
+const incomeAccountId = document.getElementById("incomeAccountId");
 
 
 const incomeExchangeGroup =
@@ -1698,6 +2108,7 @@ function openIncomeForm(
         incomeCurrency.value =
             income.currency;
 
+        if (incomeAccountId) incomeAccountId.value = income.accountId || "";
 
         incomeAmount.value =
             income.amount;
@@ -1743,14 +2154,13 @@ function openIncomeForm(
 
 
         incomeDate.value =
-            new Date()
-                .toISOString()
-                .split("T")[0];
+            getTodayISO();
 
 
         incomeCurrency.value =
             "GTQ";
 
+        if (incomeAccountId) incomeAccountId.value = getSingleAccountId("GTQ");
 
         incomeExchangeGroup.hidden =
             true;
@@ -1777,7 +2187,9 @@ function openIncomeForm(
     }
 
 
-    incomeDate.focus();
+    populateTransactionAccountSelectors();
+    refreshDatePicker("incomeDate");
+    focusDatePicker("incomeDate");
 
 }
 
@@ -1958,6 +2370,7 @@ if (incomeCurrency) {
         "change",
         updateIncomeCurrencyUI
     );
+    incomeCurrency.addEventListener("change", populateTransactionAccountSelectors);
 
 }
 
@@ -1986,151 +2399,43 @@ if (incomeExchangeRate) {
 // 10. TIPO DE CAMBIO
 // ============================================================
 
+async function getBanguatReferenceRate() {
+    const { data, error } = await supabaseClient.functions.invoke("banguat-exchange-rate");
+    if (error) throw error;
+
+    const rate = Number(data?.rate);
+    if (!Number.isFinite(rate) || rate <= 0) {
+        throw new Error("Banguat devolvió un tipo de cambio inválido.");
+    }
+
+    return {
+        rate,
+        date: String(data.date || ""),
+        source: data.source || "Banco de Guatemala"
+    };
+}
+
 async function fetchExchangeRate() {
-
-    if (!incomeExchangeRate) {
-        return;
-    }
-
-
-    if (exchangeRateStatus) {
-
-        exchangeRateStatus.textContent =
-            "Consultando tipo de cambio...";
-
-    }
-
-
-    if (refreshExchangeRate) {
-
-        refreshExchangeRate.disabled =
-            true;
-
-    }
-
+    if (!incomeExchangeRate) return;
+    if (exchangeRateStatus) exchangeRateStatus.textContent = "Consultando referencia del Banco de Guatemala…";
+    if (refreshExchangeRate) refreshExchangeRate.disabled = true;
 
     try {
-
-        const url =
-            "https://www.banguat.gob.gt/variables/ws/TipoCambio.asmx/TipoCambioDia";
-
-
-        const response =
-            await fetch(url);
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                `HTTP ${response.status}`
-            );
-
-        }
-
-
-        const text =
-            await response.text();
-
-
-        const parser =
-            new DOMParser();
-
-
-        const xml =
-            parser.parseFromString(
-                text,
-                "text/xml"
-            );
-
-
-        const node =
-            xml.querySelector(
-                "VarDolar referencia"
-            );
-
-
-        if (!node) {
-
-            throw new Error(
-                "No se encontró el tipo de cambio."
-            );
-
-        }
-
-
-        const rate =
-            parseFloat(
-                node.textContent
-            );
-
-
-        if (
-            !rate ||
-            rate <= 0
-        ) {
-
-            throw new Error(
-                "Tipo de cambio inválido."
-            );
-
-        }
-
-
-        incomeExchangeRate.value =
-            rate.toFixed(4);
-
-
+        const quote = await getBanguatReferenceRate();
+        incomeExchangeRate.value = quote.rate.toFixed(5);
         if (exchangeRateStatus) {
-
-            exchangeRateStatus.textContent =
-                "Tipo de cambio obtenido de Banguat.";
-
+            exchangeRateStatus.textContent = `Referencia Banguat${quote.date ? ` · ${quote.date}` : ""}.`;
         }
-
-
         updateIncomeConversion();
-
-
     } catch (error) {
-
-        console.warn(
-            "No se pudo obtener el tipo de cambio:",
-            error
-        );
-
-
+        console.error("No se pudo consultar el tipo de cambio de Banguat:", error);
         if (exchangeRateStatus) {
-
-            exchangeRateStatus.textContent =
-                "No se pudo obtener automáticamente. Puedes ingresarlo manualmente.";
-
+            exchangeRateStatus.textContent = "No se pudo consultar Banguat. Ingresa la tasa manualmente o despliega la función de conexión.";
         }
-
-
     } finally {
-
-        if (refreshExchangeRate) {
-
-            refreshExchangeRate.disabled =
-                false;
-
-        }
-
+        if (refreshExchangeRate) refreshExchangeRate.disabled = false;
     }
-
 }
-
-
-if (refreshExchangeRate) {
-
-    refreshExchangeRate.addEventListener(
-        "click",
-        fetchExchangeRate
-    );
-
-}
-
-
 // ============================================================
 // 11. GUARDAR INGRESO
 // ============================================================
@@ -2163,6 +2468,7 @@ if (incomeForm) {
 
             const notes =
                 incomeNotes.value.trim();
+            const accountId = incomeAccountId?.value || "";
 
 
             if (!date) {
@@ -2221,6 +2527,12 @@ if (incomeForm) {
                     "La categoría seleccionada no existe."
                 );
 
+                return;
+            }
+
+            const selectedAccount = getBankAccount(accountId);
+            if (accountsSchemaReady && (!selectedAccount || selectedAccount.isActive === false || selectedAccount.currency !== currency)) {
+                alert("Selecciona una cuenta activa que use la misma moneda del ingreso.");
                 return;
             }
 
@@ -2343,6 +2655,8 @@ if (incomeForm) {
 
                     notes,
 
+                accountId: accountsSchemaReady ? accountId : existingIncome?.accountId || null,
+
                 createdAt:
 
                     existingIncome?.createdAt ||
@@ -2404,6 +2718,8 @@ if (incomeForm) {
                 notes:
 
                     incomeData.notes,
+
+                ...(accountsSchemaReady ? { account_id: incomeData.accountId } : {}),
 
                 updated_at:
 
@@ -2476,6 +2792,7 @@ if (incomeForm) {
             }
 
             renderIncomeTable();
+            renderAccounts();
             updateDashboard();
             closeIncomeForm();
 
@@ -2880,6 +3197,7 @@ document.addEventListener("click", async event => {
     deletedIds.forEach(id => selectedIncomeIds.delete(id));
 
     renderIncomeTable();
+    renderAccounts();
     updateDashboard();
 
     alert(`Se eliminaron ${deletedIds.size} ingreso(s).`);
@@ -2984,6 +3302,8 @@ document.addEventListener(
         );
 
     renderIncomeTable();
+    renderAccounts();
+    updateDashboard();
 
 }
 
@@ -3019,6 +3339,12 @@ const budgetId =
 const budgetMonth =
     document.getElementById("budgetMonth");
 
+const budgetMonthSelect =
+    document.getElementById("budgetMonthSelect");
+
+const budgetYearSelect =
+    document.getElementById("budgetYearSelect");
+
 const budgetCategory =
     document.getElementById("budgetCategory");
 
@@ -3030,6 +3356,64 @@ const cancelBudgetButton =
 
 const budgetTableContainer =
     document.getElementById("budgetTableContainer");
+
+function updateBudgetMonthFromPeriods() {
+    if (!budgetMonth || !budgetMonthSelect?.value || !budgetYearSelect?.value) return;
+    budgetMonth.value = `${budgetYearSelect.value}-${budgetMonthSelect.value}`;
+}
+
+function syncBudgetPeriodsFromMonth() {
+    if (!budgetMonth?.value || !budgetMonthSelect || !budgetYearSelect) return;
+    const [year, month] = budgetMonth.value.split("-");
+    if (!year || !month) return;
+
+    if (![...budgetYearSelect.options].some(option => option.value === year)) {
+        const yearOption = document.createElement("option");
+        yearOption.value = year;
+        yearOption.textContent = year;
+        budgetYearSelect.appendChild(yearOption);
+        const sortedYears = [...budgetYearSelect.options]
+            .sort((a, b) => Number(b.value) - Number(a.value));
+        budgetYearSelect.replaceChildren(...sortedYears);
+    }
+
+    budgetYearSelect.value = year;
+    budgetMonthSelect.value = month;
+    budgetYearSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    budgetMonthSelect.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+budgetMonthSelect?.addEventListener("change", updateBudgetMonthFromPeriods);
+budgetYearSelect?.addEventListener("change", updateBudgetMonthFromPeriods);
+
+function populateBudgetYearOptions() {
+    if (!budgetYearSelect) return;
+
+    const currentYear = new Date().getFullYear();
+    const selectedYear = budgetYearSelect.value || String(currentYear);
+    const years = new Set();
+
+    for (let year = currentYear + 10; year >= currentYear - 30; year--) {
+        years.add(year);
+    }
+    (Array.isArray(budgets) ? budgets : []).forEach(budget => {
+        const year = Number(String(budget.month || "").slice(0, 4));
+        if (Number.isInteger(year) && year > 0) years.add(year);
+    });
+
+    budgetYearSelect.replaceChildren(...[...years]
+        .sort((a, b) => b - a)
+        .map(year => {
+            const option = document.createElement("option");
+            option.value = String(year);
+            option.textContent = String(year);
+            return option;
+        }));
+
+    budgetYearSelect.value = years.has(Number(selectedYear))
+        ? selectedYear
+        : String(currentYear);
+}
 
 
 // ------------------------------------------------------------
@@ -3219,15 +3603,46 @@ function populateBudgetCategories() {
 // ABRIR FORMULARIO
 // ------------------------------------------------------------
 
+function closeBudgetPickerMenus() {
+    budgetFormPanel?.querySelectorAll(".period-trigger[aria-expanded='true']")
+        .forEach(button => {
+            button.setAttribute("aria-expanded", "false");
+            const listbox = document.getElementById(button.getAttribute("aria-controls"));
+            if (!listbox) return;
+            listbox.hidden = true;
+            listbox.classList.remove("has-custom-scrollbar");
+            const track = listbox.parentElement?.querySelector(".period-scrollbar");
+            if (track) track.hidden = true;
+        });
+}
+
 function openBudgetForm(budget = null) {
 
     if (!budgetFormPanel || !budgetForm) {
         return;
     }
 
-
+    closeBudgetPickerMenus();
     populateBudgetCategories();
-
+    populateBudgetYearOptions();
+    initializePeriodPicker(
+        "budgetMonthSelect",
+        "budgetMonthPickerButton",
+        "budgetMonthPickerValue",
+        "budgetMonthPickerOptions"
+    );
+    initializePeriodPicker(
+        "budgetYearSelect",
+        "budgetYearPickerButton",
+        "budgetYearPickerValue",
+        "budgetYearPickerOptions"
+    );
+    initializePeriodPicker(
+        "budgetCategory",
+        "budgetCategoryPickerButton",
+        "budgetCategoryPickerValue",
+        "budgetCategoryPickerOptions"
+    );
 
     budgetFormPanel.hidden = false;
 
@@ -3279,8 +3694,15 @@ function openBudgetForm(budget = null) {
 
     }
 
-
-    budgetMonth.focus();
+    syncBudgetPeriodsFromMonth();
+    budgetCategory.dispatchEvent(new Event("change", { bubbles: true }));
+    // Actualiza el menú si se añadió un año histórico para editar un presupuesto.
+    initializePeriodPicker(
+        "budgetYearSelect",
+        "budgetYearPickerButton",
+        "budgetYearPickerValue",
+        "budgetYearPickerOptions"
+    );
 
 }
 
@@ -3295,7 +3717,7 @@ function closeBudgetForm() {
         return;
     }
 
-
+    closeBudgetPickerMenus();
     budgetFormPanel.hidden = true;
 
 
@@ -4462,6 +4884,8 @@ const expenseAmount =
         "expenseAmount"
     );
 
+const expenseAccountId = document.getElementById("expenseAccountId");
+
 const expenseExchangeGroup =
     document.getElementById(
         "expenseExchangeGroup"
@@ -4522,6 +4946,7 @@ expensePaymentMethod?.addEventListener("change", () => {
 
     expenseCreditCardGroup.hidden = !usesCard;
     expenseCreditCardId.required = usesCard;
+    populateTransactionAccountSelectors();
 
     if (!usesCard) {
         expenseCreditCardId.value = "";
@@ -4576,7 +5001,7 @@ async function initializeExpenses() {
                 statement_cutoff_date,
                 statement_due_date,
                 created_at,
-                updated_at
+                updated_at${accountsSchemaReady ? ", account_id" : ""}
             `)
             .order(
                 "date",
@@ -4642,6 +5067,9 @@ async function initializeExpenses() {
                     notes:
                         expense.notes ||
                         "",
+
+                    accountId:
+                        expense.account_id || null,
 
                     paymentMethod:
                           expense.payment_method || "cash",
@@ -4811,6 +5239,7 @@ function openExpenseForm(
 
         expensePaymentMethod.value =
            expense.paymentMethod || "cash";
+        if (expenseAccountId) expenseAccountId.value = expense.accountId || "";
 
 expensePaymentMethod.dispatchEvent(
     new Event("change")
@@ -4862,12 +5291,11 @@ expensePaymentMethod.dispatchEvent(
             "";
 
         expenseDate.value =
-            new Date()
-                .toISOString()
-                .split("T")[0];
+            getTodayISO();
 
         expenseCurrency.value =
             "GTQ";
+        if (expenseAccountId) expenseAccountId.value = getSingleAccountId("GTQ");
 
         expenseExchangeGroup.hidden =
             true;
@@ -4890,7 +5318,9 @@ expensePaymentMethod.dispatchEvent(
     }
 
 
-    expenseDate.focus();
+    populateTransactionAccountSelectors();
+    refreshDatePicker("expenseDate");
+    focusDatePicker("expenseDate");
 
 }
 
@@ -5091,6 +5521,7 @@ if (expenseCurrency) {
         "change",
         updateExpenseCurrencyUI
     );
+    expenseCurrency.addEventListener("change", populateTransactionAccountSelectors);
 
 }
 
@@ -5120,143 +5551,26 @@ if (expenseExchangeRate) {
 // ============================================================
 
 async function fetchExpenseExchangeRate() {
-
-    if (!expenseExchangeRate) {
-        return;
-    }
-
-
-    if (expenseExchangeRateStatus) {
-
-        expenseExchangeRateStatus.textContent =
-            "Consultando tipo de cambio...";
-
-    }
-
-
-    if (refreshExpenseExchangeRate) {
-
-        refreshExpenseExchangeRate.disabled =
-            true;
-
-    }
-
+    if (!expenseExchangeRate) return;
+    if (expenseExchangeRateStatus) expenseExchangeRateStatus.textContent = "Consultando referencia del Banco de Guatemala…";
+    if (refreshExpenseExchangeRate) refreshExpenseExchangeRate.disabled = true;
 
     try {
-
-        const url =
-            "https://www.banguat.gob.gt/variables/ws/TipoCambio.asmx/TipoCambioDia";
-
-
-        const response =
-            await fetch(url);
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                `HTTP ${response.status}`
-            );
-
+        const quote = await getBanguatReferenceRate();
+        expenseExchangeRate.value = quote.rate.toFixed(5);
+        if (expenseExchangeRateStatus) {
+            expenseExchangeRateStatus.textContent = `Referencia Banguat${quote.date ? ` · ${quote.date}` : ""}.`;
         }
-
-
-        const text =
-            await response.text();
-
-
-        const parser =
-            new DOMParser();
-
-
-        const xml =
-            parser.parseFromString(
-                text,
-                "text/xml"
-            );
-
-
-        const node =
-            xml.querySelector(
-                "VarDolar referencia"
-            );
-
-
-        if (!node) {
-
-            throw new Error(
-                "No se encontró el tipo de cambio."
-            );
-
-        }
-
-
-        const rate =
-            parseFloat(
-                node.textContent
-            );
-
-
-        if (
-            !rate ||
-            rate <= 0
-        ) {
-
-            throw new Error(
-                "Tipo de cambio inválido."
-            );
-
-        }
-
-
-        expenseExchangeRate.value =
-            rate.toFixed(4);
-
-
-        if (
-            expenseExchangeRateStatus
-        ) {
-
-            expenseExchangeRateStatus.textContent =
-                "Tipo de cambio obtenido de Banguat.";
-
-        }
-
-
         updateExpenseConversion();
-
-
     } catch (error) {
-
-        console.warn(
-            "No se pudo obtener el tipo de cambio:",
-            error
-        );
-
-
-        if (
-            expenseExchangeRateStatus
-        ) {
-
-            expenseExchangeRateStatus.textContent =
-                "No se pudo obtener automáticamente. Puedes ingresarlo manualmente.";
-
+        console.error("No se pudo consultar el tipo de cambio de Banguat:", error);
+        if (expenseExchangeRateStatus) {
+            expenseExchangeRateStatus.textContent = "No se pudo consultar Banguat. Ingresa la tasa manualmente o despliega la función de conexión.";
         }
-
-
     } finally {
-
-        if (refreshExpenseExchangeRate) {
-
-            refreshExpenseExchangeRate.disabled =
-                false;
-
-        }
-
+        if (refreshExpenseExchangeRate) refreshExpenseExchangeRate.disabled = false;
     }
-
 }
-
 
 if (refreshExpenseExchangeRate) {
 
@@ -5308,10 +5622,18 @@ const creditCardId =
     paymentMethod === "card"
         ? expenseCreditCardId.value
         : null;
+const accountId = paymentMethod === "card" ? null : (expenseAccountId?.value || "");
 
 if (paymentMethod === "card" && !creditCardId) {
     alert("Selecciona una tarjeta de crédito.");
     return;
+}
+if (accountsSchemaReady && paymentMethod !== "card") {
+    const selectedAccount = getBankAccount(accountId);
+    if (!selectedAccount || selectedAccount.isActive === false || selectedAccount.currency !== currency) {
+        alert("Selecciona una cuenta activa que use la misma moneda del gasto.");
+        return;
+    }
 }
 
             if (!date) {
@@ -5482,6 +5804,8 @@ const statementDates =
                 notes:
                     notes,
 
+                accountId: accountsSchemaReady ? accountId || null : existingExpense?.accountId || null,
+
                 paymentMethod:
                    paymentMethod,
 
@@ -5564,6 +5888,8 @@ const statementDates =
                     credit_card_id:
                         expenseData.creditCardId,
 
+                    ...(accountsSchemaReady ? { account_id: expenseData.accountId } : {}),
+
                     statement_cutoff_date:
                         expenseData.statementCutoffDate,
 
@@ -5609,6 +5935,7 @@ const statementDates =
                 );
 
                 renderExpenseTable();
+                renderAccounts();
                 updateDashboard();
                 closeExpenseForm();
 
@@ -6210,7 +6537,7 @@ document.addEventListener(
     );
 
 renderExpenseTable();
-
+renderAccounts();
 updateDashboard();
 
             } catch (error) {
@@ -6299,6 +6626,7 @@ document.addEventListener("click", async event => {
     deletedIds.forEach(id => selectedExpenseIds.delete(id));
 
     renderExpenseTable();
+    renderAccounts();
     updateDashboard();
 
     alert(`Se eliminaron ${deletedIds.size} gasto(s).`);
@@ -7471,6 +7799,65 @@ function getDashboardExpenses(
 }
 
 // ------------------------------------------------------------
+function getCurrentMonthInputValue() {
+    const now = new Date();
+
+    return (
+        String(now.getFullYear()) +
+        "-" +
+        String(now.getMonth() + 1).padStart(2, "0")
+    );
+}
+
+function getFixedExpenseStartMonth(expense) {
+    const storedMonth =
+        String(
+            expense?.startMonth ||
+            expense?.purchaseDate ||
+            expense?.createdAt ||
+            ""
+        ).slice(0, 7);
+
+    return /^\d{4}-(0[1-9]|1[0-2])$/.test(storedMonth)
+        ? storedMonth
+        : getCurrentMonthInputValue();
+}
+
+function isFixedExpenseStartedByMonth(expense, selectedDate) {
+    if (expense?.expenseType !== "recurring") {
+        return true;
+    }
+
+    const selectedMonth =
+        String(selectedDate.getFullYear()) +
+        "-" +
+        String(selectedDate.getMonth() + 1).padStart(2, "0");
+
+    return getFixedExpenseStartMonth(expense) <= selectedMonth;
+}
+
+function formatFixedExpenseStartMonth(value) {
+    const monthValue =
+        String(value || "").slice(0, 7);
+
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(monthValue)) {
+        return "Sin definir";
+    }
+
+    const [year, month] =
+        monthValue.split("-").map(Number);
+
+    return new Intl.DateTimeFormat(
+        "es-GT",
+        {
+            month: "long",
+            year: "numeric"
+        }
+    ).format(
+        new Date(year, month - 1, 1)
+    );
+}
+
 // CALCULAR GASTOS FIJOS DEL MES SELECCIONADO
 // ------------------------------------------------------------
 
@@ -7501,6 +7888,10 @@ function getDashboardFixedExpenses(
                 return total;
             }
 
+
+            if (!isFixedExpenseStartedByMonth(expense, selectedDate)) {
+                return total;
+            }
 
             const amount =
                 parseFloat(
@@ -7699,6 +8090,53 @@ totalExpenses = sumForSelectedPeriod(expenses);
 
     }
 
+
+    const insightCard = document.getElementById("dashboardFinancialInsight");
+    const insightPeriod = document.getElementById("dashboardInsightPeriod");
+    const insightTitle = document.getElementById("dashboardInsightTitle");
+    const insightDescription = document.getElementById("dashboardInsightDescription");
+    const savingRateLabel = document.getElementById("dashboardInsightRateLabel");
+    const savingRateValue = document.getElementById("dashboardSavingRate");
+    const savingRateBar = document.getElementById("dashboardSavingRateBar");
+    const selectedMonthDate = new Date(Number(year), Number(month) - 1, 1);
+    const periodLabel = new Intl.DateTimeFormat("es-GT", {
+        month: "long",
+        year: "numeric"
+    }).format(selectedMonthDate);
+    const hasIncome = totalIncome > 0;
+    const hasExpenses = totalExpenses + monthlyFixedExpenses > 0;
+    const savingRate = hasIncome ? (balance / totalIncome) * 100 : null;
+
+    if (insightCard) {
+        insightCard.dataset.tone = balance < 0 ? "warning" : hasIncome ? "positive" : "neutral";
+        insightCard.dataset.incomeStatus = hasIncome ? "available" : "missing";
+    }
+    if (savingRateLabel) savingRateLabel.textContent = "Porción disponible";
+    if (insightPeriod) insightPeriod.textContent = periodLabel;
+    if (savingRateValue) savingRateValue.textContent = savingRate === null ? "Pendiente" : Math.round(savingRate) + "%";
+    if (savingRateBar) {
+        const barWidth = savingRate === null ? 0 : Math.min(100, Math.max(0, savingRate));
+        savingRateBar.style.width = barWidth + "%";
+    }
+
+    if (insightTitle && insightDescription) {
+        if (!hasIncome && !hasExpenses) {
+            insightTitle.textContent = "Tu panel está listo para empezar";
+            insightDescription.textContent = "Registra un ingreso o gasto para ver cómo se mueve tu dinero este mes.";
+        } else if (!hasIncome) {
+            insightTitle.textContent = "Falta registrar ingresos del mes";
+            insightDescription.textContent = "Ya aparecen " + formatCurrency(totalExpenses + monthlyFixedExpenses, "GTQ") + " entre gastos y compromisos.";
+        } else if (balance < 0) {
+            insightTitle.textContent = "El flujo del mes está en negativo";
+            insightDescription.textContent = "Los gastos registrados superan los ingresos. Revisa el detalle antes de conciliar el estado.";
+        } else if (balance === 0) {
+            insightTitle.textContent = "Ingresos y salidas están equilibrados";
+            insightDescription.textContent = "El balance disponible para este mes es Q 0.00.";
+        } else {
+            insightTitle.textContent = "Mantienes dinero disponible este mes";
+            insightDescription.textContent = "Después de gastos variables y recurrentes conservas " + formatCurrency(balance, "GTQ") + ".";
+        }
+    }
 }
 
 // ------------------------------------------------------------
@@ -8263,16 +8701,8 @@ const cutoffMonthDate =
 
 projectedCharges.push({
     creditCardId: expense.creditCardId,
-    statementCutoffDate: formatDate(
-        cutoffMonthDate.getFullYear(),
-        cutoffMonthDate.getMonth(),
-        cardCutoffDay
-    ),
-    statementDueDate: formatDate(
-        selectedYear,
-        selectedMonthIndex,
-        cardPaymentDay
-    ),
+    statementCutoffDate: buildISODate(cutoffMonthDate.getFullYear(), cutoffMonthDate.getMonth(), cardCutoffDay),
+    statementDueDate: buildISODate(selectedYear, selectedMonthIndex - 1, cardPaymentDay),
     amountGTQ: installmentAmountGTQ,
     isProjected: true
 });
@@ -8301,6 +8731,10 @@ projectedCharges.push({
 
             const monthIndex =
                 occurrenceMonth.getMonth();
+
+            if (!isFixedExpenseStartedByMonth(expense, occurrenceMonth)) {
+                continue;
+            }
 
             const lastDayOfMonth =
                 new Date(year, monthIndex + 1, 0).getDate();
@@ -8532,6 +8966,223 @@ if (dashboardMonth) {
 // ------------------------------------------------------------
 
 populateYearSelectors();
+// Selectores propios para los periodos; los selects nativos quedan como
+// fuente de datos para los cálculos y los eventos existentes.
+const periodPickerRefreshers = new WeakMap();
+
+function initializePeriodPicker(selectId, buttonId, valueId, optionsId) {
+    const select = document.getElementById(selectId);
+    const button = document.getElementById(buttonId);
+    const value = document.getElementById(valueId);
+    const listbox = document.getElementById(optionsId);
+    const field = button?.closest(".period-field");
+
+    if (!select || !button || !value || !listbox || !field) {
+        return;
+    }
+
+    const existingRefresh = periodPickerRefreshers.get(select);
+    if (existingRefresh) {
+        existingRefresh();
+        return;
+    }
+
+    const syncSelection = () => {
+        const selectedOption = select.options[select.selectedIndex];
+        value.textContent = selectedOption?.textContent.trim() || "Seleccionar";
+
+        listbox.querySelectorAll(".period-option").forEach(optionButton => {
+            const isSelected = optionButton.dataset.value === select.value;
+            optionButton.setAttribute("aria-selected", String(isSelected));
+        });
+    };
+
+    const close = (restoreFocus = false) => {
+        listbox.hidden = true;
+        scrollTrack.hidden = true;
+        listbox.classList.remove("has-custom-scrollbar");
+        button.setAttribute("aria-expanded", "false");
+        if (restoreFocus) button.focus();
+    };
+
+    const open = () => {
+        document.querySelectorAll(".period-trigger[aria-expanded='true']").forEach(openButton => {
+            if (openButton !== button) {
+                openButton.setAttribute("aria-expanded", "false");
+                const otherListbox = document.getElementById(openButton.getAttribute("aria-controls"));
+                if (otherListbox) {
+                    otherListbox.hidden = true;
+                    otherListbox.classList.remove("has-custom-scrollbar");
+                    const otherTrack = otherListbox.parentElement.querySelector(".period-scrollbar");
+                    if (otherTrack) otherTrack.hidden = true;
+                }
+            }
+        });
+
+        listbox.hidden = false;
+        button.setAttribute("aria-expanded", "true");
+        requestAnimationFrame(updateCustomScrollbar);
+        listbox.querySelector("[aria-selected='true']")?.focus();
+    };
+
+    const scrollTrack = document.createElement("div");
+    scrollTrack.className = "period-scrollbar";
+    scrollTrack.setAttribute("aria-hidden", "true");
+    scrollTrack.setAttribute("role", "presentation");
+    scrollTrack.hidden = true;
+
+    const scrollThumb = document.createElement("div");
+    scrollThumb.className = "period-scroll-thumb";
+    scrollTrack.appendChild(scrollThumb);
+    const scrollContainer = listbox.parentElement;
+    scrollContainer?.appendChild(scrollTrack);
+
+    const refreshOptions = () => {
+        listbox.replaceChildren();
+        [...select.options].forEach(option => {
+            const optionButton = document.createElement("button");
+            optionButton.type = "button";
+            optionButton.className = "period-option";
+            optionButton.setAttribute("role", "option");
+            optionButton.dataset.value = option.value;
+            optionButton.textContent = option.textContent.trim();
+            optionButton.setAttribute("aria-selected", String(option.value === select.value));
+
+            optionButton.addEventListener("click", () => {
+                const changed = select.value !== option.value;
+                select.value = option.value;
+                if (changed) {
+                    select.dispatchEvent(new Event("change", { bubbles: true }));
+                } else {
+                    syncSelection();
+                }
+                close(true);
+            });
+
+            listbox.appendChild(optionButton);
+        });
+        syncSelection();
+        if (!listbox.hidden) requestAnimationFrame(updateCustomScrollbar);
+    };
+    periodPickerRefreshers.set(select, refreshOptions);
+    refreshOptions();
+
+    let scrollDrag = null;
+    const updateCustomScrollbar = () => {
+        if (listbox.hidden) {
+            scrollTrack.hidden = true;
+            listbox.classList.remove("has-custom-scrollbar");
+            return;
+        }
+
+        const scrollRange = listbox.scrollHeight - listbox.clientHeight;
+        const trackHeight = Math.max(0, listbox.clientHeight - 16);
+        const isScrollable = scrollRange > 1 && trackHeight > 0;
+        scrollTrack.hidden = !isScrollable;
+        listbox.classList.toggle("has-custom-scrollbar", isScrollable);
+        if (!isScrollable) return;
+
+        const listBounds = listbox.getBoundingClientRect();
+        const containerBounds = scrollContainer.getBoundingClientRect();
+        scrollTrack.style.top = `${listBounds.top - containerBounds.top + 8}px`;
+        scrollTrack.style.left = `${listBounds.right - containerBounds.left - 13}px`;
+        scrollTrack.style.height = `${trackHeight}px`;
+        const thumbHeight = Math.max(
+            28,
+            Math.min(trackHeight, trackHeight * listbox.clientHeight / listbox.scrollHeight)
+        );
+        const thumbRange = Math.max(0, trackHeight - thumbHeight);
+        const thumbTop = scrollRange > 0
+            ? (listbox.scrollTop / scrollRange) * thumbRange
+            : 0;
+        scrollThumb.style.height = `${thumbHeight}px`;
+        scrollThumb.style.transform = `translateY(${thumbTop}px)`;
+    };
+
+    const finishScrollDrag = () => {
+        scrollDrag = null;
+        scrollThumb.classList.remove("is-dragging");
+    };
+
+    scrollThumb.addEventListener("pointerdown", event => {
+        if (event.button !== 0) return;
+        event.preventDefault();
+        event.stopPropagation();
+        scrollDrag = { startY: event.clientY, startScrollTop: listbox.scrollTop };
+        scrollThumb.classList.add("is-dragging");
+        scrollThumb.setPointerCapture(event.pointerId);
+    });
+    scrollThumb.addEventListener("pointermove", event => {
+        if (!scrollDrag) return;
+        const thumbRange = scrollTrack.clientHeight - scrollThumb.offsetHeight;
+        const scrollRange = listbox.scrollHeight - listbox.clientHeight;
+        if (thumbRange <= 0 || scrollRange <= 0) return;
+        listbox.scrollTop = scrollDrag.startScrollTop +
+            ((event.clientY - scrollDrag.startY) / thumbRange) * scrollRange;
+    });
+    scrollThumb.addEventListener("pointerup", finishScrollDrag);
+    scrollThumb.addEventListener("pointercancel", finishScrollDrag);
+    scrollThumb.addEventListener("lostpointercapture", finishScrollDrag);
+    scrollTrack.addEventListener("pointerdown", event => {
+        if (event.target !== scrollTrack || event.button !== 0) return;
+        const bounds = scrollTrack.getBoundingClientRect();
+        const scrollRange = listbox.scrollHeight - listbox.clientHeight;
+        const ratio = Math.max(0, Math.min(1, (event.clientY - bounds.top) / bounds.height));
+        listbox.scrollTop = Math.max(0, ratio * scrollRange - listbox.clientHeight / 2);
+    });
+    listbox.addEventListener("scroll", updateCustomScrollbar, { passive: true });
+    window.addEventListener("resize", updateCustomScrollbar, { passive: true });
+
+    button.addEventListener("click", () => {
+        if (button.getAttribute("aria-expanded") === "true") {
+            close();
+        } else {
+            open();
+        }
+    });
+
+    button.addEventListener("keydown", event => {
+        if (["ArrowDown", "ArrowUp", "Enter", " "].includes(event.key)) {
+            event.preventDefault();
+            if (button.getAttribute("aria-expanded") !== "true") open();
+        } else if (event.key === "Escape") {
+            close();
+        }
+    });
+
+    listbox.addEventListener("keydown", event => {
+        const options = [...listbox.querySelectorAll(".period-option")];
+        const currentIndex = options.indexOf(document.activeElement);
+        let nextIndex = currentIndex;
+
+        if (event.key === "ArrowDown") nextIndex = Math.min(currentIndex + 1, options.length - 1);
+        else if (event.key === "ArrowUp") nextIndex = Math.max(currentIndex - 1, 0);
+        else if (event.key === "Home") nextIndex = 0;
+        else if (event.key === "End") nextIndex = options.length - 1;
+        else if (event.key === "Escape") {
+            event.preventDefault();
+            close(true);
+            return;
+        } else {
+            return;
+        }
+
+        event.preventDefault();
+        options[nextIndex]?.focus();
+    });
+
+    document.addEventListener("click", event => {
+        if (!field.contains(event.target)) close();
+    });
+
+    select.addEventListener("change", syncSelection);
+    syncSelection();
+}
+
+initializePeriodPicker("month", "monthPickerButton", "monthPickerValue", "monthPickerOptions");
+initializePeriodPicker("year", "yearPickerButton", "yearPickerValue", "yearPickerOptions");
+initializePeriodPicker("reportYear", "reportYearPickerButton", "reportYearPickerValue", "reportYearPickerOptions");
+initializePeriodPicker("reportMonth", "reportMonthPickerButton", "reportMonthPickerValue", "reportMonthPickerOptions");
 
 // ============================================================
 // 13. GASTOS FIJOS
@@ -8638,7 +9289,107 @@ const fixedExpenseDueDay =
         "fixedExpenseDueDay"
     );
 
-    function updateFixedExpenseTypeVisibility() {
+const fixedExpenseStartMonthGroup =
+    document.getElementById(
+        "fixedExpenseStartMonthGroup"
+    );
+
+const fixedExpenseStartMonth =
+    document.getElementById(
+        "fixedExpenseStartMonth"
+    );
+
+const fixedExpenseStartMonthMonth =
+    document.getElementById("fixedExpenseStartMonthMonth");
+
+const fixedExpenseStartMonthYear =
+    document.getElementById("fixedExpenseStartMonthYear");
+
+function updateFixedExpenseStartMonthFromPeriods() {
+    if (
+        fixedExpenseStartMonth &&
+        fixedExpenseStartMonthMonth?.value &&
+        fixedExpenseStartMonthYear?.value
+    ) {
+        fixedExpenseStartMonth.value =
+            `${fixedExpenseStartMonthYear.value}-${fixedExpenseStartMonthMonth.value}`;
+    }
+}
+
+function populateFixedExpenseStartYears() {
+    if (!fixedExpenseStartMonthYear) return;
+
+    const currentYear = new Date().getFullYear();
+    const sourceYear = String(fixedExpenseStartMonth?.value || "").slice(0, 4);
+    const selectedYear = sourceYear || fixedExpenseStartMonthYear.value || String(currentYear);
+    const years = new Set();
+
+    for (let year = currentYear + 10; year >= currentYear - 30; year--) {
+        years.add(year);
+    }
+    const parsedSourceYear = Number(sourceYear);
+    if (Number.isInteger(parsedSourceYear) && parsedSourceYear > 0) {
+        years.add(parsedSourceYear);
+    }
+
+    fixedExpenseStartMonthYear.replaceChildren(...[...years]
+        .sort((a, b) => b - a)
+        .map(year => {
+            const option = document.createElement("option");
+            option.value = String(year);
+            option.textContent = String(year);
+            return option;
+        }));
+
+    fixedExpenseStartMonthYear.value = selectedYear;
+}
+
+function syncFixedExpenseStartMonthPeriods() {
+    if (
+        !fixedExpenseStartMonth?.value ||
+        !fixedExpenseStartMonthMonth ||
+        !fixedExpenseStartMonthYear
+    ) return;
+
+    const [year, month] = fixedExpenseStartMonth.value.split("-");
+    if (!year || !month) return;
+
+    if (![...fixedExpenseStartMonthYear.options].some(option => option.value === year)) {
+        const option = document.createElement("option");
+        option.value = year;
+        option.textContent = year;
+        fixedExpenseStartMonthYear.appendChild(option);
+    }
+
+    fixedExpenseStartMonthYear.value = year;
+    fixedExpenseStartMonthMonth.value = month;
+    fixedExpenseStartMonthYear.dispatchEvent(new Event("change", { bubbles: true }));
+    fixedExpenseStartMonthMonth.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+fixedExpenseStartMonthMonth?.addEventListener(
+    "change",
+    updateFixedExpenseStartMonthFromPeriods
+);
+fixedExpenseStartMonthYear?.addEventListener(
+    "change",
+    updateFixedExpenseStartMonthFromPeriods
+);
+
+function closeFixedExpensePickerMenus() {
+    fixedExpenseFormPanel?.querySelectorAll(".period-trigger[aria-expanded='true']")
+        .forEach(button => {
+            button.setAttribute("aria-expanded", "false");
+            const listbox = document.getElementById(button.getAttribute("aria-controls"));
+            if (!listbox) return;
+            listbox.hidden = true;
+            listbox.classList.remove("has-custom-scrollbar");
+            const track = listbox.parentElement?.querySelector(".period-scrollbar");
+            if (track) track.hidden = true;
+        });
+}
+
+function updateFixedExpenseTypeVisibility() {
     const isInstallment =
         fixedExpenseType?.value === "installment";
 
@@ -8660,6 +9411,14 @@ const fixedExpenseDueDay =
     if (fixedExpenseChargeDayGroup) {
         fixedExpenseChargeDayGroup.hidden =
             !(isCard && isRecurring);
+    }
+
+    if (fixedExpenseStartMonthGroup) {
+        fixedExpenseStartMonthGroup.hidden = !isRecurring;
+    }
+
+    if (fixedExpenseStartMonth) {
+        fixedExpenseStartMonth.required = isRecurring;
     }
 }
 
@@ -8799,8 +9558,19 @@ async function initializeFixedExpenses() {
                     expenseType: 
                         expense.expense_type,
 
-                    purchaseDate: 
-                        expense.purchase_date,
+                    startMonth:
+                        expense.expense_type === "recurring"
+                            ? String(
+                                expense.purchase_date ||
+                                expense.created_at ||
+                                getCurrentMonthInputValue()
+                            ).slice(0, 7)
+                            : null,
+
+                    purchaseDate:
+                        expense.expense_type === "installment"
+                            ? expense.purchase_date
+                            : null,
                     
                     cutoffDay: 
                         expense.cutoff_day,
@@ -9258,6 +10028,7 @@ function openFixedExpenseForm(expense = null) {
 
     if (!fixedExpenseFormPanel) return;
 
+    closeFixedExpensePickerMenus();
     populateFixedExpenseCategories();
 
     fixedExpenseForm.reset();
@@ -9288,6 +10059,12 @@ function openFixedExpenseForm(expense = null) {
 
         fixedExpensePurchaseDate.value =
             expense.purchaseDate || "";
+
+        fixedExpenseStartMonth.value =
+            expense.startMonth ||
+            (expense.createdAt
+                ? String(expense.createdAt).slice(0, 7)
+                : getCurrentMonthInputValue());
 
         fixedExpenseCutoffDay.value =
             expense.cutoffDay || "";
@@ -9331,6 +10108,9 @@ fixedExpenseChargeDay.value =
     fixedExpensePurchaseDate.value =
     "";
 
+    fixedExpenseStartMonth.value =
+        getCurrentMonthInputValue();
+
 fixedExpenseCutoffDay.value =
     "";
 
@@ -9345,9 +10125,32 @@ fixedExpenseTotalInstallments.value =
 
 }
 
+    populateFixedExpenseStartYears();
+    initializePeriodPicker(
+        "fixedExpenseStartMonthMonth",
+        "fixedExpenseStartMonthMonthButton",
+        "fixedExpenseStartMonthMonthValue",
+        "fixedExpenseStartMonthMonthOptions"
+    );
+    initializePeriodPicker(
+        "fixedExpenseStartMonthYear",
+        "fixedExpenseStartMonthYearButton",
+        "fixedExpenseStartMonthYearValue",
+        "fixedExpenseStartMonthYearOptions"
+    );
+    syncFixedExpenseStartMonthPeriods();
+    // Si el registro es histórico, refresca la lista con el año que se añadió.
+    initializePeriodPicker(
+        "fixedExpenseStartMonthYear",
+        "fixedExpenseStartMonthYearButton",
+        "fixedExpenseStartMonthYearValue",
+        "fixedExpenseStartMonthYearOptions"
+    );
+
     updateFixedExpenseExchangeVisibility();
     updateFixedExpenseTypeVisibility();
 
+    refreshDatePicker("fixedExpensePurchaseDate");
     fixedExpenseFormPanel.hidden = false;
 
     fixedExpenseFormPanel.scrollIntoView({
@@ -9362,6 +10165,7 @@ function closeFixedExpenseForm() {
 
     if (!fixedExpenseFormPanel) return;
 
+    closeFixedExpensePickerMenus();
     fixedExpenseForm.reset();
 
     fixedExpenseId.value = "";
@@ -9415,81 +10219,28 @@ function getFixedExpenseExchangeRate() {
 
 
 async function refreshFixedExpenseRate() {
-
     if (!refreshFixedExpenseExchangeRate) return;
 
-    refreshFixedExpenseExchangeRate.disabled =
-        true;
-
+    refreshFixedExpenseExchangeRate.disabled = true;
     if (fixedExpenseExchangeStatus) {
-
-        fixedExpenseExchangeStatus.textContent =
-            "Consultando tipo de cambio...";
-
+        fixedExpenseExchangeStatus.textContent = "Consultando referencia del Banco de Guatemala…";
     }
 
     try {
-
-        const response =
-            await fetch(
-                "https://www.banguat.gob.gt/variables/ws/TipoCambio.asmx/TipoCambioDia"
-            );
-
-        if (!response.ok) {
-            throw new Error("HTTP error");
-        }
-
-        const xml =
-            await response.text();
-
-        const match =
-            xml.match(
-                /<Monto>(.*?)<\/Monto>/i
-            );
-
-        if (!match) {
-            throw new Error(
-                "Tipo de cambio no encontrado"
-            );
-        }
-
-        const rate =
-            parseFloat(match[1]);
-
-        if (!rate || rate <= 0) {
-            throw new Error(
-                "Tipo de cambio inválido"
-            );
-        }
-
-        fixedExpenseExchangeRate.value =
-            rate.toFixed(5);
-
+        const quote = await getBanguatReferenceRate();
+        fixedExpenseExchangeRate.value = quote.rate.toFixed(5);
         if (fixedExpenseExchangeStatus) {
-
-            fixedExpenseExchangeStatus.textContent =
-                "Tipo de cambio actualizado.";
-
+            fixedExpenseExchangeStatus.textContent = `Referencia Banguat${quote.date ? ` · ${quote.date}` : ""}.`;
         }
-
     } catch (error) {
-
+        console.error("No se pudo consultar el tipo de cambio de Banguat:", error);
         if (fixedExpenseExchangeStatus) {
-
-            fixedExpenseExchangeStatus.textContent =
-                "No fue posible consultar Banguat. Ingresa el tipo de cambio manualmente.";
-
+            fixedExpenseExchangeStatus.textContent = "No se pudo consultar Banguat. Ingresa la tasa manualmente o despliega la función de conexión.";
         }
-
     } finally {
-
-        refreshFixedExpenseExchangeRate.disabled =
-            false;
-
+        refreshFixedExpenseExchangeRate.disabled = false;
     }
-
 }
-
 
 function getFixedExpenseCategoryName(
     categoryId
@@ -9602,6 +10353,11 @@ const purchaseDate =
     fixedExpensePurchaseDate.value ||
     null;
 
+const startMonth =
+    expenseType === "recurring"
+        ? fixedExpenseStartMonth.value
+        : null;
+
 const cutoffDay =
     fixedExpenseCutoffDay.value
         ? Number(fixedExpenseCutoffDay.value)
@@ -9658,7 +10414,12 @@ const totalInstallments =
 
             }
 
-            if (
+            if (expenseType === "recurring" && !startMonth) {
+    alert("Selecciona el mes de inicio del gasto recurrente.");
+    return;
+}
+
+if (
     paymentMethod === "card" &&
     !selectedFixedExpenseCard
 ) {
@@ -9745,7 +10506,8 @@ if (
                 exchangeRate,
                 amountGTQ,
                 expenseType,
-                purchaseDate,
+                startMonth,
+                purchaseDate: expenseType === "installment" ? purchaseDate : null,
                 cutoffDay,
                 totalInstallments,
                frequency,
@@ -9810,8 +10572,11 @@ active,
                 expense_type:
                     fixedExpense.expenseType,
 
-                purchase_date: 
-                    fixedExpense.purchaseDate,
+                // Recurrentes reutilizan purchase_date para guardar su mes de inicio.
+                purchase_date:
+                    fixedExpense.expenseType === "recurring"
+                        ? fixedExpense.startMonth + "-01"
+                        : fixedExpense.purchaseDate,
 
                 cutoff_day: 
                     fixedExpense.cutoffDay,
@@ -10072,7 +10837,11 @@ function renderFixedExpenseTable() {
                 }`
                 : formatFixedExpenseFrequency(
                     expense.frequency
-                );
+                ) +
+                    " · Desde " +
+                    formatFixedExpenseStartMonth(
+                        getFixedExpenseStartMonth(expense)
+                    );
 
         const dayText =
             expense.expenseType === "recurring" &&
@@ -10700,12 +11469,25 @@ function getReportFixedMonthlyTotal() {
     const fixedExpenses =
         getReportFixedExpenses();
 
+    const reportYear = getReportYear();
+    const reportMonth = getReportMonth();
+    const reportPeriodEnd = new Date(
+        reportYear,
+        reportMonth === "all" ? 11 : Number(reportMonth) - 1,
+        1
+    );
+
     return fixedExpenses.reduce(
         (total, expense) => {
 
             if (
                 expense.active === false
             ) {
+                return total;
+            }
+
+
+            if (!isFixedExpenseStartedByMonth(expense, reportPeriodEnd)) {
                 return total;
             }
 
@@ -11589,39 +12371,335 @@ function formatCurrency(
 }
 
 
-function formatDate(
-    dateString
-) {
+const DATE_FORMAT_STORAGE_KEY = "finanzas_personales.date_format";
+const datePickerInstances = new Map();
 
-    if (!dateString) {
-        return "";
+function getDateFormatPreference() {
+    const allowed = new Set(["DD/MM/YYYY", "MM/DD/YYYY", "YYYY-MM-DD"]);
+    try {
+        const saved = localStorage.getItem(DATE_FORMAT_STORAGE_KEY);
+        if (saved === "DD-MM-YYYY") return "DD/MM/YYYY"; // Migra la preferencia anterior.
+        return allowed.has(saved) ? saved : "DD/MM/YYYY";
+    } catch (error) {
+        return "DD/MM/YYYY";
     }
-
-
-    const parts =
-        dateString.split("-");
-
-
-    if (
-        parts.length !== 3
-    ) {
-
-        return dateString;
-
-    }
-
-
-    return (
-        parts[2] +
-        "/" +
-        parts[1] +
-        "/" +
-        parts[0]
-    );
-
 }
 
+function toISODate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+}
 
+function buildISODate(year, monthIndex, day) {
+    const lastDay = new Date(year, monthIndex + 1, 0).getDate();
+    const validDay = Math.min(Math.max(Number(day) || 1, 1), lastDay);
+    return toISODate(new Date(year, monthIndex, validDay));
+}
+
+function getTodayISO() {
+    return toISODate(new Date());
+}
+
+function formatDate(dateString) {
+    if (!dateString) return "";
+
+    const datePart = String(dateString).slice(0, 10);
+    const match = datePart.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return String(dateString);
+
+    const [, year, month, day] = match;
+    const format = getDateFormatPreference();
+
+    if (format === "MM/DD/YYYY") return `${month}/${day}/${year}`;
+    if (format === "YYYY-MM-DD") return `${year}-${month}-${day}`;
+    return `${day}/${month}/${year}`;
+}
+
+function initializeSpanishDatePicker(inputId) {
+    const input = document.getElementById(inputId);
+    if (!input || datePickerInstances.has(inputId)) return;
+
+    const field = document.createElement("div");
+    field.className = "date-picker-field";
+    input.classList.add("date-value-hidden");
+    input.removeAttribute("required");
+    input.parentNode.insertBefore(field, input);
+    field.appendChild(input);
+
+    const button = document.createElement("button");
+    button.id = `${inputId}PickerButton`;
+    button.type = "button";
+    button.className = "date-picker-trigger";
+    button.setAttribute("aria-haspopup", "dialog");
+    button.setAttribute("aria-expanded", "false");
+    button.setAttribute("aria-controls", `${inputId}Calendar`);
+    button.innerHTML = `<span class="date-picker-value"></span><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="5" width="14" height="12" rx="2"/><path d="M6.5 3.5v3M13.5 3.5v3M3 9h14"/></svg>`;
+
+    const calendar = document.createElement("div");
+    calendar.id = `${inputId}Calendar`;
+    calendar.className = "date-calendar";
+    calendar.setAttribute("role", "dialog");
+    calendar.setAttribute("aria-label", "Selecciona una fecha");
+    calendar.hidden = true;
+    calendar.innerHTML = `
+        <div class="date-calendar-header">
+            <button type="button" class="date-calendar-nav" data-calendar-shift="-1" aria-label="Mes anterior">‹</button>
+            <strong class="date-calendar-title"></strong>
+            <button type="button" class="date-calendar-nav" data-calendar-shift="1" aria-label="Mes siguiente">›</button>
+        </div>
+        <div class="date-calendar-weekdays" aria-hidden="true">
+            <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
+        </div>
+        <div class="date-calendar-grid" role="grid"></div>
+        <div class="date-calendar-footer">
+            <button type="button" class="date-calendar-action" data-calendar-action="clear">Limpiar</button>
+            <button type="button" class="date-calendar-action" data-calendar-action="today">Hoy</button>
+        </div>`;
+
+    field.append(button, calendar);
+    const label = document.querySelector(`label[for="${inputId}"]`);
+    if (label) label.htmlFor = button.id;
+
+    const valueLabel = button.querySelector(".date-picker-value");
+    const title = calendar.querySelector(".date-calendar-title");
+    const grid = calendar.querySelector(".date-calendar-grid");
+    const state = { visibleMonth: new Date() };
+
+    const selectedDate = () => {
+        const match = String(input.value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        return match ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])) : null;
+    };
+
+    const refreshButton = () => {
+        valueLabel.textContent = formatDate(input.value) || "Selecciona una fecha";
+        button.setAttribute("aria-label", input.value ? `Fecha: ${formatDate(input.value)}` : "Seleccionar fecha");
+    };
+
+    const renderCalendar = () => {
+        const year = state.visibleMonth.getFullYear();
+        const month = state.visibleMonth.getMonth();
+        const monthTitle = new Intl.DateTimeFormat("es-GT", { month: "long", year: "numeric" })
+            .format(new Date(year, month, 1))
+            .replace(/\s+de\s+/i, " ");
+        title.textContent = monthTitle.charAt(0).toLocaleUpperCase("es-GT") + monthTitle.slice(1);
+        grid.replaceChildren();
+
+        const firstDayOffset = (new Date(year, month, 1).getDay() + 6) % 7;
+        const selected = input.value;
+        const today = getTodayISO();
+
+        // Seis semanas mantienen una cuadrícula estable e incluyen los días
+        // contiguos de los meses anterior y siguiente.
+        for (let cell = 0; cell < 42; cell++) {
+            const dateValue = new Date(year, month, cell - firstDayOffset + 1);
+            const date = toISODate(dateValue);
+            const dayButton = document.createElement("button");
+            dayButton.type = "button";
+            dayButton.className = "date-calendar-day";
+            dayButton.textContent = String(dateValue.getDate());
+            if (dateValue.getMonth() !== month) dayButton.classList.add("is-outside-month");
+            dayButton.dataset.date = date;
+            dayButton.setAttribute("role", "gridcell");
+            dayButton.setAttribute("aria-label", formatDate(date));
+            if (date === selected) {
+                dayButton.classList.add("is-selected");
+                dayButton.setAttribute("aria-selected", "true");
+            } else {
+                dayButton.setAttribute("aria-selected", "false");
+            }
+            if (date === today) dayButton.classList.add("is-today");
+            grid.appendChild(dayButton);
+        }
+    };
+
+    const closeCalendar = restoreFocus => {
+        calendar.hidden = true;
+        button.setAttribute("aria-expanded", "false");
+        field.classList.remove("is-open");
+        if (restoreFocus) button.focus();
+    };
+
+    const openCalendar = () => {
+        document.querySelectorAll(".date-picker-field.is-open").forEach(openField => {
+            if (openField !== field) {
+                openField.classList.remove("is-open");
+                const otherCalendar = openField.querySelector(".date-calendar");
+                const otherButton = openField.querySelector(".date-picker-trigger");
+                if (otherCalendar) otherCalendar.hidden = true;
+                if (otherButton) otherButton.setAttribute("aria-expanded", "false");
+            }
+        });
+
+        const current = selectedDate() || new Date();
+        state.visibleMonth = new Date(current.getFullYear(), current.getMonth(), 1);
+        renderCalendar();
+        calendar.classList.remove("align-right", "opens-up");
+        calendar.hidden = false;
+        button.setAttribute("aria-expanded", "true");
+        field.classList.add("is-open");
+
+        const calendarBounds = calendar.getBoundingClientRect();
+        const fieldBounds = field.getBoundingClientRect();
+        if (calendarBounds.right > window.innerWidth - 12) {
+            calendar.classList.add("align-right");
+        }
+        if (
+            calendarBounds.bottom > window.innerHeight - 12 &&
+            fieldBounds.top > calendarBounds.height + 12
+        ) {
+            calendar.classList.add("opens-up");
+        }
+
+        const focusDate = input.value || getTodayISO();
+        grid.querySelector(`[data-date="${focusDate}"]`)?.focus();
+    };
+
+    const setDate = value => {
+        input.value = value;
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+        refreshButton();
+        renderCalendar();
+        closeCalendar(true);
+    };
+
+    button.addEventListener("click", () => {
+        if (button.getAttribute("aria-expanded") === "true") closeCalendar(false);
+        else openCalendar();
+    });
+    button.addEventListener("keydown", event => {
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+            event.preventDefault();
+            if (calendar.hidden) openCalendar();
+        } else if (event.key === "Escape") {
+            closeCalendar(false);
+        }
+    });
+
+    calendar.querySelectorAll("[data-calendar-shift]").forEach(navButton => {
+        navButton.addEventListener("click", () => {
+            state.visibleMonth = new Date(
+                state.visibleMonth.getFullYear(),
+                state.visibleMonth.getMonth() + Number(navButton.dataset.calendarShift),
+                1
+            );
+            renderCalendar();
+        });
+    });
+
+    calendar.addEventListener("click", event => {
+        const dayButton = event.target.closest("[data-date]");
+        if (dayButton) {
+            setDate(dayButton.dataset.date);
+            return;
+        }
+
+        const action = event.target.closest("[data-calendar-action]")?.dataset.calendarAction;
+        if (action === "today") setDate(getTodayISO());
+        if (action === "clear") setDate("");
+    });
+
+    grid.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+            event.preventDefault();
+            closeCalendar(true);
+            return;
+        }
+
+        const currentButton = event.target.closest("[data-date]");
+        if (!currentButton) return;
+        const current = selectedDateFromISO(currentButton.dataset.date);
+        let offset = 0;
+        if (event.key === "ArrowLeft") offset = -1;
+        else if (event.key === "ArrowRight") offset = 1;
+        else if (event.key === "ArrowUp") offset = -7;
+        else if (event.key === "ArrowDown") offset = 7;
+        else if (event.key === "Home") offset = -((current.getDay() + 6) % 7);
+        else if (event.key === "End") offset = 6 - ((current.getDay() + 6) % 7);
+        else if (event.key === "PageUp" || event.key === "PageDown") {
+            event.preventDefault();
+            state.visibleMonth = new Date(state.visibleMonth.getFullYear(), state.visibleMonth.getMonth() + (event.key === "PageUp" ? -1 : 1), 1);
+            const focusedDate = new Date(current.getFullYear(), current.getMonth() + (event.key === "PageUp" ? -1 : 1), current.getDate());
+            renderCalendar();
+            grid.querySelector(`[data-date="${toISODate(focusedDate)}"]`)?.focus();
+            return;
+        } else return;
+
+        event.preventDefault();
+        const nextDate = new Date(current.getFullYear(), current.getMonth(), current.getDate() + offset);
+        if (nextDate.getMonth() !== state.visibleMonth.getMonth()) {
+            state.visibleMonth = new Date(nextDate.getFullYear(), nextDate.getMonth(), 1);
+            renderCalendar();
+        }
+        grid.querySelector(`[data-date="${toISODate(nextDate)}"]`)?.focus();
+    });
+
+    input.addEventListener("input", () => {
+        refreshButton();
+        renderCalendar();
+    });
+    input.addEventListener("change", () => {
+        refreshButton();
+        renderCalendar();
+    });
+    document.addEventListener("click", event => {
+        if (!field.contains(event.target)) closeCalendar(false);
+    });
+
+    refreshButton();
+    renderCalendar();
+    datePickerInstances.set(inputId, {
+        refresh() { refreshButton(); renderCalendar(); },
+        focus() { button.focus(); }
+    });
+}
+
+function selectedDateFromISO(value) {
+    const [year, month, day] = value.split("-").map(Number);
+    return new Date(year, month - 1, day);
+}
+
+function refreshDatePicker(inputId) {
+    datePickerInstances.get(inputId)?.refresh();
+}
+
+function focusDatePicker(inputId) {
+    datePickerInstances.get(inputId)?.focus();
+}
+
+function initializeDateFormatPreference() {
+    const options = [...document.querySelectorAll('input[name="dateFormatPreference"]')];
+    if (!options.length) return;
+
+    const selectedFormat = getDateFormatPreference();
+    options.forEach(option => {
+        option.checked = option.value === selectedFormat;
+        option.addEventListener("change", () => {
+            if (!option.checked) return;
+            try {
+                localStorage.setItem(DATE_FORMAT_STORAGE_KEY, option.value);
+            } catch (error) {
+                console.warn("No se pudo guardar el formato de fecha en este navegador.", error);
+            }
+
+            datePickerInstances.forEach(picker => picker.refresh());
+            if (typeof renderIncomeTable === "function") renderIncomeTable();
+            if (typeof renderExpenseTable === "function") renderExpenseTable();
+            if (typeof renderDashboardCardPayments === "function") renderDashboardCardPayments();
+            if (typeof renderCreditCardStatements === "function") renderCreditCardStatements();
+            if (typeof updateReports === "function") updateReports();
+        });
+    });
+}
+
+initializeDateFormatPreference();
+initializeSpanishDatePicker("incomeDate");
+initializeSpanishDatePicker("expenseDate");
+initializeSpanishDatePicker("fixedExpensePurchaseDate");
+initializeSpanishDatePicker("accountOpeningDate");
+initializeSpanishDatePicker("transferDate");
 function escapeHtml(
     value
 ) {
@@ -11873,38 +12951,284 @@ function bindAccordion({
 // 15. INICIALIZACIÓN
 // ============================================================
 
+let appDataInitializedForUserId = null;
+let appDataInitializationPromise = null;
+
 async function initializeAppData() {
-    // Inicia la carga de tarjetas desde el principio.
-    const creditCardsLoad = initializeCreditCards();
+    if (appDataInitializationPromise) {
+        return appDataInitializationPromise;
+    }
 
-    // Las categorías deben estar listas antes de cargar los demás datos.
-    await initializeCategories();
+    appDataInitializationPromise = (async () => {
+        const user = await getCurrentUser();
+        if (!user) return false;
+        if (appDataInitializedForUserId === user.id) return true;
 
-    // Inicia estas cargas en paralelo para no sumar sus tiempos de espera.
-    const budgetsLoad = initializeBudgets();
+        const accountsReady = await initializeAccounts();
+        const creditCardsLoad = initializeCreditCards();
+        const categoriesReady = await initializeCategories();
+        const budgetsLoad = initializeBudgets();
 
-    await Promise.all([
-        initializeIncomes(),
-        initializeExpenses(),
-        initializeFixedExpenses(),
-        creditCardsLoad
-    ]);
+        await Promise.all([
+            initializeIncomes(),
+            initializeExpenses(),
+            initializeFixedExpenses(),
+            creditCardsLoad
+        ]);
 
-    // Aquí ya están listas tarjetas, gastos y cargos recurrentes.
-    renderExpenseTable();
-    renderIncomeTable();
-    updateDashboard();
+        renderExpenseTable();
+        renderIncomeTable();
+        renderAccounts();
+        updateDashboard();
 
-        // Esperar a que los presupuestos también estén cargados.
-    await budgetsLoad;
+        await budgetsLoad;
+        renderBudgetTable();
+        if (categoriesReady) appDataInitializedForUserId = user.id;
+        return true;
+    })();
 
-    // Actualizar la tabla con los gastos y presupuestos ya disponibles.
-    renderBudgetTable();
+    try {
+        return await appDataInitializationPromise;
+    } finally {
+        appDataInitializationPromise = null;
+    }
 }
 
-// Iniciar aplicación
-initializeAppData();
+// Iniciar únicamente cuando exista una sesión autenticada.
+initializeAppData().catch(error => {
+    console.error("No se pudieron cargar los datos de la aplicación:", error);
+});
 
 // ============================================================
 // FIN
 // ============================================================
+// API local para integrar el importador de estados de cuenta sin duplicar
+// las reglas de guardado que usa el resto de la aplicación.
+window.FinanzasPersonalesImport = {
+    getState() {
+        return { categories, expenses, incomes, creditCards, accounts: bankAccounts, accountsReady: accountsSchemaReady };
+    },
+
+    async ensureReady() {
+        const ready = await initializeAppData();
+        if (ready && categoryLoadError) {
+            throw new Error("No se pudieron cargar las categorías desde la base de datos. Revisa tu conexión e inténtalo de nuevo.");
+        }
+        return ready;
+    },
+
+    async importStatementRows(rows, settings) {
+        const user = await getCurrentUser();
+        if (!user) throw new Error("Tu sesión ha expirado. Inicia sesión nuevamente.");
+
+        const currency = settings.currency === "USD" ? "USD" : "GTQ";
+        const exchangeRate = currency === "USD" ? Number(settings.exchangeRate) : 1;
+        if (!Number.isFinite(exchangeRate) || exchangeRate <= 0) {
+            throw new Error("Ingresa un tipo de cambio válido para los movimientos en USD.");
+        }
+
+        const paymentMethod = settings.paymentMethod === "card" ? "card" : "cash";
+        const creditCard = paymentMethod === "card"
+            ? creditCards.find(card => card.id === settings.creditCardId && card.active !== false)
+            : null;
+        if (paymentMethod === "card" && !creditCard) {
+            throw new Error("Selecciona una tarjeta de crédito activa.");
+        }
+        const selectedAccount = paymentMethod === "cash" && accountsSchemaReady
+            ? bankAccounts.find(account => String(account.id) === String(settings.accountId) && account.isActive !== false)
+            : null;
+        if (paymentMethod === "cash" && accountsSchemaReady && (!selectedAccount || selectedAccount.currency !== currency)) {
+            throw new Error("Selecciona una cuenta bancaria activa que use la misma moneda del estado de cuenta.");
+        }
+        const accountId = paymentMethod === "cash" ? selectedAccount?.id || null : null;
+
+        const now = new Date().toISOString();
+        const incomeBatch = [];
+        const expenseBatch = [];
+
+        for (const row of rows) {
+            const type = row.type === "income" ? "income" : "expense";
+            const sourceList = type === "income" ? incomes : expenses;
+            const existingRecord = row.existingId
+                ? sourceList.find(item => String(item.id) === String(row.existingId))
+                : null;
+            if (row.existingId && !existingRecord) {
+                throw new Error(`El registro que se iba a actualizar ya no está disponible: “${row.description}”.`);
+            }
+
+            const category = categories[type].find(item => item.id === row.categoryId && item.active !== false);
+            const amount = Number(row.amount);
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(row.date) || !row.description?.trim() || !Number.isFinite(amount) || amount <= 0) {
+                throw new Error("Hay un movimiento con fecha, descripción o monto inválido. Corrígelo antes de importar.");
+            }
+            if (!category) {
+                throw new Error(`Selecciona una categoría válida para “${row.description}”.`);
+            }
+
+            const id = existingRecord?.id || createId(type);
+            const amountGTQ = amount * exchangeRate;
+            const notes = existingRecord?.notes
+                || (paymentMethod === "card"
+                    ? "Importado desde estado de cuenta PDF (tarjeta de crédito)."
+                    : "Importado desde estado de cuenta PDF (cuenta bancaria/débito).");
+            const common = {
+                id,
+                date: row.date,
+                description: row.description.trim(),
+                categoryId: category.id,
+                categoryName: category.name,
+                currency,
+                amount,
+                exchangeRate,
+                amountGTQ,
+                exchangeRateSource: currency === "USD" ? "Importación PDF/Manual" : "N/A",
+                notes,
+                accountId,
+                createdAt: existingRecord?.createdAt || now,
+                updatedAt: now
+            };
+
+            if (type === "income") {
+                incomeBatch.push({
+                    clientKey: row.clientKey,
+                    isUpdate: Boolean(existingRecord),
+                    memory: common,
+                    database: {
+                        id,
+                        user_id: user.id,
+                        date: common.date,
+                        description: common.description,
+                        category_id: common.categoryId,
+                        category_name: common.categoryName,
+                        currency,
+                        amount,
+                        exchange_rate: exchangeRate,
+                        amount_gtq: amountGTQ,
+                        exchange_rate_source: common.exchangeRateSource,
+                        notes: common.notes,
+                        ...(accountsSchemaReady ? { account_id: accountId } : {}),
+                        created_at: common.createdAt,
+                        updated_at: now
+                    }
+                });
+                continue;
+            }
+
+            const statementDates = creditCard
+                ? getCreditCardStatementDates(row.date, creditCard)
+                : { statementCutoffDate: null, statementDueDate: null };
+            const memory = {
+                ...common,
+                paymentMethod,
+                creditCardId: creditCard?.id || null,
+                accountId: paymentMethod === "card" ? null : accountId,
+                statementCutoffDate: statementDates.statementCutoffDate,
+                statementDueDate: statementDates.statementDueDate
+            };
+            expenseBatch.push({
+                clientKey: row.clientKey,
+                isUpdate: Boolean(existingRecord),
+                memory,
+                database: {
+                    id,
+                    user_id: user.id,
+                    date: memory.date,
+                    description: memory.description,
+                    category_id: memory.categoryId,
+                    category_name: memory.categoryName,
+                    currency,
+                    amount,
+                    exchange_rate: exchangeRate,
+                    amount_gtq: amountGTQ,
+                    exchange_rate_source: common.exchangeRateSource,
+                    notes: common.notes,
+                    payment_method: paymentMethod,
+                    credit_card_id: memory.creditCardId,
+                    ...(accountsSchemaReady ? { account_id: memory.accountId } : {}),
+                    statement_cutoff_date: memory.statementCutoffDate,
+                    statement_due_date: memory.statementDueDate,
+                    created_at: common.createdAt,
+                    updated_at: now
+                }
+            });
+        }
+
+        const batches = [];
+        if (expenseBatch.length) batches.push({ type: "expense", table: "gastos", rows: expenseBatch });
+        if (incomeBatch.length) batches.push({ type: "income", table: "ingresos", rows: incomeBatch });
+
+        const outcomes = await Promise.all(batches.map(async batch => {
+            try {
+                const { data, error } = await supabaseClient
+                    .from(batch.table)
+                    .upsert(batch.rows.map(item => item.database))
+                    .select();
+                return { ...batch, data: data || [], error };
+            } catch (error) {
+                return { ...batch, data: [], error };
+            }
+        }));
+
+        let updated = 0;
+        let inserted = 0;
+        const errors = [];
+        const savedClientKeys = [];
+        for (const outcome of outcomes) {
+            if (outcome.error) {
+                console.error(`Error importando ${outcome.type}:`, outcome.error);
+                errors.push(outcome.type === "expense" ? "gastos" : "ingresos");
+                continue;
+            }
+
+            const savedIds = new Set(outcome.data.map(item => String(item.id)));
+            const savedRows = outcome.rows.filter(item =>
+                savedIds.size === 0 || savedIds.has(String(item.memory.id))
+            );
+            for (const item of savedRows) {
+                savedClientKeys.push(String(item.clientKey));
+                if (outcome.type === "expense") {
+                    const index = expenses.findIndex(entry => String(entry.id) === String(item.memory.id));
+                    if (index >= 0) {
+                        expenses[index] = item.memory;
+                        updated++;
+                    } else {
+                        expenses.push(item.memory);
+                        inserted++;
+                    }
+                } else {
+                    const index = incomes.findIndex(entry => String(entry.id) === String(item.memory.id));
+                    if (index >= 0) {
+                        incomes[index] = item.memory;
+                        updated++;
+                    } else {
+                        incomes.push(item.memory);
+                        inserted++;
+                    }
+                }
+            }
+        }
+
+        renderExpenseTable();
+        renderIncomeTable();
+        renderCreditCardStatements();
+        renderAccounts();
+        updateDashboard();
+        updateReports();
+
+        return {
+            imported: updated + inserted,
+            updated,
+            inserted,
+            errors,
+            savedClientKeys
+        };
+    }
+};
+// Evita que la rueda del mouse incremente o reduzca montos por accidente.
+// Al quitar el foco, la rueda conserva el desplazamiento normal de la página.
+document.addEventListener("wheel", event => {
+    const numberInput = event.target.closest?.('input[type="number"]');
+    if (numberInput && document.activeElement === numberInput) {
+        numberInput.blur();
+    }
+}, { capture: true, passive: true });
