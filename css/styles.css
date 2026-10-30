@@ -7447,3 +7447,13 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
         min-height: 88px;
     }
 }
+
+.account-assign-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.account-assign-row select {
+    flex: 1 1 240px; min-width: 0; min-height: 42px; padding: 9px 12px;
+    border: 1px solid #34443e; border-radius: 10px;
+    background: #111a18; color: #eaf1ea; font: inherit; font-size: 13px;
+}
+.account-assign-row select:focus {
+    border-color: #9ac759; outline: 0; box-shadow: 0 0 0 3px rgba(199,236,117,.12);
+}
