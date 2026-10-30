@@ -1348,9 +1348,13 @@
     <div id="accountFeatureContent" hidden>
         <div class="account-card-grid" id="accountCards"></div>
         <div class="panel account-unassigned-notice" id="accountUnassignedNotice" hidden>
-            <strong>Hay movimientos sin cuenta</strong>
-            <p id="accountUnassignedDescription"></p>
-        </div>
+    <strong>Hay movimientos sin cuenta</strong>
+    <p id="accountUnassignedDescription"></p>
+    <div class="account-assign-row">
+        <select id="accountAssignSelect" data-placeholder="Selecciona una cuenta"></select>
+        <button type="button" class="secondary-button" id="assignUnassignedButton">Vincular movimientos</button>
+    </div>
+</div>
 
         <div class="panel" id="accountFormPanel" hidden>
             <div class="panel-header">
