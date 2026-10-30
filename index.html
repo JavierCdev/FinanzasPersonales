@@ -1334,7 +1334,6 @@
     <div class="section-header account-section-header">
         <div><p>Administra saldos, movimientos y transferencias entre tus cuentas.</p></div>
         <div class="section-actions">
-            <button type="button" class="secondary-button" id="newCardPaymentButton">Pagar tarjeta</button>
             <button type="button" class="secondary-button" id="newTransferButton">↔ Transferir</button>
             <button type="button" class="primary-button" id="newAccountButton">+ Nueva cuenta</button>
         </div>
@@ -1349,17 +1348,9 @@
     <div id="accountFeatureContent" hidden>
         <div class="account-card-grid" id="accountCards"></div>
         <div class="panel account-unassigned-notice" id="accountUnassignedNotice" hidden>
-    <strong>Hay movimientos sin cuenta</strong>
-    <p id="accountUnassignedDescription"></p>
-    <div class="account-assign-row">
-        <select id="accountAssignSelect" data-placeholder="Selecciona una cuenta"></select>
-        <button type="button" class="secondary-button" id="assignUnassignedButton">Vincular movimientos</button>
-    </div>
-        <div class="panel">
-    <div class="panel-header"><div><h2>Pagos de tarjetas</h2><p>Salidas de tus cuentas hacia tus tarjetas de crédito.</p></div></div>
-    <div class="table-container" id="cardPaymentsTable"><div class="empty-table">Todavía no has registrado pagos de tarjeta.</div></div>
-</div>    
-</div>
+            <strong>Hay movimientos sin cuenta</strong>
+            <p id="accountUnassignedDescription"></p>
+        </div>
 
         <div class="panel" id="accountFormPanel" hidden>
             <div class="panel-header">
@@ -2633,51 +2624,7 @@
 
         </section>
 
-<div class="card-payment-overlay" id="cardPaymentDialog" role="dialog" aria-modal="true" aria-labelledby="cardPaymentTitle" hidden>
-    <section class="card-payment-dialog">
-        <header class="card-payment-header">
-            <div>
-                <h2 id="cardPaymentTitle">Pagar tarjeta de crédito</h2>
-                <p id="cardPaymentStatementInfo"></p>
-            </div>
-            <button type="button" class="icon-button" id="closeCardPaymentButton" aria-label="Cerrar">×</button>
-        </header>
-        <form id="cardPaymentForm">
-            <div class="form-grid">
-                <div class="form-group form-group-full">
-                    <label for="cardPaymentCard">Tarjeta</label>
-                    <select id="cardPaymentCard" required><option value="">Selecciona una tarjeta</option></select>
-                </div>
-                <div class="form-group">
-                    <label for="cardPaymentDatePickerButton">Fecha del pago</label>
-                    <input type="hidden" id="cardPaymentDate" required>
-                </div>
-                <div class="form-group">
-                    <label for="cardPaymentAccount">Pagar desde</label>
-                    <select id="cardPaymentAccount" data-placeholder="Selecciona una cuenta" required></select>
-                </div>
-                <div class="form-group">
-                    <label for="cardPaymentAmount">Monto debitado</label>
-                    <input type="number" id="cardPaymentAmount" min="0.01" step="0.01" placeholder="0.00" inputmode="decimal" required>
-                    <small id="cardPaymentAmountHint" class="field-help">Moneda de la cuenta elegida</small>
-                </div>
-                <div class="form-group">
-                    <label for="cardPaymentAmountGTQ">Abonado a la tarjeta (GTQ)</label>
-                    <input type="number" id="cardPaymentAmountGTQ" min="0.01" step="0.01" placeholder="0.00" inputmode="decimal" required>
-                </div>
-                <div class="form-group form-group-full">
-                    <label for="cardPaymentNotes">Notas</label>
-                    <input type="text" id="cardPaymentNotes" maxlength="200" placeholder="Opcional">
-                </div>
-            </div>
-            <div class="form-actions">
-                <button type="button" class="secondary-button" id="cancelCardPaymentButton">Cancelar</button>
-                <button type="submit" class="primary-button">Registrar pago</button>
-            </div>
-        </form>
-    </section>
-</div>
-        
+
     </main>
 
 
