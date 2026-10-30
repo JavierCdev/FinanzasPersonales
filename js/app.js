@@ -476,8 +476,9 @@ function renderAccounts() {
     const unassigned = incomes.filter(item => !item.accountId).length + expenses.filter(item => item.paymentMethod !== "card" && !item.accountId).length;
     if (accountUnassignedNotice) accountUnassignedNotice.hidden = unassigned === 0;
     if (accountUnassignedDescription && unassigned) {
-        accountUnassignedDescription.textContent = `${unassigned} movimientos históricos no tienen una cuenta vinculada. Edítalos desde Ingresos o Gastos para incluirlos en los saldos.`;
+        accountUnassignedDescription.textContent = `${unassigned} movimientos históricos no tienen una cuenta vinculada. Elige una cuenta para vincular de una vez los que usan su misma moneda, o edítalos uno por uno desde Ingresos o Gastos.`;
     }
+    fillAccountSelect(accountAssignSelect, accountAssignSelect?.value || "");
     renderTransfersTable();
 }
 
@@ -516,6 +517,11 @@ function updateAccountInstitutionVisibility() {
 }
 
 function openAccountForm(account = null) {
+
+    if (!accountsSchemaReady) {
+        alert("Primero aplica la migración de cuentas en Supabase y recarga la app.");
+        return;
+    }
     if (!accountFormPanel || !accountForm) return;
     accountForm.reset();
     accountEditId.value = account?.id || "";
@@ -545,6 +551,10 @@ function closeAccountForm() {
 }
 
 function openTransferForm() {
+        if (!accountsSchemaReady) {
+        alert("Primero aplica la migración de cuentas en Supabase y recarga la app.");
+        return;
+    }
     if (!bankAccounts.some(account => account.isActive !== false)) {
         alert("Primero agrega al menos una cuenta activa.");
         return;
@@ -567,6 +577,46 @@ function closeTransferForm() {
 }
 
 const newAccountButton = document.getElementById("newAccountButton");
+const accountAssignSelect = document.getElementById("accountAssignSelect");
+const assignUnassignedButton = document.getElementById("assignUnassignedButton");
+
+async function assignUnassignedToAccount() {
+    const account = getBankAccount(accountAssignSelect?.value);
+    if (!account) return alert("Selecciona la cuenta a la que pertenecen estos movimientos.");
+
+    const pendingIncomes = incomes.filter(i => !i.accountId && i.currency === account.currency);
+    const pendingExpenses = expenses.filter(e => e.paymentMethod !== "card" && !e.accountId && e.currency === account.currency);
+    const total = pendingIncomes.length + pendingExpenses.length;
+    if (!total) return alert(`No hay movimientos sin cuenta en ${account.currency}.`);
+
+    if (!confirm(
+        `Se vincularán ${total} movimiento(s) en ${account.currency} a "${account.name}".\n\n` +
+        `Solo los posteriores al ${formatDate(account.openingDate)} afectarán su saldo. ¿Continuar?`
+    )) return;
+
+    assignUnassignedButton.disabled = true;
+    try {
+        for (const [table, items] of [["ingresos", pendingIncomes], ["gastos", pendingExpenses]]) {
+            for (let i = 0; i < items.length; i += 100) {
+                const chunk = items.slice(i, i + 100);
+                const { error } = await supabaseClient.from(table)
+                    .update({ account_id: account.id })
+                    .in("id", chunk.map(item => item.id));
+                if (error) throw error;
+                chunk.forEach(item => { item.accountId = account.id; });
+            }
+        }
+        renderAccounts();
+        alert(`Se vincularon ${total} movimiento(s).`);
+    } catch (error) {
+        console.error("No se pudieron vincular los movimientos:", error);
+        alert("No se pudieron vincular todos los movimientos. Recarga la app para ver el estado real.");
+        renderAccounts();
+    } finally {
+        assignUnassignedButton.disabled = false;
+    }
+}
+assignUnassignedButton?.addEventListener("click", assignUnassignedToAccount);
 const cancelAccountButton = document.getElementById("cancelAccountButton");
 const newTransferButton = document.getElementById("newTransferButton");
 const cancelTransferButton = document.getElementById("cancelTransferButton");
@@ -2105,9 +2155,10 @@ function openIncomeForm(
             income.categoryId;
 
 
-        incomeCurrency.value =
+                incomeCurrency.value =
             income.currency;
 
+        populateTransactionAccountSelectors();
         if (incomeAccountId) incomeAccountId.value = income.accountId || "";
 
         incomeAmount.value =
@@ -2159,7 +2210,9 @@ function openIncomeForm(
 
         incomeCurrency.value =
             "GTQ";
-
+        
+        populateTransactionAccountSelectors();
+    
         if (incomeAccountId) incomeAccountId.value = getSingleAccountId("GTQ");
 
         incomeExchangeGroup.hidden =
@@ -5237,13 +5290,13 @@ function openExpenseForm(
         expenseNotes.value =
             expense.notes || "";
 
-        expensePaymentMethod.value =
+                expensePaymentMethod.value =
            expense.paymentMethod || "cash";
-        if (expenseAccountId) expenseAccountId.value = expense.accountId || "";
 
 expensePaymentMethod.dispatchEvent(
     new Event("change")
 );
+        if (expenseAccountId) expenseAccountId.value = expense.accountId || "";
 
 populateExpenseCreditCardOptions(
     expense.creditCardId || null
@@ -5295,6 +5348,7 @@ expensePaymentMethod.dispatchEvent(
 
         expenseCurrency.value =
             "GTQ";
+        populateTransactionAccountSelectors();
         if (expenseAccountId) expenseAccountId.value = getSingleAccountId("GTQ");
 
         expenseExchangeGroup.hidden =
