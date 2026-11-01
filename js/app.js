@@ -303,6 +303,11 @@ function createId(type) {
 
 let bankAccounts = [];
 let accountTransfers = [];
+<<<<<<< HEAD
+=======
+let cardPayments = [];
+let cardPaymentsSchemaReady = false;
+>>>>>>> 1da84a9 (feat: improve credit card payments and UI)
 let accountsSchemaReady = false;
 let accountsSchemaError = null;
 
@@ -333,6 +338,22 @@ const transferReceivedAmount = document.getElementById("transferReceivedAmount")
 const transferSentCurrency = document.getElementById("transferSentCurrency");
 const transferReceivedCurrency = document.getElementById("transferReceivedCurrency");
 const transfersTable = document.getElementById("transfersTable");
+<<<<<<< HEAD
+=======
+const cardPaymentFormPanel = document.getElementById("cardPaymentFormPanel");
+const cardPaymentForm = document.getElementById("cardPaymentForm");
+const cardPaymentCard = document.getElementById("cardPaymentCard");
+const cardPaymentStatement = document.getElementById("cardPaymentStatement");
+const cardPaymentOutstandingHint = document.getElementById("cardPaymentOutstandingHint");
+const cardPaymentAccount = document.getElementById("cardPaymentAccount");
+const cardPaymentDate = document.getElementById("cardPaymentDate");
+const cardPaymentAmount = document.getElementById("cardPaymentAmount");
+const cardPaymentCurrencyHint = document.getElementById("cardPaymentCurrencyHint");
+const cardPaymentExchangeRateGroup = document.getElementById("cardPaymentExchangeRateGroup");
+const cardPaymentExchangeRate = document.getElementById("cardPaymentExchangeRate");
+const cardPaymentDescription = document.getElementById("cardPaymentDescription");
+const cardPaymentsTable = document.getElementById("cardPaymentsTable");
+>>>>>>> 1da84a9 (feat: improve credit card payments and UI)
 const accountTypeLabels = { checking: "Monetaria", savings: "Ahorro", cash: "Efectivo" };
 
 function getBankAccount(id) {
@@ -411,6 +432,11 @@ async function initializeAccounts() {
             sentAmount: Number(row.sent_amount) || 0, receivedAmount: Number(row.received_amount) || 0,
             notes: row.notes || "", createdAt: row.created_at, updatedAt: row.updated_at
         }));
+<<<<<<< HEAD
+=======
+        cardPayments = [];
+        cardPaymentsSchemaReady = false;
+>>>>>>> 1da84a9 (feat: improve credit card payments and UI)
         accountsSchemaReady = true;
         if (accountMigrationNotice) accountMigrationNotice.hidden = true;
         if (accountFeatureContent) accountFeatureContent.hidden = false;
@@ -446,6 +472,18 @@ function calculateBankAccountBalance(account) {
         if (String(transfer.fromAccountId) === String(account.id)) balance -= Number(transfer.sentAmount) || 0;
         if (String(transfer.toAccountId) === String(account.id)) balance += Number(transfer.receivedAmount) || 0;
     });
+<<<<<<< HEAD
+=======
+    cardPayments.forEach(payment => {
+        if (
+            String(payment.accountId) === String(account.id) &&
+            payment.currency === account.currency &&
+            afterOpening(payment.date)
+        ) {
+            balance -= Number(payment.amount) || 0;
+        }
+    });
+>>>>>>> 1da84a9 (feat: improve credit card payments and UI)
     return balance;
 }
 
@@ -474,10 +512,28 @@ function renderAccounts() {
         : `${totalCards}<div class="panel account-empty-state"><h2>Aún no tienes cuentas</h2><p>Agrega una cuenta bancaria, de ahorro o efectivo para empezar a separar tus saldos.</p></div>`;
 
     const unassigned = incomes.filter(item => !item.accountId).length + expenses.filter(item => item.paymentMethod !== "card" && !item.accountId).length;
+<<<<<<< HEAD
     if (accountUnassignedNotice) accountUnassignedNotice.hidden = unassigned === 0;
     if (accountUnassignedDescription && unassigned) {
         accountUnassignedDescription.textContent = `${unassigned} movimientos históricos no tienen una cuenta vinculada. Edítalos desde Ingresos o Gastos para incluirlos en los saldos.`;
     }
+=======
+    if (accountUnassignedNotice) {
+    accountUnassignedNotice.hidden = unassigned === 0;
+}
+
+if (accountUnassignedDescription && unassigned) {
+    accountUnassignedDescription.textContent =
+        `${unassigned} movimientos históricos no tienen una cuenta vinculada. ` +
+        `Elige una cuenta para vincular de una vez los que usan su misma moneda, ` +
+        `o edítalos uno por uno desde Ingresos o Gastos.`;
+}
+
+fillAccountSelect(
+    accountAssignSelect,
+    accountAssignSelect?.value || ""
+);
+>>>>>>> 1da84a9 (feat: improve credit card payments and UI)
     renderTransfersTable();
 }
 
@@ -509,6 +565,355 @@ function renderTransfersTable() {
     transfersTable.innerHTML = `<div class="account-transfer-table-wrap"><table class="data-table account-transfer-table"><thead><tr><th>Fecha</th><th>Descripción</th><th>Desde</th><th>Hacia</th><th>Montos</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
+<<<<<<< HEAD
+=======
+
+async function initializeCardPayments() {
+    cardPayments = [];
+    cardPaymentsSchemaReady = false;
+    const { data, error } = await supabaseClient
+        .from("pagos_tarjeta")
+        .select("id,credit_card_id,account_id,statement_cutoff_date,statement_due_date,date,description,amount,currency,exchange_rate,amount_gtq,created_at")
+        .order("date", { ascending: false });
+
+    if (error) {
+        console.warn("No se pudieron cargar los pagos de tarjetas. Verifica la migración 20261031_card_payments.sql.", error);
+        renderCardPaymentsTable();
+        return false;
+    }
+
+    cardPayments = (data || []).map(row => ({
+        id: String(row.id),
+        creditCardId: String(row.credit_card_id),
+        accountId: String(row.account_id),
+        statementCutoffDate: row.statement_cutoff_date,
+        statementDueDate: row.statement_due_date,
+        date: row.date,
+        description: row.description || "Pago de tarjeta",
+        amount: Number(row.amount) || 0,
+        currency: row.currency || "GTQ",
+        exchangeRate: Number(row.exchange_rate) || 1,
+        amountGTQ: Number(row.amount_gtq) || 0,
+        createdAt: row.created_at
+    }));
+    cardPaymentsSchemaReady = true;
+    renderCardPaymentsTable();
+    renderAccounts();
+    renderDashboardCardPayments();
+    return true;
+}
+
+function getCardStatementBalances(cardId) {
+    const statements = new Map();
+
+    expenses.forEach(expense => {
+        if (
+            expense.paymentMethod !== "card" ||
+            String(expense.creditCardId || "") !== String(cardId) ||
+            !expense.statementCutoffDate ||
+            !expense.statementDueDate
+        ) return;
+
+        const key = `${expense.statementCutoffDate}|${expense.statementDueDate}`;
+        if (!statements.has(key)) {
+            statements.set(key, {
+                cutoffDate: expense.statementCutoffDate,
+                dueDate: expense.statementDueDate,
+                totalGTQ: 0
+            });
+        }
+        statements.get(key).totalGTQ += Number(expense.amountGTQ) || 0;
+    });
+
+    return [...statements.values()]
+        .map(statement => {
+            const paidGTQ = cardPayments
+                .filter(payment =>
+                    String(payment.creditCardId) === String(cardId) &&
+                    payment.statementCutoffDate === statement.cutoffDate &&
+                    payment.statementDueDate === statement.dueDate
+                )
+                .reduce((sum, payment) => sum + (Number(payment.amountGTQ) || 0), 0);
+
+            return {
+                ...statement,
+                paidGTQ,
+                outstandingGTQ: Math.max(0, statement.totalGTQ - paidGTQ)
+            };
+        })
+        .filter(statement => statement.outstandingGTQ > 0.009)
+        .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+}
+
+function populateCardPaymentCardOptions(selectedId = "") {
+    if (!cardPaymentCard) return;
+    cardPaymentCard.replaceChildren(new Option("Selecciona una tarjeta", ""));
+    creditCards
+        .filter(card => card.active !== false)
+        .forEach(card => {
+            cardPaymentCard.add(new Option(`${card.bank} · ${card.name}`, String(card.id)));
+        });
+    if (selectedId && [...cardPaymentCard.options].some(option => option.value === String(selectedId))) {
+        cardPaymentCard.value = String(selectedId);
+    }
+}
+
+function populateCardPaymentStatementOptions(selectedKey = "") {
+    if (!cardPaymentStatement) return;
+    const cardId = cardPaymentCard?.value || "";
+    cardPaymentStatement.replaceChildren(new Option(
+        cardId ? "Selecciona el estado de cuenta" : "Primero selecciona una tarjeta",
+        ""
+    ));
+
+    const statements = cardId ? getCardStatementBalances(cardId) : [];
+    statements.forEach(statement => {
+        const key = `${statement.cutoffDate}|${statement.dueDate}`;
+        cardPaymentStatement.add(new Option(
+            `Corte ${formatDate(statement.cutoffDate)} · Vence ${formatDate(statement.dueDate)} · Pendiente ${formatCurrency(statement.outstandingGTQ, "GTQ")}`,
+            key
+        ));
+    });
+
+    cardPaymentStatement.disabled = statements.length === 0;
+    if (selectedKey && [...cardPaymentStatement.options].some(option => option.value === selectedKey)) {
+        cardPaymentStatement.value = selectedKey;
+    }
+    updateCardPaymentHints();
+}
+
+function getSelectedCardStatement() {
+    const [cutoffDate, dueDate] = (cardPaymentStatement?.value || "").split("|");
+    if (!cutoffDate || !dueDate) return null;
+    return getCardStatementBalances(cardPaymentCard.value)
+        .find(statement => statement.cutoffDate === cutoffDate && statement.dueDate === dueDate) || null;
+}
+
+function populateCardPaymentAccountOptions(selectedId = "") {
+    if (!cardPaymentAccount) return;
+    fillAccountSelect(cardPaymentAccount, selectedId);
+    updateCardPaymentHints();
+}
+
+function updateCardPaymentHints() {
+    const account = getBankAccount(cardPaymentAccount?.value);
+    const statement = getSelectedCardStatement();
+
+    if (cardPaymentCurrencyHint) {
+        cardPaymentCurrencyHint.textContent = account
+            ? `El débito se registrará en ${account.currency}. El abono al estado de cuenta se calcula en GTQ.`
+            : "Selecciona una cuenta para ver la moneda del débito.";
+    }
+
+    if (cardPaymentOutstandingHint) {
+        cardPaymentOutstandingHint.textContent = statement
+            ? `Pendiente de este estado de cuenta: ${formatCurrency(statement.outstandingGTQ, "GTQ")}.`
+            : "Selecciona un estado de cuenta pendiente.";
+    }
+
+    const needsRate = Boolean(account && account.currency === "USD");
+    if (cardPaymentExchangeRateGroup) cardPaymentExchangeRateGroup.hidden = !needsRate;
+    if (cardPaymentExchangeRate) cardPaymentExchangeRate.required = needsRate;
+
+    if (cardPaymentAmount) {
+        if (statement && account) {
+            const rate = needsRate ? Number(cardPaymentExchangeRate?.value) : 1;
+            const maxAmount = rate > 0 ? statement.outstandingGTQ / rate : 0;
+            cardPaymentAmount.max = String(maxAmount.toFixed(2));
+        } else {
+            cardPaymentAmount.removeAttribute("max");
+        }
+    }
+}
+
+function openCardPaymentForm() {
+    if (!accountsSchemaReady) {
+        alert("Primero configura tus cuentas bancarias.");
+        return;
+    }
+    if (!cardPaymentsSchemaReady) {
+        alert("Primero ejecuta la migración supabase/migrations/20261031_card_payments.sql en Supabase y recarga la aplicación.");
+        return;
+    }
+    if (!creditCards.some(card => card.active !== false)) {
+        alert("Primero registra una tarjeta de crédito activa.");
+        return;
+    }
+    if (!bankAccounts.some(account => account.isActive !== false)) {
+        alert("Primero registra una cuenta bancaria activa.");
+        return;
+    }
+
+    cardPaymentForm.reset();
+    cardPaymentDate.value = getTodayISO();
+    refreshDatePicker("cardPaymentDate");
+    cardPaymentExchangeRate.value = "1";
+    populateCardPaymentCardOptions();
+    populateCardPaymentAccountOptions();
+    populateCardPaymentStatementOptions();
+    cardPaymentFormPanel.hidden = false;
+    cardPaymentFormPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function closeCardPaymentForm() {
+    if (cardPaymentFormPanel) cardPaymentFormPanel.hidden = true;
+    cardPaymentForm?.reset();
+    if (cardPaymentExchangeRateGroup) cardPaymentExchangeRateGroup.hidden = true;
+}
+
+function renderCardPaymentsTable() {
+    if (!cardPaymentsTable) return;
+    if (!cardPaymentsSchemaReady) {
+        cardPaymentsTable.innerHTML = '<div class="empty-table">Ejecuta la migración 20261031_card_payments.sql para habilitar los pagos.</div>';
+        return;
+    }
+    if (!cardPayments.length) {
+        cardPaymentsTable.innerHTML = '<div class="empty-table">Todavía no has registrado pagos de tarjetas.</div>';
+        return;
+    }
+
+    const rows = [...cardPayments]
+        .sort((a, b) => String(b.date).localeCompare(String(a.date)))
+        .map(payment => {
+            const card = creditCards.find(item => String(item.id) === String(payment.creditCardId));
+            const account = getBankAccount(payment.accountId);
+            return `<tr>
+                <td>${escapeHtml(formatDate(payment.date))}</td>
+                <td>${escapeHtml(card ? `${card.bank} · ${card.name}` : "Tarjeta")}</td>
+                <td>${escapeHtml(account ? `${account.institution ? account.institution + " · " : ""}${account.name}` : "Cuenta")}</td>
+                <td>${escapeHtml(formatDate(payment.statementDueDate))}</td>
+                <td>${escapeHtml(payment.description)}</td>
+                <td><strong>${formatCurrency(payment.amount, payment.currency)}</strong></td>
+                <td>${formatCurrency(payment.amountGTQ, "GTQ")}</td>
+                <td><button type="button" class="icon-button account-transfer-delete" data-card-payment-delete="${escapeHtml(payment.id)}" aria-label="Eliminar pago">×</button></td>
+            </tr>`;
+        }).join("");
+
+    cardPaymentsTable.innerHTML = `<div class="account-transfer-table-wrap">
+        <table class="data-table account-transfer-table card-payments-table">
+            <thead><tr><th>Fecha</th><th>Tarjeta</th><th>Cuenta utilizada</th><th>Estado de cuenta</th><th>Descripción</th><th>Débito</th><th>Abono GTQ</th><th></th></tr></thead>
+            <tbody>${rows}</tbody>
+        </table>
+    </div>`;
+}
+
+cardPaymentCard?.addEventListener("change", () => populateCardPaymentStatementOptions());
+cardPaymentStatement?.addEventListener("change", updateCardPaymentHints);
+cardPaymentAccount?.addEventListener("change", updateCardPaymentHints);
+cardPaymentExchangeRate?.addEventListener("input", updateCardPaymentHints);
+
+document.getElementById("newCardPaymentButton")?.addEventListener("click", openCardPaymentForm);
+document.getElementById("cancelCardPaymentButton")?.addEventListener("click", closeCardPaymentForm);
+
+cardPaymentForm?.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (!accountsSchemaReady || !cardPaymentsSchemaReady) {
+        alert("La función de pagos no está disponible. Revisa la migración de Supabase.");
+        return;
+    }
+
+    const card = creditCards.find(item =>
+        String(item.id) === String(cardPaymentCard.value) && item.active !== false
+    );
+    const account = getBankAccount(cardPaymentAccount.value);
+    const statement = getSelectedCardStatement();
+    const amount = Number(cardPaymentAmount.value);
+    const date = cardPaymentDate.value;
+    const exchangeRate = account?.currency === "USD" ? Number(cardPaymentExchangeRate.value) : 1;
+
+    if (!card) return alert("Selecciona una tarjeta activa.");
+    if (!statement) return alert("Selecciona un estado de cuenta que tenga saldo pendiente.");
+    if (!account || account.isActive === false) return alert("Selecciona una cuenta bancaria activa.");
+    if (!date || !Number.isFinite(amount) || amount <= 0) return alert("Ingresa una fecha y un monto válido.");
+    if (!Number.isFinite(exchangeRate) || exchangeRate <= 0) return alert("Ingresa un tipo de cambio válido.");
+
+    const amountGTQ = Number((amount * exchangeRate).toFixed(2));
+    if (amountGTQ > statement.outstandingGTQ + 0.009) {
+        return alert(`El pago supera el saldo pendiente de ${formatCurrency(statement.outstandingGTQ, "GTQ")}.`);
+    }
+
+    const user = await getCurrentUser();
+    if (!user) return alert("Tu sesión ha expirado. Inicia sesión nuevamente.");
+
+    const now = new Date().toISOString();
+    const id = createId("card-payment");
+    const payment = {
+        id,
+        creditCardId: String(card.id),
+        accountId: String(account.id),
+        statementCutoffDate: statement.cutoffDate,
+        statementDueDate: statement.dueDate,
+        date,
+        description: cardPaymentDescription.value.trim() || `Pago de ${card.bank} · ${card.name}`,
+        amount,
+        currency: account.currency,
+        exchangeRate,
+        amountGTQ,
+        createdAt: now
+    };
+
+    const row = {
+        id,
+        user_id: user.id,
+        credit_card_id: payment.creditCardId,
+        account_id: payment.accountId,
+        statement_cutoff_date: payment.statementCutoffDate,
+        statement_due_date: payment.statementDueDate,
+        date: payment.date,
+        description: payment.description,
+        amount: payment.amount,
+        currency: payment.currency,
+        exchange_rate: payment.exchangeRate,
+        amount_gtq: payment.amountGTQ,
+        created_at: now
+    };
+
+    const saveButton = document.getElementById("saveCardPaymentButton");
+    if (saveButton) saveButton.disabled = true;
+
+    try {
+        const { error } = await supabaseClient.from("pagos_tarjeta").insert(row);
+        if (error) throw error;
+
+        cardPayments.unshift(payment);
+        renderCardPaymentsTable();
+        renderAccounts();
+        renderDashboardCardPayments();
+        closeCardPaymentForm();
+        alert("Pago de tarjeta registrado correctamente.");
+    } catch (error) {
+        console.error("No se pudo registrar el pago de tarjeta:", error);
+        alert("No se pudo registrar el pago. Verifica la migración de Supabase y vuelve a intentarlo.");
+    } finally {
+        if (saveButton) saveButton.disabled = false;
+    }
+});
+
+document.addEventListener("click", async event => {
+    const deleteButton = event.target.closest("[data-card-payment-delete]");
+    if (!deleteButton) return;
+
+    const id = deleteButton.dataset.cardPaymentDelete;
+    if (!confirm("¿Eliminar este pago? El saldo bancario y el pendiente del estado de cuenta se recalcularán.")) return;
+
+    const { error } = await supabaseClient
+        .from("pagos_tarjeta")
+        .delete()
+        .eq("id", id);
+
+    if (error) {
+        console.error("No se pudo eliminar el pago:", error);
+        alert("No se pudo eliminar el pago.");
+        return;
+    }
+
+    cardPayments = cardPayments.filter(payment => String(payment.id) !== String(id));
+    renderCardPaymentsTable();
+    renderAccounts();
+    renderDashboardCardPayments();
+});
+
+>>>>>>> 1da84a9 (feat: improve credit card payments and UI)
 function updateAccountInstitutionVisibility() {
     const isCash = accountType?.value === "cash";
     if (accountInstitutionGroup) accountInstitutionGroup.hidden = isCash;
@@ -516,6 +921,13 @@ function updateAccountInstitutionVisibility() {
 }
 
 function openAccountForm(account = null) {
+<<<<<<< HEAD
+=======
+        if (!accountsSchemaReady) {
+        alert("Primero aplica la migración de cuentas en Supabase y recarga la app.");
+        return;
+    }
+>>>>>>> 1da84a9 (feat: improve credit card payments and UI)
     if (!accountFormPanel || !accountForm) return;
     accountForm.reset();
     accountEditId.value = account?.id || "";
@@ -545,6 +957,13 @@ function closeAccountForm() {
 }
 
 function openTransferForm() {
+<<<<<<< HEAD
+=======
+        if (!accountsSchemaReady) {
+        alert("Primero aplica la migración de cuentas en Supabase y recarga la app.");
+        return;
+    }
+>>>>>>> 1da84a9 (feat: improve credit card payments and UI)
     if (!bankAccounts.some(account => account.isActive !== false)) {
         alert("Primero agrega al menos una cuenta activa.");
         return;
@@ -570,6 +989,88 @@ const newAccountButton = document.getElementById("newAccountButton");
 const cancelAccountButton = document.getElementById("cancelAccountButton");
 const newTransferButton = document.getElementById("newTransferButton");
 const cancelTransferButton = document.getElementById("cancelTransferButton");
+<<<<<<< HEAD
+=======
+const accountAssignSelect = document.getElementById("accountAssignSelect");
+const assignUnassignedButton = document.getElementById("assignUnassignedButton");
+async function assignUnassignedToAccount() {
+    const account = getBankAccount(accountAssignSelect?.value);
+
+    if (!account) {
+        alert("Selecciona la cuenta a la que pertenecen estos movimientos.");
+        return;
+    }
+
+    const pendingIncomes = incomes.filter(
+        income => !income.accountId && income.currency === account.currency
+    );
+
+    const pendingExpenses = expenses.filter(
+        expense =>
+            expense.paymentMethod !== "card" &&
+            !expense.accountId &&
+            expense.currency === account.currency
+    );
+
+    const total = pendingIncomes.length + pendingExpenses.length;
+
+    if (!total) {
+        alert(`No hay movimientos sin cuenta en ${account.currency}.`);
+        return;
+    }
+
+    if (!confirm(
+        `Se vincularán ${total} movimiento(s) en ${account.currency} a "${account.name}".\n\n` +
+        `Solo los posteriores al ${formatDate(account.openingDate)} afectarán su saldo. ¿Continuar?`
+    )) {
+        return;
+    }
+
+    assignUnassignedButton.disabled = true;
+
+    try {
+        for (const [table, items] of [
+            ["ingresos", pendingIncomes],
+            ["gastos", pendingExpenses]
+        ]) {
+            for (let i = 0; i < items.length; i += 100) {
+                const chunk = items.slice(i, i + 100);
+
+                const { error } = await supabaseClient
+                    .from(table)
+                    .update({ account_id: account.id })
+                    .in("id", chunk.map(item => item.id));
+
+                if (error) throw error;
+
+                chunk.forEach(item => {
+                    item.accountId = account.id;
+                });
+            }
+        }
+
+        renderAccounts();
+        alert(`Se vincularon ${total} movimiento(s).`);
+
+    } catch (error) {
+        console.error("No se pudieron vincular los movimientos:", error);
+
+        alert(
+            "No se pudieron vincular todos los movimientos. Recarga la app para ver el estado real."
+        );
+
+        renderAccounts();
+
+    } finally {
+        assignUnassignedButton.disabled = false;
+    }
+}
+
+assignUnassignedButton?.addEventListener(
+    "click",
+    assignUnassignedToAccount
+);
+>>>>>>> 1da84a9 (feat: improve credit card payments and UI)
 newAccountButton?.addEventListener("click", () => openAccountForm());
 cancelAccountButton?.addEventListener("click", closeAccountForm);
 newTransferButton?.addEventListener("click", openTransferForm);
@@ -2108,6 +2609,11 @@ function openIncomeForm(
         incomeCurrency.value =
             income.currency;
 
+<<<<<<< HEAD
+=======
+            populateTransactionAccountSelectors();
+
+>>>>>>> 1da84a9 (feat: improve credit card payments and UI)
         if (incomeAccountId) incomeAccountId.value = income.accountId || "";
 
         incomeAmount.value =
@@ -2160,6 +2666,11 @@ function openIncomeForm(
         incomeCurrency.value =
             "GTQ";
 
+<<<<<<< HEAD
+=======
+            populateTransactionAccountSelectors();
+
+>>>>>>> 1da84a9 (feat: improve credit card payments and UI)
         if (incomeAccountId) incomeAccountId.value = getSingleAccountId("GTQ");
 
         incomeExchangeGroup.hidden =
@@ -5238,12 +5749,20 @@ function openExpenseForm(
             expense.notes || "";
 
         expensePaymentMethod.value =
+<<<<<<< HEAD
            expense.paymentMethod || "cash";
         if (expenseAccountId) expenseAccountId.value = expense.accountId || "";
+=======
+    expense.paymentMethod || "cash";
+>>>>>>> 1da84a9 (feat: improve credit card payments and UI)
 
 expensePaymentMethod.dispatchEvent(
     new Event("change")
 );
+
+if (expenseAccountId) {
+    expenseAccountId.value = expense.accountId || "";
+}
 
 populateExpenseCreditCardOptions(
     expense.creditCardId || null
@@ -5295,6 +5814,10 @@ expensePaymentMethod.dispatchEvent(
 
         expenseCurrency.value =
             "GTQ";
+        if (expenseAccountId) expenseAccountId.value = getSingleAccountId("GTQ");
+
+          populateTransactionAccountSelectors();
+
         if (expenseAccountId) expenseAccountId.value = getSingleAccountId("GTQ");
 
         expenseExchangeGroup.hidden =
@@ -8702,7 +9225,11 @@ const cutoffMonthDate =
 projectedCharges.push({
     creditCardId: expense.creditCardId,
     statementCutoffDate: buildISODate(cutoffMonthDate.getFullYear(), cutoffMonthDate.getMonth(), cardCutoffDay),
+<<<<<<< HEAD
     statementDueDate: buildISODate(selectedYear, selectedMonthIndex - 1, cardPaymentDay),
+=======
+    statementDueDate: buildISODate(selectedYear, selectedMonthIndex, cardPaymentDay),
+>>>>>>> 1da84a9 (feat: improve credit card payments and UI)
     amountGTQ: installmentAmountGTQ,
     isProjected: true
 });
@@ -8868,11 +9395,29 @@ if (expense.isProjected) {
     });
 
     const monthlyPayments =
-        [...payments.values()].sort(
+        [...payments.values()].map(payment => {
+            const paidGTQ = cardPayments
+                .filter(item =>
+                    String(item.creditCardId) === String(payment.creditCardId) &&
+                    item.statementCutoffDate === payment.cutoffDate &&
+                    item.statementDueDate === payment.dueDate
+                )
+                .reduce((sum, item) => sum + (Number(item.amountGTQ) || 0), 0);
+
+            return {
+                ...payment,
+                paidGTQ,
+                totalGTQ: Math.max(0, payment.totalGTQ - paidGTQ)
+            };
+        }).sort(
             (a, b) => a.dueDate.localeCompare(b.dueDate)
         );
 
-    const totalDue = monthlyPayments.reduce(
+    const visibleMonthlyPayments = monthlyPayments.filter(
+        payment => payment.totalGTQ > 0.009 || payment.projectedGTQ > 0.009
+    );
+
+    const totalDue = visibleMonthlyPayments.reduce(
         (total, payment) => total + payment.totalGTQ,
         0
     );
@@ -8889,14 +9434,14 @@ if (expense.isProjected) {
                     <th>Tarjeta</th>
                     <th>Fecha de corte</th>
                     <th>Fecha de pago</th>
-                    <th>Monto total (GTQ)</th>
+                    <th>Pendiente (GTQ)</th>
                     <th>Previsto (GTQ)</th>
                 </tr>
             </thead>
             <tbody>
     `;
 
-    monthlyPayments.forEach(payment => {
+    visibleMonthlyPayments.forEach(payment => {
         const card = creditCards.find(
             item => item.id === payment.creditCardId
         );
@@ -12700,6 +13245,10 @@ initializeSpanishDatePicker("expenseDate");
 initializeSpanishDatePicker("fixedExpensePurchaseDate");
 initializeSpanishDatePicker("accountOpeningDate");
 initializeSpanishDatePicker("transferDate");
+<<<<<<< HEAD
+=======
+initializeSpanishDatePicker("cardPaymentDate");
+>>>>>>> 1da84a9 (feat: improve credit card payments and UI)
 function escapeHtml(
     value
 ) {
@@ -12976,6 +13525,7 @@ async function initializeAppData() {
             creditCardsLoad
         ]);
 
+<<<<<<< HEAD
         renderExpenseTable();
         renderIncomeTable();
         renderAccounts();
@@ -12987,6 +13537,24 @@ async function initializeAppData() {
         return true;
     })();
 
+=======
+        await initializeCardPayments();
+        populateCardPaymentCardOptions();
+        populateCardPaymentAccountOptions();
+        populateCardPaymentStatementOptions();
+
+        renderExpenseTable();
+        renderIncomeTable();
+        renderAccounts();
+        updateDashboard();
+
+        await budgetsLoad;
+        renderBudgetTable();
+        if (categoriesReady) appDataInitializedForUserId = user.id;
+        return true;
+    })();
+
+>>>>>>> 1da84a9 (feat: improve credit card payments and UI)
     try {
         return await appDataInitializationPromise;
     } finally {
@@ -13232,3 +13800,146 @@ document.addEventListener("wheel", event => {
         numberInput.blur();
     }
 }, { capture: true, passive: true });
+<<<<<<< HEAD
+=======
+
+/* Dropdown personalizado reutilizable: replica el selector de mes/año. */
+(() => {
+    const enhancedSelects = new WeakMap();
+
+    function enhanceSelect(select) {
+        if (!select || enhancedSelects.has(select) || select.multiple || select.classList.contains('period-native-select')) return;
+        if (select.closest('.custom-select-shell')) return;
+
+        const shell = document.createElement('div');
+        shell.className = 'custom-select-shell';
+        const parent = select.parentNode;
+        parent.insertBefore(shell, select);
+        shell.appendChild(select);
+        select.classList.add('custom-select-native');
+
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'period-trigger custom-select-trigger';
+        trigger.setAttribute('aria-haspopup', 'listbox');
+        trigger.setAttribute('aria-expanded', 'false');
+        const label = document.createElement('span');
+        const chevron = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        chevron.setAttribute('viewBox', '0 0 16 16');
+        chevron.setAttribute('aria-hidden', 'true');
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'm4 6 4 4 4-4');
+        chevron.appendChild(path);
+        trigger.append(label, chevron);
+
+        const list = document.createElement('div');
+        list.className = 'period-options custom-select-options';
+        list.setAttribute('role', 'listbox');
+        list.hidden = true;
+        const listId = `custom-select-${Math.random().toString(36).slice(2, 10)}`;
+        list.id = listId;
+        trigger.setAttribute('aria-controls', listId);
+        shell.append(trigger, list);
+
+        const sync = () => {
+            const selected = select.options[select.selectedIndex];
+            label.textContent = selected?.textContent.trim() || 'Seleccionar';
+            trigger.disabled = select.disabled;
+            trigger.setAttribute('aria-expanded', String(!list.hidden));
+            [...list.children].forEach(item => {
+                item.setAttribute('aria-selected', String(item.dataset.value === select.value));
+                item.disabled = item.dataset.disabled === 'true';
+                const mark = item.querySelector('.custom-select-check');
+                if (mark) mark.textContent = item.dataset.value === select.value ? '✓' : '';
+            });
+        };
+
+        const refresh = () => {
+            list.replaceChildren();
+            [...select.options].forEach(option => {
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'period-option custom-select-option';
+                item.setAttribute('role', 'option');
+                item.dataset.value = option.value;
+                item.dataset.disabled = String(option.disabled);
+                const text = document.createElement('span');
+                text.textContent = option.textContent.trim();
+                const check = document.createElement('span');
+                check.className = 'custom-select-check';
+                item.append(text, check);
+                item.addEventListener('click', () => {
+                    if (option.disabled) return;
+                    select.value = option.value;
+                    select.dispatchEvent(new Event('change', { bubbles: true }));
+                    close(true);
+                    sync();
+                });
+                list.appendChild(item);
+            });
+            sync();
+        };
+
+        const close = (focus = false) => {
+            list.hidden = true;
+            trigger.setAttribute('aria-expanded', 'false');
+            if (focus) trigger.focus();
+        };
+        const open = () => {
+            if (select.disabled) return;
+            document.querySelectorAll('.custom-select-options:not([hidden])').forEach(other => {
+                if (other !== list) {
+                    other.hidden = true;
+                    other.previousElementSibling?.setAttribute('aria-expanded', 'false');
+                }
+            });
+            list.hidden = false;
+            trigger.setAttribute('aria-expanded', 'true');
+            const selected = list.querySelector('[aria-selected="true"]');
+            selected?.scrollIntoView({ block: 'nearest' });
+        };
+
+        trigger.addEventListener('click', () => list.hidden ? open() : close());
+        trigger.addEventListener('keydown', event => {
+            if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key)) {
+                event.preventDefault(); open();
+                const options = [...list.querySelectorAll('.period-option:not(:disabled)')];
+                (event.key === 'ArrowUp' ? options.at(-1) : options[0])?.focus();
+            } else if (event.key === 'Escape') close();
+        });
+        list.addEventListener('keydown', event => {
+            const options = [...list.querySelectorAll('.period-option:not(:disabled)')];
+            const index = options.indexOf(document.activeElement);
+            let next = index;
+            if (event.key === 'ArrowDown') next = Math.min(index + 1, options.length - 1);
+            else if (event.key === 'ArrowUp') next = Math.max(index - 1, 0);
+            else if (event.key === 'Escape') { event.preventDefault(); close(true); return; }
+            else if (event.key === 'Home') next = 0;
+            else if (event.key === 'End') next = options.length - 1;
+            else return;
+            event.preventDefault(); options[next]?.focus();
+        });
+        document.addEventListener('click', event => { if (!shell.contains(event.target)) close(); });
+        select.addEventListener('change', sync);
+        const observer = new MutationObserver(refresh);
+        observer.observe(select, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled'] });
+        enhancedSelects.set(select, { refresh, sync });
+        refresh();
+    }
+
+    function scan(root = document) {
+        root.querySelectorAll?.('select:not(.period-native-select):not([multiple])').forEach(enhanceSelect);
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => scan());
+    else scan();
+    const pageObserver = new MutationObserver(records => {
+        records.forEach(record => record.addedNodes.forEach(node => {
+            if (node.nodeType === 1) {
+                if (node.matches?.('select')) enhanceSelect(node);
+                scan(node);
+            }
+        }));
+    });
+    pageObserver.observe(document.documentElement, { childList: true, subtree: true });
+})();
+>>>>>>> 1da84a9 (feat: improve credit card payments and UI)

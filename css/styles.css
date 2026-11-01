@@ -6116,7 +6116,11 @@ table tbody tr:hover, .fixed-expense-table tbody tr:hover { background: #1d2a26;
 }
 .period-option:hover, .period-option:focus-visible { background: #263630; color: #f2f6ef; }
 .period-option[aria-selected="true"] { background: #2b3c31; color: #d5f191; font-weight: 700; }
+<<<<<<< HEAD
 .period-option[aria-selected="true"]::after { content: "✓"; color: #c7ec75; font-size: 12px; }
+=======
+/* El check se dibuja con .custom-select-check desde JavaScript; no duplicarlo con ::after. */
+>>>>>>> 1da84a9 (feat: improve credit card payments and UI)
 @media (max-width: 600px) {
     .period-selector { justify-content: space-between; gap: 8px; padding: 7px; }
     .period-field { gap: 6px; }
@@ -7448,4 +7452,145 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
     }
 }
 
+<<<<<<< HEAD
 \n#accountFeatureContent[hidden] { display: none !important; }\n
+=======
+#accountFeatureContent[hidden] {
+    display: none;
+}
+
+.account-assign-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.account-assign-row select {
+    flex: 1 1 240px;
+    min-width: 0;
+    min-height: 42px;
+    padding: 9px 12px;
+    border: 1px solid #34443e;
+    border-radius: 10px;
+    background: #111a18;
+    color: #eaf1ea;
+    font: inherit;
+    font-size: 13px;
+}
+
+.account-assign-row select:focus {
+    border-color: #9ac759;
+    outline: 0;
+    box-shadow: 0 0 0 3px rgba(199,236,117,.12);
+}
+
+
+/* ========================================
+   PAGOS DE TARJETAS DESDE CUENTAS
+======================================== */
+#cardPaymentFormPanel {
+    margin-top: 18px;
+}
+#cardPaymentFormPanel .field-help {
+    display: block;
+    margin-top: 6px;
+    line-height: 1.45;
+}
+#cardPaymentsTable .card-payments-table {
+    min-width: 980px;
+}
+#newCardPaymentButton {
+    white-space: nowrap;
+}
+@media (max-width: 680px) {
+    #newCardPaymentButton {
+        width: 100%;
+    }
+    #cardPaymentFormPanel .form-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+
+/* Dropdowns de formularios: mismo lenguaje visual del selector de periodo. */
+.custom-select-shell { position: relative; width: 100%; min-width: 0; }
+.custom-select-native {
+    position: absolute !important;
+    width: 1px !important; height: 1px !important;
+    padding: 0 !important; margin: -1px !important;
+    overflow: hidden !important; clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important; border: 0 !important;
+    opacity: 0 !important; pointer-events: none !important;
+}
+.custom-select-trigger {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%; min-height: 48px; padding: 0 15px;
+    border: 1px solid #34443e; border-radius: 12px;
+    background: #121d1a; color: #e7efe8;
+    font: inherit; text-align: left; cursor: pointer;
+}
+.custom-select-trigger:hover { border-color: #60784c; background: #17231f; }
+.custom-select-trigger:focus-visible { outline: 2px solid #9bc65c; outline-offset: 2px; }
+.custom-select-trigger:disabled { opacity: .55; cursor: not-allowed; }
+.custom-select-trigger svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; flex: 0 0 auto; }
+.custom-select-options {
+    position: absolute; z-index: 150; top: calc(100% + 5px); left: 0;
+    display: flex; flex-direction: column; gap: 3px;
+    width: 100%; max-height: min(260px, 55vh); overflow-y: auto; overflow-x: hidden;
+    padding: 6px; border: 1px solid #34443e; border-radius: 13px;
+    background: #17221f; box-shadow: 0 14px 32px rgba(0,0,0,.38);
+    scrollbar-width: thin; scrollbar-color: #647267 #182320;
+}
+.custom-select-options[hidden] { display: none; }
+.custom-select-option {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%; min-height: 38px; padding: 0 12px;
+    border: 0; border-radius: 9px; background: transparent;
+    color: #dce8df; font: inherit; text-align: left; cursor: pointer;
+}
+.custom-select-option:hover,
+.custom-select-option:focus-visible { outline: none; background: #26372e; color: #e5f5c6; }
+.custom-select-option[aria-selected="true"] { background: #2a3b31; color: #c7ec75; font-weight: 700; }
+.custom-select-check { color: #c7ec75; font-weight: 800; margin-left: 12px; }
+.custom-select-option:disabled { opacity: .4; cursor: not-allowed; }
+.custom-select-options::-webkit-scrollbar { width: 7px; }
+.custom-select-options::-webkit-scrollbar-thumb { border: 2px solid #17221f; border-radius: 99px; background: #647267; }
+
+/* Contraste corregido para nombres y filas de gastos recurrentes. */
+.fixed-expense-table td { color: #dce7df; }
+.fixed-expense-name { color: #e7efe8; }
+.fixed-expense-category, .fixed-expense-frequency { color: #b4c4ba; }
+.fixed-expense-table tbody tr:hover { background: #202f29; }
+.fixed-expense-table .fixed-expense-actions .fixed-expense-action-button {
+    border: 1px solid #34443e; border-radius: 8px; background: #202c28;
+    color: #d3e0d5; font-family: inherit; font-weight: 650;
+}
+.fixed-expense-table .fixed-expense-actions .fixed-expense-action-button.delete {
+    border-color: rgba(240,131,123,.3); background: rgba(120,48,45,.16); color: #f0837b;
+}
+.icon-button.account-transfer-delete {
+    width: 34px; height: 34px; border: 1px solid rgba(240,131,123,.3);
+    border-radius: 10px; background: rgba(120,48,45,.16); color: #f0837b;
+}
+.icon-button.account-transfer-delete:hover { background: rgba(120,48,45,.32); color: #ffaaa3; }
+
+.custom-select-option[aria-selected="true"]::after {
+    content: none;
+}
+.custom-select-check {
+    display: inline-flex;
+    flex: 0 0 18px;
+    width: 18px;
+    align-items: center;
+    justify-content: center;
+    margin-left: 12px;
+    color: #c7ec75;
+    font-size: 17px;
+    font-weight: 800;
+    line-height: 1;
+}
+.custom-select-option[aria-selected="true"] .custom-select-check {
+    color: #c7ec75;
+}
+>>>>>>> 1da84a9 (feat: improve credit card payments and UI)
