@@ -303,11 +303,8 @@ function createId(type) {
 
 let bankAccounts = [];
 let accountTransfers = [];
-<<<<<<< HEAD
-=======
 let cardPayments = [];
 let cardPaymentsSchemaReady = false;
->>>>>>> 1da84a9 (feat: improve credit card payments and UI)
 let accountsSchemaReady = false;
 let accountsSchemaError = null;
 
@@ -338,8 +335,6 @@ const transferReceivedAmount = document.getElementById("transferReceivedAmount")
 const transferSentCurrency = document.getElementById("transferSentCurrency");
 const transferReceivedCurrency = document.getElementById("transferReceivedCurrency");
 const transfersTable = document.getElementById("transfersTable");
-<<<<<<< HEAD
-=======
 const cardPaymentFormPanel = document.getElementById("cardPaymentFormPanel");
 const cardPaymentForm = document.getElementById("cardPaymentForm");
 const cardPaymentCard = document.getElementById("cardPaymentCard");
@@ -353,7 +348,6 @@ const cardPaymentExchangeRateGroup = document.getElementById("cardPaymentExchang
 const cardPaymentExchangeRate = document.getElementById("cardPaymentExchangeRate");
 const cardPaymentDescription = document.getElementById("cardPaymentDescription");
 const cardPaymentsTable = document.getElementById("cardPaymentsTable");
->>>>>>> 1da84a9 (feat: improve credit card payments and UI)
 const accountTypeLabels = { checking: "Monetaria", savings: "Ahorro", cash: "Efectivo" };
 
 function getBankAccount(id) {
@@ -432,11 +426,8 @@ async function initializeAccounts() {
             sentAmount: Number(row.sent_amount) || 0, receivedAmount: Number(row.received_amount) || 0,
             notes: row.notes || "", createdAt: row.created_at, updatedAt: row.updated_at
         }));
-<<<<<<< HEAD
-=======
         cardPayments = [];
         cardPaymentsSchemaReady = false;
->>>>>>> 1da84a9 (feat: improve credit card payments and UI)
         accountsSchemaReady = true;
         if (accountMigrationNotice) accountMigrationNotice.hidden = true;
         if (accountFeatureContent) accountFeatureContent.hidden = false;
@@ -472,8 +463,6 @@ function calculateBankAccountBalance(account) {
         if (String(transfer.fromAccountId) === String(account.id)) balance -= Number(transfer.sentAmount) || 0;
         if (String(transfer.toAccountId) === String(account.id)) balance += Number(transfer.receivedAmount) || 0;
     });
-<<<<<<< HEAD
-=======
     cardPayments.forEach(payment => {
         if (
             String(payment.accountId) === String(account.id) &&
@@ -483,7 +472,6 @@ function calculateBankAccountBalance(account) {
             balance -= Number(payment.amount) || 0;
         }
     });
->>>>>>> 1da84a9 (feat: improve credit card payments and UI)
     return balance;
 }
 
@@ -512,12 +500,6 @@ function renderAccounts() {
         : `${totalCards}<div class="panel account-empty-state"><h2>Aún no tienes cuentas</h2><p>Agrega una cuenta bancaria, de ahorro o efectivo para empezar a separar tus saldos.</p></div>`;
 
     const unassigned = incomes.filter(item => !item.accountId).length + expenses.filter(item => item.paymentMethod !== "card" && !item.accountId).length;
-<<<<<<< HEAD
-    if (accountUnassignedNotice) accountUnassignedNotice.hidden = unassigned === 0;
-    if (accountUnassignedDescription && unassigned) {
-        accountUnassignedDescription.textContent = `${unassigned} movimientos históricos no tienen una cuenta vinculada. Edítalos desde Ingresos o Gastos para incluirlos en los saldos.`;
-    }
-=======
     if (accountUnassignedNotice) {
     accountUnassignedNotice.hidden = unassigned === 0;
 }
@@ -533,7 +515,6 @@ fillAccountSelect(
     accountAssignSelect,
     accountAssignSelect?.value || ""
 );
->>>>>>> 1da84a9 (feat: improve credit card payments and UI)
     renderTransfersTable();
 }
 
@@ -565,8 +546,6 @@ function renderTransfersTable() {
     transfersTable.innerHTML = `<div class="account-transfer-table-wrap"><table class="data-table account-transfer-table"><thead><tr><th>Fecha</th><th>Descripción</th><th>Desde</th><th>Hacia</th><th>Montos</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
-<<<<<<< HEAD
-=======
 
 async function initializeCardPayments() {
     cardPayments = [];
@@ -913,7 +892,6 @@ document.addEventListener("click", async event => {
     renderDashboardCardPayments();
 });
 
->>>>>>> 1da84a9 (feat: improve credit card payments and UI)
 function updateAccountInstitutionVisibility() {
     const isCash = accountType?.value === "cash";
     if (accountInstitutionGroup) accountInstitutionGroup.hidden = isCash;
@@ -921,13 +899,10 @@ function updateAccountInstitutionVisibility() {
 }
 
 function openAccountForm(account = null) {
-<<<<<<< HEAD
-=======
         if (!accountsSchemaReady) {
         alert("Primero aplica la migración de cuentas en Supabase y recarga la app.");
         return;
     }
->>>>>>> 1da84a9 (feat: improve credit card payments and UI)
     if (!accountFormPanel || !accountForm) return;
     accountForm.reset();
     accountEditId.value = account?.id || "";
@@ -957,13 +932,10 @@ function closeAccountForm() {
 }
 
 function openTransferForm() {
-<<<<<<< HEAD
-=======
         if (!accountsSchemaReady) {
         alert("Primero aplica la migración de cuentas en Supabase y recarga la app.");
         return;
     }
->>>>>>> 1da84a9 (feat: improve credit card payments and UI)
     if (!bankAccounts.some(account => account.isActive !== false)) {
         alert("Primero agrega al menos una cuenta activa.");
         return;
@@ -989,8 +961,6 @@ const newAccountButton = document.getElementById("newAccountButton");
 const cancelAccountButton = document.getElementById("cancelAccountButton");
 const newTransferButton = document.getElementById("newTransferButton");
 const cancelTransferButton = document.getElementById("cancelTransferButton");
-<<<<<<< HEAD
-=======
 const accountAssignSelect = document.getElementById("accountAssignSelect");
 const assignUnassignedButton = document.getElementById("assignUnassignedButton");
 async function assignUnassignedToAccount() {
@@ -1070,7 +1040,6 @@ assignUnassignedButton?.addEventListener(
     "click",
     assignUnassignedToAccount
 );
->>>>>>> 1da84a9 (feat: improve credit card payments and UI)
 newAccountButton?.addEventListener("click", () => openAccountForm());
 cancelAccountButton?.addEventListener("click", closeAccountForm);
 newTransferButton?.addEventListener("click", openTransferForm);
@@ -2609,11 +2578,8 @@ function openIncomeForm(
         incomeCurrency.value =
             income.currency;
 
-<<<<<<< HEAD
-=======
             populateTransactionAccountSelectors();
 
->>>>>>> 1da84a9 (feat: improve credit card payments and UI)
         if (incomeAccountId) incomeAccountId.value = income.accountId || "";
 
         incomeAmount.value =
@@ -2666,11 +2632,8 @@ function openIncomeForm(
         incomeCurrency.value =
             "GTQ";
 
-<<<<<<< HEAD
-=======
             populateTransactionAccountSelectors();
 
->>>>>>> 1da84a9 (feat: improve credit card payments and UI)
         if (incomeAccountId) incomeAccountId.value = getSingleAccountId("GTQ");
 
         incomeExchangeGroup.hidden =
@@ -5749,12 +5712,8 @@ function openExpenseForm(
             expense.notes || "";
 
         expensePaymentMethod.value =
-<<<<<<< HEAD
-           expense.paymentMethod || "cash";
-        if (expenseAccountId) expenseAccountId.value = expense.accountId || "";
-=======
     expense.paymentMethod || "cash";
->>>>>>> 1da84a9 (feat: improve credit card payments and UI)
+        if (expenseAccountId) expenseAccountId.value = expense.accountId || "";
 
 expensePaymentMethod.dispatchEvent(
     new Event("change")
@@ -9225,11 +9184,7 @@ const cutoffMonthDate =
 projectedCharges.push({
     creditCardId: expense.creditCardId,
     statementCutoffDate: buildISODate(cutoffMonthDate.getFullYear(), cutoffMonthDate.getMonth(), cardCutoffDay),
-<<<<<<< HEAD
     statementDueDate: buildISODate(selectedYear, selectedMonthIndex - 1, cardPaymentDay),
-=======
-    statementDueDate: buildISODate(selectedYear, selectedMonthIndex, cardPaymentDay),
->>>>>>> 1da84a9 (feat: improve credit card payments and UI)
     amountGTQ: installmentAmountGTQ,
     isProjected: true
 });
@@ -13245,10 +13200,7 @@ initializeSpanishDatePicker("expenseDate");
 initializeSpanishDatePicker("fixedExpensePurchaseDate");
 initializeSpanishDatePicker("accountOpeningDate");
 initializeSpanishDatePicker("transferDate");
-<<<<<<< HEAD
-=======
 initializeSpanishDatePicker("cardPaymentDate");
->>>>>>> 1da84a9 (feat: improve credit card payments and UI)
 function escapeHtml(
     value
 ) {
@@ -13525,19 +13477,6 @@ async function initializeAppData() {
             creditCardsLoad
         ]);
 
-<<<<<<< HEAD
-        renderExpenseTable();
-        renderIncomeTable();
-        renderAccounts();
-        updateDashboard();
-
-        await budgetsLoad;
-        renderBudgetTable();
-        if (categoriesReady) appDataInitializedForUserId = user.id;
-        return true;
-    })();
-
-=======
         await initializeCardPayments();
         populateCardPaymentCardOptions();
         populateCardPaymentAccountOptions();
@@ -13554,7 +13493,6 @@ async function initializeAppData() {
         return true;
     })();
 
->>>>>>> 1da84a9 (feat: improve credit card payments and UI)
     try {
         return await appDataInitializationPromise;
     } finally {
@@ -13800,8 +13738,6 @@ document.addEventListener("wheel", event => {
         numberInput.blur();
     }
 }, { capture: true, passive: true });
-<<<<<<< HEAD
-=======
 
 /* Dropdown personalizado reutilizable: replica el selector de mes/año. */
 (() => {
@@ -13942,4 +13878,3 @@ document.addEventListener("wheel", event => {
     });
     pageObserver.observe(document.documentElement, { childList: true, subtree: true });
 })();
->>>>>>> 1da84a9 (feat: improve credit card payments and UI)

@@ -6116,11 +6116,7 @@ table tbody tr:hover, .fixed-expense-table tbody tr:hover { background: #1d2a26;
 }
 .period-option:hover, .period-option:focus-visible { background: #263630; color: #f2f6ef; }
 .period-option[aria-selected="true"] { background: #2b3c31; color: #d5f191; font-weight: 700; }
-<<<<<<< HEAD
-.period-option[aria-selected="true"]::after { content: "✓"; color: #c7ec75; font-size: 12px; }
-=======
 /* El check se dibuja con .custom-select-check desde JavaScript; no duplicarlo con ::after. */
->>>>>>> 1da84a9 (feat: improve credit card payments and UI)
 @media (max-width: 600px) {
     .period-selector { justify-content: space-between; gap: 8px; padding: 7px; }
     .period-field { gap: 6px; }
@@ -7452,9 +7448,6 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
     }
 }
 
-<<<<<<< HEAD
-\n#accountFeatureContent[hidden] { display: none !important; }\n
-=======
 #accountFeatureContent[hidden] {
     display: none;
 }
@@ -7593,4 +7586,3 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
 .custom-select-option[aria-selected="true"] .custom-select-check {
     color: #c7ec75;
 }
->>>>>>> 1da84a9 (feat: improve credit card payments and UI)
