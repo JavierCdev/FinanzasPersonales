@@ -235,6 +235,26 @@ checkAuthentication();
 // ============================================================
 
 const menuButtons = document.querySelectorAll(".menu-item");
+const mobileMenuToggle = document.getElementById("mobileMenuToggle");
+const mobileMenuBackdrop = document.getElementById("mobileMenuBackdrop");
+const appSidebar = document.getElementById("appSidebar");
+
+function setMobileMenuOpen(isOpen) {
+    if (!appSidebar || !mobileMenuToggle || !mobileMenuBackdrop) return;
+    appSidebar.classList.toggle("is-open", isOpen);
+    mobileMenuBackdrop.classList.toggle("is-visible", isOpen);
+    mobileMenuToggle.setAttribute("aria-expanded", String(isOpen));
+    mobileMenuToggle.setAttribute("aria-label", isOpen ? "Cerrar menú" : "Abrir menú");
+    document.body.classList.toggle("mobile-menu-open", isOpen);
+}
+
+mobileMenuToggle?.addEventListener("click", () => {
+    setMobileMenuOpen(mobileMenuToggle.getAttribute("aria-expanded") !== "true");
+});
+mobileMenuBackdrop?.addEventListener("click", () => setMobileMenuOpen(false));
+window.addEventListener("keydown", event => {
+    if (event.key === "Escape") setMobileMenuOpen(false);
+});
 const pageSections = document.querySelectorAll(".page-section");
 const pageTitle = document.getElementById("pageTitle");
 
@@ -252,6 +272,8 @@ const sectionTitles = {
 menuButtons.forEach(button => {
 
     button.addEventListener("click", () => {
+
+        setMobileMenuOpen(false);
 
         const section = button.dataset.section;
 
