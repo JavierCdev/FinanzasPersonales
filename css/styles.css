@@ -8005,3 +8005,45 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
         border-bottom-right-radius: 0;
     }
 }
+
+
+/* Gastos en móvil: mantener buscador y acciones agrupados, sin huecos verticales. */
+@media (max-width: 600px) {
+    #gastos > .expenses-section-header {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        justify-content: flex-start !important;
+        gap: 12px !important;
+        height: auto !important;
+        min-height: 0 !important;
+        margin: 0 0 18px !important;
+        padding: 0 !important;
+    }
+    #gastos > .expenses-section-header > .expense-audit-search {
+        flex: 0 0 auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+    }
+    #gastos > .expenses-section-header > .section-actions {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+        align-items: stretch !important;
+        gap: 9px !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    #gastos > .expenses-section-header > .section-actions button {
+        width: 100% !important;
+        min-width: 0 !important;
+        min-height: 42px !important;
+        margin: 0 !important;
+        padding: 9px 7px !important;
+        white-space: normal !important;
+        font-size: 11px !important;
+    }
+}
