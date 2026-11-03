@@ -7787,3 +7787,46 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
         margin: 0 !important;
     }
 }
+
+
+/* Corrección del encabezado móvil: cada línea del título ocupa su propia fila. */
+@media (max-width: 600px) {
+    .topbar > .topbar-heading {
+        display: grid !important;
+        grid-template-columns: 40px minmax(0, 1fr) !important;
+        grid-template-rows: auto auto auto !important;
+        align-items: center !important;
+        column-gap: 10px !important;
+        row-gap: 2px !important;
+        min-width: 0 !important;
+    }
+    .topbar > .topbar-heading::before {
+        grid-column: 2 !important;
+        grid-row: 1 !important;
+        transform: none !important;
+        align-self: end !important;
+        margin: 0 0 2px !important;
+    }
+    .topbar > .topbar-heading #pageTitle {
+        grid-column: 2 !important;
+        grid-row: 2 !important;
+        align-self: center !important;
+        margin: 0 !important;
+        line-height: 1.1 !important;
+        white-space: nowrap !important;
+    }
+    .topbar > .topbar-heading #pageSubtitle {
+        grid-column: 2 !important;
+        grid-row: 3 !important;
+        align-self: start !important;
+        margin: 3px 0 0 !important;
+        line-height: 1.35 !important;
+    }
+    .topbar > .topbar-heading > .mobile-menu-toggle {
+        grid-column: 1 !important;
+        grid-row: 1 / 4 !important;
+        position: static !important;
+        transform: none !important;
+        align-self: center !important;
+    }
+}
