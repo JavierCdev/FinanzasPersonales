@@ -8079,3 +8079,76 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
     }
 }
 
+/* Tarjetas de crédito: corregir el grid heredado en pantallas móviles. */
+@media (max-width: 650px) {
+    .credit-card-item {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        gap: 14px;
+        overflow: hidden;
+    }
+
+    .credit-card-main,
+    .credit-card-main .category-info {
+        display: flex;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .credit-card-title {
+        width: auto;
+        min-width: 0;
+        max-width: 100%;
+        flex-wrap: wrap;
+        overflow-wrap: anywhere;
+    }
+
+    .credit-card-details {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        gap: 8px;
+    }
+
+    .credit-card-detail {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .credit-card-detail span {
+        white-space: normal;
+        overflow-wrap: anywhere;
+        line-height: 1.25;
+    }
+
+    .credit-card-detail strong {
+        min-width: 0;
+        overflow-wrap: anywhere;
+        font-size: clamp(10px, 2.8vw, 12px);
+    }
+
+    .credit-card-item > .category-actions {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        gap: 6px;
+    }
+
+    .credit-card-item > .category-actions > button {
+        width: 100%;
+        min-width: 0;
+        padding: 8px 4px;
+        font-size: clamp(9px, 2.6vw, 11px);
+        white-space: nowrap;
+    }
+}
+
