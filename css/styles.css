@@ -7981,3 +7981,17 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
     .dashboard-payment-amounts { gap: 7px; }
     .dashboard-payment-amounts strong { font-size: 12px; }
 }
+
+
+/* Separación lateral entre las tarjetas de pago y el borde de su contenedor. */
+@media (max-width: 600px) {
+    .dashboard-payment-cards {
+        padding-inline: 8px;
+        box-sizing: border-box;
+    }
+    .dashboard-payment-card {
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+    }
+}
