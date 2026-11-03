@@ -7881,3 +7881,70 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
         white-space: nowrap !important;
     }
 }
+
+
+/* Pagos de tarjetas: resumen compacto, tarjetas móviles y tabla de escritorio. */
+.dashboard-payment-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 14px;
+    padding: 14px 16px;
+    border: 1px solid #31463a;
+    border-radius: 13px;
+    background: linear-gradient(135deg, #1c3329, #192923);
+}
+.dashboard-payment-summary > div { display: grid; gap: 4px; min-width: 0; }
+.dashboard-payment-summary span { color: #a9b9ae; font-size: 11px; }
+.dashboard-payment-summary strong { color: #c7ec75; font-size: 22px; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.dashboard-payment-summary small { color: #9aaca1; font-size: 11px; white-space: nowrap; }
+.dashboard-payment-cards { display: none; }
+.dashboard-payment-table-wrap { width: 100%; overflow-x: auto; border: 1px solid #2b3a35; border-radius: 12px; }
+.dashboard-payment-table { width: 100%; min-width: 620px; border-collapse: collapse; }
+.dashboard-payment-table th, .dashboard-payment-table td { padding: 12px 13px; text-align: left; white-space: nowrap; }
+.dashboard-payment-table th { color: #9eafa5; background: #202d28; font-size: 10px; letter-spacing: .04em; }
+.dashboard-payment-table td { border-top: 1px solid #2b3a35; color: #dce6df; font-size: 12px; }
+.dashboard-payment-table td strong, .dashboard-payment-table .income-amount { font-weight: 700; }
+@media (max-width: 600px) {
+    .dashboard-payment-summary { align-items: flex-start; margin-bottom: 11px; padding: 12px; }
+    .dashboard-payment-summary strong { font-size: 20px; }
+    .dashboard-payment-summary small { padding-top: 3px; font-size: 10px; }
+    .dashboard-payment-cards { display: grid; gap: 10px; }
+    .dashboard-payment-table-wrap { display: none; }
+    .dashboard-payment-card {
+        display: grid;
+        gap: 12px;
+        min-width: 0;
+        padding: 13px;
+        border: 1px solid #2c4038;
+        border-radius: 13px;
+        background: linear-gradient(145deg, #192823, #15211e);
+    }
+    .dashboard-payment-card-heading,
+    .dashboard-payment-card-name,
+    .dashboard-payment-amounts > div {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        min-width: 0;
+    }
+    .dashboard-payment-card-name { justify-content: flex-start; }
+    .dashboard-payment-card-name strong { overflow: hidden; color: #e5eee7; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+    .dashboard-payment-card-icon { display: grid; place-items: center; flex: 0 0 30px; width: 30px; height: 30px; border: 1px solid #405447; border-radius: 9px; background: #24372d; color: #c7ec75; }
+    .dashboard-payment-status { flex: 0 0 auto; padding: 5px 8px; border: 1px solid transparent; border-radius: 999px; font-size: 9px; font-weight: 700; }
+    .dashboard-payment-status.is-upcoming { border-color: #42543c; background: #29382a; color: #c7ec75; }
+    .dashboard-payment-status.is-today { border-color: #80623a; background: #3a3020; color: #f2c66b; }
+    .dashboard-payment-status.is-overdue { border-color: #75413e; background: #392624; color: #f08a80; }
+    .dashboard-payment-dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 10px 0; border-top: 1px solid #2b3a35; border-bottom: 1px solid #2b3a35; }
+    .dashboard-payment-dates > div,
+    .dashboard-payment-amounts > div { display: grid; gap: 5px; min-width: 0; }
+    .dashboard-payment-dates span,
+    .dashboard-payment-amounts span { color: #91a49a; font-size: 10px; }
+    .dashboard-payment-dates strong { color: #dce6df; font-size: 11px; font-variant-numeric: tabular-nums; }
+    .dashboard-payment-amounts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .dashboard-payment-amounts > div { align-items: flex-start; }
+    .dashboard-payment-amounts strong { color: #dce6df; font-size: 13px; font-variant-numeric: tabular-nums; }
+    .dashboard-payment-amounts > div:first-child strong { color: #c7ec75; }
+}
