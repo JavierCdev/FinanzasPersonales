@@ -8152,7 +8152,98 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
     }
 }
 
-/* Reporte mensual: presentación en tarjetas para evitar scroll horizontal en móvil. */
+/* Reporte mensual: tarjetas compactas en móvil, sin tabla de ancho fijo. */
+@media (max-width: 760px) {
+    #reportMonthlyContainer .report-monthly-table-wrapper {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        overflow: visible;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+    }
+
+    #reportMonthlyContainer table.report-monthly-table {
+        display: block;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        table-layout: auto;
+        border: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    #reportMonthlyContainer .report-monthly-table thead {
+        display: none;
+    }
+
+    #reportMonthlyContainer .report-monthly-table tbody {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 8px;
+        width: 100%;
+        min-width: 0;
+    }
+
+    #reportMonthlyContainer .report-monthly-table tbody tr {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        overflow: hidden;
+        border: 1px solid #2b3a36;
+        border-radius: 10px;
+        background: #172220;
+    }
+
+    #reportMonthlyContainer .report-monthly-table tbody td {
+        display: block;
+        width: auto;
+        min-width: 0;
+        max-width: 100%;
+        padding: 9px 6px;
+        border: 0;
+        text-align: left;
+        font-size: 11px;
+        line-height: 1.3;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: normal;
+        font-variant-numeric: tabular-nums;
+    }
+
+    #reportMonthlyContainer .report-monthly-table tbody td::before {
+        display: block;
+        margin-bottom: 5px;
+        color: #91a29a;
+        content: attr(data-label);
+        font-size: 9px;
+        font-weight: 600;
+        line-height: 1.2;
+    }
+
+    #reportMonthlyContainer .report-monthly-table tbody td.report-month-cell {
+        grid-column: 1 / -1;
+        padding: 9px 10px;
+        border-bottom: 1px solid #293833;
+        color: #edf3ee;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    #reportMonthlyContainer .report-monthly-table tbody td.report-month-cell::before {
+        display: none;
+        content: none;
+    }
+
+    #reportMonthlyContainer .report-monthly-table .report-table-number {
+        white-space: normal;
+    }
+}
 @media (max-width: 600px) {
     .report-monthly-table-wrapper {
         width: 100%;
