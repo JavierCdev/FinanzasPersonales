@@ -12330,9 +12330,9 @@ function renderReportBudget() {
 
     reportBudgetContainer.innerHTML = `
 
-        <div class="report-table-wrapper">
+        <div class="report-table-wrapper report-monthly-table-wrapper">
 
-            <table class="report-table">
+            <table class="report-table report-monthly-table">
 
                 <thead>
 
@@ -12813,14 +12813,14 @@ function renderReportMonthly() {
 
                 <tr>
 
-                    <td>
+                    <td class="report-month-cell" data-label="Mes">
 
                         ${monthNames[index]}
 
                     </td>
 
 
-                    <td class="report-table-number">
+                    <td class="report-table-number" data-label="Ingresos">
 
                         ${formatCurrency(
                             item.income,
@@ -12830,7 +12830,7 @@ function renderReportMonthly() {
                     </td>
 
 
-                    <td class="report-table-number">
+                    <td class="report-table-number" data-label="Gastos">
 
                         ${formatCurrency(
                             item.expense,
@@ -12841,6 +12841,7 @@ function renderReportMonthly() {
 
 
                     <td
+                        data-label="Balance"
                         class="
                             report-table-number
                             ${
