@@ -9427,52 +9427,82 @@ if (expense.isProjected) {
         0
     );
 
-    let html = `
-        <div class="dashboard-payment-summary">
-    <span>Total estimado a pagar este mes</span>
-    <strong>${formatCurrency(totalDue, "GTQ")}</strong>
-</div>
+    const today = new Date();
+    const todayISO = [
+        today.getFullYear(),
+        String(today.getMonth() + 1).padStart(2, "0"),
+        String(today.getDate()).padStart(2, "0")
+    ].join("-");
 
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Tarjeta</th>
-                    <th>Fecha de corte</th>
-                    <th>Fecha de pago</th>
-                    <th>Pendiente (GTQ)</th>
-                    <th>Previsto (GTQ)</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
-
-    visibleMonthlyPayments.forEach(payment => {
+    const mobileCards = visibleMonthlyPayments.map(payment => {
         const card = creditCards.find(
-            item => item.id === payment.creditCardId
+            item => String(item.id) === String(payment.creditCardId)
         );
-
         const cardName = card
             ? `${card.bank} - ${card.name}`
             : "Tarjeta de crédito";
 
-        html += `
+        const status = payment.dueDate < todayISO
+            ? { label: "Vencido", className: "is-overdue" }
+            : payment.dueDate === todayISO
+                ? { label: "Vence hoy", className: "is-today" }
+                : { label: "Próximo", className: "is-upcoming" };
+
+        return `
+            <article class="dashboard-payment-card">
+                <div class="dashboard-payment-card-heading">
+                    <div class="dashboard-payment-card-name">
+                        <span class="dashboard-payment-card-icon" aria-hidden="true">▣</span>
+                        <strong>${escapeHtml(cardName)}</strong>
+                    </div>
+                    <span class="dashboard-payment-status ${status.className}">${status.label}</span>
+                </div>
+                <div class="dashboard-payment-dates">
+                    <div><span>Fecha de corte</span><strong>${formatDate(payment.cutoffDate)}</strong></div>
+                    <div><span>Fecha de pago</span><strong>${formatDate(payment.dueDate)}</strong></div>
+                </div>
+                <div class="dashboard-payment-amounts">
+                    <div><span>Pendiente</span><strong>${formatCurrency(payment.totalGTQ, "GTQ")}</strong></div>
+                    <div><span>Previsto</span><strong>${formatCurrency(payment.projectedGTQ, "GTQ")}</strong></div>
+                </div>
+            </article>
+        `;
+    }).join("");
+
+    const tableRows = visibleMonthlyPayments.map(payment => {
+        const card = creditCards.find(
+            item => String(item.id) === String(payment.creditCardId)
+        );
+        const cardName = card
+            ? `${card.bank} - ${card.name}`
+            : "Tarjeta de crédito";
+
+        return `
             <tr>
                 <td>${escapeHtml(cardName)}</td>
                 <td>${formatDate(payment.cutoffDate)}</td>
                 <td>${formatDate(payment.dueDate)}</td>
-                <td class="income-amount">
-                   ${formatCurrency(payment.totalGTQ, "GTQ")}
-                           </td>
-                     <td>
-    ${formatCurrency(payment.projectedGTQ, "GTQ")}
-</td>
+                <td class="income-amount">${formatCurrency(payment.totalGTQ, "GTQ")}</td>
+                <td>${formatCurrency(payment.projectedGTQ, "GTQ")}</td>
             </tr>
         `;
-    });
+    }).join("");
 
-    html += `
-            </tbody>
-        </table>
+    const html = `
+        <div class="dashboard-payment-summary">
+            <div>
+                <span>Total pendiente este mes</span>
+                <strong>${formatCurrency(totalDue, "GTQ")}</strong>
+            </div>
+            <small>${visibleMonthlyPayments.length} ${visibleMonthlyPayments.length === 1 ? "pago programado" : "pagos programados"}</small>
+        </div>
+        <div class="dashboard-payment-cards">${mobileCards}</div>
+        <div class="dashboard-payment-table-wrap">
+            <table class="data-table dashboard-payment-table">
+                <thead><tr><th>Tarjeta</th><th>Fecha de corte</th><th>Fecha de pago</th><th>Pendiente (GTQ)</th><th>Previsto (GTQ)</th></tr></thead>
+                <tbody>${tableRows}</tbody>
+            </table>
+        </div>
     `;
 
     dashboardCardPayments.innerHTML = html;
