@@ -8439,3 +8439,10 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
 
 /* Reportes utiliza el mismo encabezado y botón global que las demás secciones. */
 
+/* Reportes desktop: alinear visualmente el botón con el encabezado del Dashboard. */
+@media (min-width: 821px) {
+    body:has(#reportes.active) .topbar-controls > #logoutButton {
+        transform: translate(6px, 13px);
+    }
+}
+
