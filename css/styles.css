@@ -8280,7 +8280,7 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
         grid-area: controls;
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
-        align-items: center;
+        align-items: stretch;
         gap: 8px;
         width: 100%;
         min-width: 0;
@@ -8290,41 +8290,54 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
         display: flex;
         flex: 1 1 auto;
         flex-wrap: nowrap;
+        align-items: center;
         justify-content: flex-start;
         gap: 10px;
-        width: auto;
+        width: 100%;
         min-width: 0;
         padding: 7px 10px;
+        box-sizing: border-box;
     }
 
     .topbar .period-field {
-        flex: 0 0 auto;
-        grid-template-columns: auto auto;
+        flex: 1 1 0;
+        grid-template-columns: auto minmax(0, 1fr);
         gap: 8px;
         min-width: 0;
     }
 
+    .topbar .period-field .period-control {
+        width: 100%;
+        min-width: 0;
+    }
+
     .topbar .period-trigger {
-        min-width: 136px;
-        width: auto;
+        min-width: 0;
+        width: 100%;
         min-height: 38px;
-        gap: 20px;
+        gap: 12px;
         padding: 0 11px 0 13px;
         font-size: 12px;
     }
 
     .topbar .period-trigger-year {
-        min-width: 86px;
+        min-width: 0;
     }
 
     .topbar-controls > #logoutButton {
+        align-self: stretch;
         justify-self: end;
+        display: inline-flex;
         flex: 0 0 auto;
+        align-items: center;
+        justify-content: center;
         width: auto;
         min-width: 0;
-        min-height: 40px;
         height: auto;
-        padding: 0 12px;
+        min-height: 0;
+        margin: 0;
+        padding: 0 14px;
+        box-sizing: border-box;
         font-size: 11px;
         font-weight: 650;
         white-space: nowrap;
