@@ -7995,3 +7995,13 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
         box-sizing: border-box;
     }
 }
+
+
+/* Quitar el borde inferior del resumen de pagos en móvil. */
+@media (max-width: 600px) {
+    .dashboard-payment-summary {
+        border-bottom: 0;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+}
