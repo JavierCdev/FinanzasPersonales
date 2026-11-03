@@ -7624,8 +7624,21 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
 .mobile-menu-toggle span { width: 17px; height: 2px; border-radius: 2px; background: #d9e8dc; }
 .mobile-menu-backdrop { display: none; }
 @media (max-width: 600px) {
-    .topbar-heading { position: relative; padding-right: 48px; }
-    .mobile-menu-toggle { display: inline-flex; position: absolute; top: 0; right: 0; }
+    .topbar-heading {
+        position: relative;
+        padding-right: 0;
+        padding-left: 50px;
+    }
+    .topbar-heading::before {
+        transform: translateX(-50px);
+    }
+    .mobile-menu-toggle {
+        display: inline-flex;
+        position: absolute;
+        top: 28px;
+        left: 0;
+        right: auto;
+    }
     .topbar > .year-selector.period-selector {
         width: fit-content;
         max-width: 100%;
