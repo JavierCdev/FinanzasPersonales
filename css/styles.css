@@ -7586,3 +7586,46 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
 .custom-select-option[aria-selected="true"] .custom-select-check {
     color: #c7ec75;
 }
+
+
+/* Acción de cierre de sesión, visible también en pantallas pequeñas. */
+.auth-logout-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 0 14px;
+    border: 1px solid rgba(240, 131, 123, .32);
+    border-radius: 11px;
+    background: rgba(120, 48, 45, .16);
+    color: #f19a92;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 650;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background .18s ease, border-color .18s ease, opacity .18s ease;
+}
+.auth-logout-button:hover {
+    border-color: rgba(240, 131, 123, .58);
+    background: rgba(120, 48, 45, .28);
+}
+.auth-logout-button:focus-visible {
+    outline: 2px solid #c7ec75;
+    outline-offset: 3px;
+}
+.auth-logout-button:disabled {
+    opacity: .65;
+    cursor: wait;
+}
+.auth-logout-button > span:first-child {
+    font-size: 17px;
+    line-height: 1;
+}
+@media (max-width: 680px) {
+    .auth-logout-button {
+        align-self: flex-end;
+        min-height: 40px;
+    }
+}
