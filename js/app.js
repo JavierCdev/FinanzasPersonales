@@ -12768,9 +12768,9 @@ function renderReportMonthly() {
 
     let html = `
 
-        <div class="report-table-wrapper">
+        <div class="report-table-wrapper report-monthly-table-wrapper">
 
-            <table class="report-table">
+            <table class="report-table report-monthly-table">
 
                 <thead>
 
@@ -13567,6 +13567,7 @@ async function initializeAppData() {
         renderIncomeTable();
         renderAccounts();
         updateDashboard();
+        updateReports();
 
         await budgetsLoad;
         renderBudgetTable();
