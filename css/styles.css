@@ -7695,21 +7695,17 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
 }
 
 
-/* Mantener el importe disponible legible sin que se recorte en tarjetas móviles. */
+/* El importe disponible usa exactamente la misma escala que las otras métricas. */
 @media (max-width: 600px) {
     .summary-card.balance #dashboardBalance {
-        width: max-content;
-        max-width: none;
-        font-size: 18px;
-        letter-spacing: -.65px;
-        line-height: 1.15;
-        transform: scaleX(.86);
-        transform-origin: left center;
-    }
-}
-@media (max-width: 370px) {
-    .summary-card.balance #dashboardBalance {
-        font-size: 16px;
-        transform: scaleX(.88);
+        display: block;
+        width: auto;
+        max-width: 100%;
+        min-width: 0;
+        white-space: nowrap;
+        font-size: clamp(17px, 5vw, 21px);
+        letter-spacing: -.5px;
+        line-height: 1.05;
+        transform: none;
     }
 }
