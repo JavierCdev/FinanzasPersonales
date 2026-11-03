@@ -7983,10 +7983,10 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
 }
 
 
-/* Separación lateral entre las tarjetas de pago y el borde de su contenedor. */
+/* Separación uniforme entre las tarjetas de pago y el borde de su contenedor. */
 @media (max-width: 600px) {
     .dashboard-payment-cards {
-        padding-inline: 8px;
+        padding: 0 12px 12px;
         box-sizing: border-box;
     }
     .dashboard-payment-card {
