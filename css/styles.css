@@ -8278,19 +8278,22 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
 
     .topbar-controls {
         grid-area: controls;
-        display: flex;
-        justify-content: flex-end;
-        min-width: 0;
-    }
-
-    .topbar .period-selector {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: flex-end;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
         gap: 8px;
         width: 100%;
         min-width: 0;
-        padding: 7px 9px;
+    }
+
+    .topbar-controls .period-selector {
+        display: flex;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        gap: 7px;
+        width: 100%;
+        min-width: 0;
+        padding: 7px 8px;
     }
 
     .topbar .period-field {
@@ -8300,22 +8303,32 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
     }
 
     .topbar .period-trigger {
-        min-width: 112px;
+        min-width: 0;
+        width: 100%;
         min-height: 36px;
-        gap: 10px;
-        padding: 0 9px;
-        font-size: 11px;
+        gap: 7px;
+        padding: 0 8px;
+        font-size: 10px;
+    }
+
+    .topbar .period-field:first-child .period-control {
+        min-width: 0;
+        flex: 1 1 105px;
+    }
+
+    .topbar .period-field:last-child .period-control {
+        min-width: 0;
+        flex: 1 1 70px;
     }
 
     .topbar .period-trigger-year {
-        min-width: 78px;
+        min-width: 0;
     }
 
-    .topbar > #logoutButton {
-        grid-area: logout;
+    .topbar-controls > #logoutButton {
         justify-self: end;
         min-height: 36px;
-        padding: 8px 10px;
+        padding: 8px 9px;
         font-size: 10px;
         white-space: nowrap;
     }
