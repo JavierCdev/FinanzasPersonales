@@ -7588,129 +7588,57 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
 }
 
 
-/* Acción de cierre de sesión integrada al encabezado. */
+/* Navegación móvil: estilos aislados para no alterar el layout original. */
 .auth-logout-button {
     display: inline-flex;
     flex: 0 0 auto;
     align-items: center;
     justify-content: center;
-    gap: 7px;
-    height: 48px;
-    min-height: 48px;
-    box-sizing: border-box;
+    gap: 6px;
+    min-height: 40px;
     padding: 0 12px;
-    line-height: 1;
-    border: 1px solid rgba(240, 131, 123, .28);
-    border-radius: 11px;
-    background: rgba(120, 48, 45, .12);
+    border: 1px solid rgba(240,131,123,.3);
+    border-radius: 10px;
+    background: rgba(120,48,45,.13);
     color: #e99a92;
     font: inherit;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 650;
     white-space: nowrap;
     cursor: pointer;
-    transition: background .18s ease, border-color .18s ease, opacity .18s ease;
 }
-.auth-logout-button:hover {
-    border-color: rgba(240, 131, 123, .52);
-    background: rgba(120, 48, 45, .24);
-}
-.auth-logout-button:focus-visible {
-    outline: 2px solid #c7ec75;
-    outline-offset: 3px;
-}
-.auth-logout-button:disabled {
-    opacity: .65;
-    cursor: wait;
-}
-.auth-logout-button > span:first-child {
-    font-size: 15px;
-    line-height: 1;
-}
-
-/* En tablet, el título ocupa su propia fila y los controles quedan alineados. */
-@media (max-width: 760px) {
-    .topbar {
-        flex-wrap: wrap;
-        align-items: center;
-        row-gap: 12px;
-    }
-    .topbar > div:first-child {
-        flex: 1 1 100%;
-    }
-    .year-selector.period-selector {
-        flex: 1 1 auto;
-        min-width: 0;
-    }
-}
-
-/* En móvil, selector y acción se apilan a todo el ancho. */
-@media (max-width: 600px) {
-    .topbar {
-        align-items: stretch;
-    }
-    .year-selector.period-selector {
-        width: 100%;
-        box-sizing: border-box;
-    }
-    .auth-logout-button {
-        align-self: stretch;
-        width: 100%;
-        min-height: 44px;
-        box-sizing: border-box;
-    }
-}
-
-
-/* Corrige la regla heredada que bajaba el selector hasta el borde inferior del topbar. */
-.topbar > .year-selector.period-selector,
-.topbar > .auth-logout-button {
-    align-self: center;
-}
-
-
-/* Navegación móvil con menú hamburguesa lateral. */
 .mobile-menu-toggle {
     display: none;
-    width: 40px;
-    height: 40px;
-    flex: 0 0 40px;
-    flex-direction: column;
+    width: 38px;
+    height: 38px;
     align-items: center;
     justify-content: center;
+    flex-direction: column;
     gap: 5px;
     padding: 0;
     border: 1px solid #30413a;
-    border-radius: 11px;
+    border-radius: 10px;
     background: #1b2924;
     cursor: pointer;
 }
-.mobile-menu-toggle span {
-    display: block;
-    width: 17px;
-    height: 2px;
-    border-radius: 2px;
-    background: #d9e8dc;
-    transition: transform .2s ease, opacity .2s ease;
-}
-.mobile-menu-toggle[aria-expanded="true"] span:first-child { transform: translateY(7px) rotate(45deg); }
-.mobile-menu-toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
-.mobile-menu-toggle[aria-expanded="true"] span:last-child { transform: translateY(-7px) rotate(-45deg); }
+.mobile-menu-toggle span { width: 17px; height: 2px; border-radius: 2px; background: #d9e8dc; }
 .mobile-menu-backdrop { display: none; }
-
 @media (max-width: 600px) {
-    .mobile-menu-toggle { display: inline-flex; }
-    .topbar > div:first-child {
-        display: grid;
-        grid-template-columns: 40px minmax(0, 1fr);
-        column-gap: 11px;
-        align-items: center;
+    .topbar-heading { position: relative; padding-right: 48px; }
+    .mobile-menu-toggle { display: inline-flex; position: absolute; top: 0; right: 0; }
+    .topbar > .year-selector.period-selector {
+        width: fit-content;
+        max-width: 100%;
+        padding: 5px 8px;
+        gap: 8px;
+        box-sizing: border-box;
     }
-    .topbar > div:first-child::before,
-    .topbar > div:first-child h1,
-    .topbar > div:first-child p { grid-column: 2; }
-    .topbar > div:first-child::before { grid-row: 1; align-self: end; }
-    .mobile-menu-toggle { grid-column: 1; grid-row: 1 / span 3; }
+    .topbar .period-field { gap: 5px; }
+    .topbar .period-field > label { font-size: 9px; }
+    .topbar .period-trigger { min-width: 108px; min-height: 32px; padding: 0 8px; gap: 8px; font-size: 11px; }
+    .topbar .period-trigger-year { min-width: 68px; }
+    .topbar .period-divider { height: 22px; }
+    .topbar > .auth-logout-button { align-self: flex-end; width: auto; min-height: 36px; height: 36px; padding: 0 10px; font-size: 10px; }
 
     .sidebar {
         position: fixed;
@@ -7732,148 +7660,13 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
         overflow-y: auto;
     }
     .sidebar.is-open { transform: translateX(0); }
-    .sidebar .logo,
-    .sidebar .sidebar-footer { display: flex; }
+    .sidebar .logo, .sidebar .sidebar-footer { display: flex; }
     .sidebar .logo { margin-bottom: 24px; }
-    .sidebar .menu {
-        display: flex;
-        flex: 1 1 auto;
-        flex-direction: column;
-        align-items: stretch;
-        justify-content: flex-start;
-        gap: 6px;
-        height: auto;
-        overflow: visible;
-    }
-    .sidebar .menu-item {
-        display: flex;
-        flex: 0 0 auto;
-        flex-direction: row;
-        justify-content: flex-start;
-        width: 100%;
-        min-width: 0;
-        min-height: 46px;
-        height: 46px;
-        gap: 12px;
-        padding: 0 13px;
-        border-radius: 11px;
-        font-size: 13px;
-        text-align: left;
-    }
-    .sidebar .menu-item > span:last-child {
-        display: block;
-        max-width: none;
-        overflow: visible;
-        text-overflow: clip;
-        white-space: nowrap;
-        text-align: left;
-        line-height: normal;
-    }
+    .sidebar .menu { display: flex; flex: 1 1 auto; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 6px; height: auto; overflow: visible; }
+    .sidebar .menu-item { display: flex; flex: 0 0 auto; flex-direction: row; justify-content: flex-start; width: 100%; min-width: 0; min-height: 46px; height: 46px; gap: 12px; padding: 0 13px; border-radius: 11px; font-size: 13px; text-align: left; }
+    .sidebar .menu-item > span:last-child { display: block; max-width: none; overflow: visible; text-overflow: clip; white-space: nowrap; text-align: left; line-height: normal; }
     .sidebar .menu-icon { width: 24px; font-size: 17px; text-align: center; }
     .sidebar .sidebar-footer { margin-top: 20px; }
-    .mobile-menu-backdrop.is-visible {
-        position: fixed;
-        inset: 0;
-        z-index: 210;
-        display: block;
-        border: 0;
-        background: rgba(0,0,0,.55);
-        backdrop-filter: blur(2px);
-    }
+    .mobile-menu-backdrop.is-visible { position: fixed; inset: 0; z-index: 210; display: block; border: 0; background: rgba(0,0,0,.55); backdrop-filter: blur(2px); }
     body.mobile-menu-open { overflow: hidden; }
-
-    .auth-logout-button {
-        align-self: flex-end;
-        width: auto;
-        min-width: 0;
-        height: 40px;
-        min-height: 40px;
-        padding: 0 12px;
-        font-size: 11px;
-    }
-}
-
-
-/* Selector de periodo más compacto en móviles: evita ocupar toda la fila. */
-@media (max-width: 600px) {
-    .topbar > .year-selector.period-selector {
-        width: fit-content;
-        max-width: 100%;
-        min-height: 0;
-        align-self: start;
-        gap: 8px;
-        padding: 5px 8px;
-    }
-    .topbar .period-field {
-        gap: 5px;
-    }
-    .topbar .period-field > label {
-        font-size: 9px;
-        letter-spacing: .04em;
-    }
-    .topbar .period-trigger {
-        min-width: 108px;
-        min-height: 32px;
-        gap: 8px;
-        padding: 0 8px;
-        border-radius: 8px;
-        font-size: 11px;
-    }
-    .topbar .period-trigger-year {
-        min-width: 68px;
-    }
-    .topbar .period-divider {
-        height: 22px;
-    }
-}
-@media (max-width: 370px) {
-    .topbar > .year-selector.period-selector {
-        gap: 5px;
-        padding: 5px 6px;
-    }
-    .topbar .period-trigger { min-width: 98px; }
-    .topbar .period-trigger-year { min-width: 62px; }
-}
-
-
-/* Distribución final del encabezado móvil: título y acciones arriba; periodo abajo. */
-@media (max-width: 600px) {
-    .topbar {
-        display: grid;
-        grid-template-columns: 40px minmax(0, 1fr) auto;
-        align-items: center;
-        column-gap: 10px;
-        row-gap: 10px;
-    }
-    .topbar > #mobileMenuToggle {
-        grid-column: 1;
-        grid-row: 1;
-        justify-self: start;
-        align-self: center;
-    }
-    .topbar > div:first-of-type {
-        grid-column: 2;
-        grid-row: 1;
-        min-width: 0;
-    }
-    .topbar > .auth-logout-button {
-        grid-column: 3;
-        grid-row: 1;
-        justify-self: end;
-        align-self: center;
-        width: auto;
-        height: 36px;
-        min-height: 36px;
-        padding: 0 9px;
-        gap: 5px;
-        font-size: 10px;
-    }
-    .topbar > .year-selector.period-selector {
-        grid-column: 1 / -1;
-        grid-row: 2;
-        justify-self: start;
-        align-self: center;
-        width: fit-content;
-        max-width: 100%;
-    }
 }
