@@ -8288,37 +8288,42 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
 
     .topbar-controls .period-selector {
         display: flex;
+        flex: 1 1 auto;
         flex-wrap: nowrap;
-        justify-content: flex-start;
-        gap: 7px;
+        justify-content: stretch;
+        gap: 10px;
         width: 100%;
         min-width: 0;
-        padding: 7px 8px;
+        padding: 9px 12px;
     }
 
     .topbar .period-field {
-        grid-template-columns: auto minmax(0, auto);
-        gap: 6px;
+        flex: 1 1 0;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 8px;
+        min-width: 0;
+    }
+
+    .topbar .period-field .period-control {
+        width: 100%;
         min-width: 0;
     }
 
     .topbar .period-trigger {
         min-width: 0;
         width: 100%;
-        min-height: 36px;
-        gap: 7px;
-        padding: 0 8px;
-        font-size: 10px;
+        min-height: 38px;
+        gap: 10px;
+        padding: 0 11px;
+        font-size: 11px;
     }
 
     .topbar .period-field:first-child .period-control {
         min-width: 0;
-        flex: 1 1 105px;
     }
 
     .topbar .period-field:last-child .period-control {
         min-width: 0;
-        flex: 1 1 70px;
     }
 
     .topbar .period-trigger-year {
@@ -8327,9 +8332,9 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
 
     .topbar-controls > #logoutButton {
         justify-self: end;
-        min-height: 36px;
-        padding: 8px 9px;
-        font-size: 10px;
+        min-height: 40px;
+        padding: 0 12px;
+        font-size: 11px;
         white-space: nowrap;
     }
 
