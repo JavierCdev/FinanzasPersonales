@@ -7670,3 +7670,26 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
     .mobile-menu-backdrop.is-visible { position: fixed; inset: 0; z-index: 210; display: block; border: 0; background: rgba(0,0,0,.55); backdrop-filter: blur(2px); }
     body.mobile-menu-open { overflow: hidden; }
 }
+
+
+/* Dashboard móvil: ajustar el saldo disponible al ancho real de su tarjeta. */
+@media (max-width: 600px) {
+    .summary-card.balance {
+        min-width: 0;
+    }
+    .summary-card.balance #dashboardBalance {
+        display: block;
+        max-width: 100%;
+        min-width: 0;
+        white-space: nowrap;
+        font-size: clamp(14px, 3.8vw, 17px);
+        letter-spacing: -.55px;
+        font-variant-numeric: tabular-nums;
+    }
+}
+@media (max-width: 370px) {
+    .summary-card.balance #dashboardBalance {
+        font-size: 14px;
+        letter-spacing: -.65px;
+    }
+}
