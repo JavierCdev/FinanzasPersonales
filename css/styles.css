@@ -8437,45 +8437,5 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
     }
 }
 
-/* Reportes: su selector global se oculta y el botón queda alineado a la derecha. */
-@media (min-width: 601px) {
-    body:has(#reportes.active) .topbar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: nowrap;
-        gap: 18px;
-    }
-
-    body:has(#reportes.active) .topbar > .topbar-heading {
-        flex: 1 1 auto;
-        min-width: 0;
-    }
-
-    body:has(#reportes.active) .topbar > .topbar-controls {
-        display: flex;
-        flex: 0 0 auto;
-        align-items: center;
-        justify-content: flex-end;
-        width: auto;
-        min-width: 0;
-        margin-left: auto;
-    }
-
-    body:has(#reportes.active) .topbar-controls > .auth-logout-button {
-        display: inline-flex;
-        align-self: center;
-        align-items: center;
-        justify-content: center;
-        flex: 0 0 auto;
-        width: auto;
-        height: 40px;
-        min-height: 40px;
-        margin: 0;
-        padding: 0 12px;
-        font-size: 11px;
-        white-space: nowrap;
-        box-sizing: border-box;
-    }
-}
+/* Reportes utiliza el mismo encabezado y botón global que las demás secciones. */
 
