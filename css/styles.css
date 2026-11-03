@@ -7948,3 +7948,36 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
     .dashboard-payment-amounts strong { color: #dce6df; font-size: 13px; font-variant-numeric: tabular-nums; }
     .dashboard-payment-amounts > div:first-child strong { color: #c7ec75; }
 }
+
+
+/* Compactar las tarjetas internas de pagos en móvil. */
+@media (max-width: 600px) {
+    .dashboard-payment-cards { gap: 7px; }
+    .dashboard-payment-card {
+        gap: 8px;
+        padding: 9px 10px;
+        border-radius: 10px;
+    }
+    .dashboard-payment-card-heading { gap: 6px; }
+    .dashboard-payment-card-name { gap: 7px; }
+    .dashboard-payment-card-name strong { font-size: 11px; }
+    .dashboard-payment-card-icon {
+        flex-basis: 25px;
+        width: 25px;
+        height: 25px;
+        border-radius: 7px;
+        font-size: 12px;
+    }
+    .dashboard-payment-status { padding: 4px 7px; font-size: 8px; }
+    .dashboard-payment-dates {
+        gap: 7px;
+        padding: 7px 0;
+    }
+    .dashboard-payment-dates > div,
+    .dashboard-payment-amounts > div { gap: 3px; }
+    .dashboard-payment-dates span,
+    .dashboard-payment-amounts span { font-size: 9px; }
+    .dashboard-payment-dates strong { font-size: 10px; }
+    .dashboard-payment-amounts { gap: 7px; }
+    .dashboard-payment-amounts strong { font-size: 12px; }
+}
