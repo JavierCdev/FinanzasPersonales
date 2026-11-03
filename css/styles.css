@@ -7792,3 +7792,45 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
         font-size: 11px;
     }
 }
+
+
+/* Selector de periodo más compacto en móviles: evita ocupar toda la fila. */
+@media (max-width: 600px) {
+    .topbar > .year-selector.period-selector {
+        width: fit-content;
+        max-width: 100%;
+        min-height: 0;
+        align-self: start;
+        gap: 8px;
+        padding: 5px 8px;
+    }
+    .topbar .period-field {
+        gap: 5px;
+    }
+    .topbar .period-field > label {
+        font-size: 9px;
+        letter-spacing: .04em;
+    }
+    .topbar .period-trigger {
+        min-width: 108px;
+        min-height: 32px;
+        gap: 8px;
+        padding: 0 8px;
+        border-radius: 8px;
+        font-size: 11px;
+    }
+    .topbar .period-trigger-year {
+        min-width: 68px;
+    }
+    .topbar .period-divider {
+        height: 22px;
+    }
+}
+@media (max-width: 370px) {
+    .topbar > .year-selector.period-selector {
+        gap: 5px;
+        padding: 5px 6px;
+    }
+    .topbar .period-trigger { min-width: 98px; }
+    .topbar .period-trigger-year { min-width: 62px; }
+}
