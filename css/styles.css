@@ -7726,3 +7726,64 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
         line-height: 1.45;
     }
 }
+
+
+/* FIX FINAL: encabezado móvil en dos filas, sin dejar Cerrar sesión debajo del selector. */
+@media (max-width: 600px) {
+    .topbar {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) auto !important;
+        grid-template-rows: auto auto !important;
+        align-items: center !important;
+        justify-content: initial !important;
+        column-gap: 10px !important;
+        row-gap: 10px !important;
+    }
+    .topbar > .topbar-heading {
+        grid-column: 1 !important;
+        grid-row: 1 !important;
+        display: grid !important;
+        grid-template-columns: 40px minmax(0, 1fr) !important;
+        grid-template-rows: auto auto !important;
+        align-items: center !important;
+        column-gap: 10px !important;
+        min-width: 0 !important;
+        padding: 0 !important;
+        position: static !important;
+    }
+    .topbar > .topbar-heading::before { grid-column: 2 !important; grid-row: 1 !important; transform: none !important; }
+    .topbar > .topbar-heading #pageTitle { grid-column: 2 !important; grid-row: 1 !important; min-width: 0 !important; }
+    .topbar > .topbar-heading #pageSubtitle { grid-column: 2 !important; grid-row: 2 !important; min-width: 0 !important; margin-top: 4px !important; }
+    .topbar > .topbar-heading > .mobile-menu-toggle {
+        display: inline-flex !important;
+        position: static !important;
+        grid-column: 1 !important;
+        grid-row: 1 / span 2 !important;
+        transform: none !important;
+        align-self: center !important;
+    }
+    .topbar > .auth-logout-button {
+        grid-column: 2 !important;
+        grid-row: 1 !important;
+        justify-self: end !important;
+        align-self: center !important;
+        display: inline-flex !important;
+        width: auto !important;
+        min-width: 0 !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        padding: 0 9px !important;
+        margin: 0 !important;
+        font-size: 10px !important;
+        white-space: nowrap !important;
+    }
+    .topbar > .year-selector.period-selector {
+        grid-column: 1 / -1 !important;
+        grid-row: 2 !important;
+        justify-self: start !important;
+        align-self: center !important;
+        width: fit-content !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+    }
+}
