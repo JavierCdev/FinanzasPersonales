@@ -39,6 +39,9 @@ const loginPassword =
 const loginMessage =
     document.getElementById("loginMessage");
 
+const logoutButton =
+    document.getElementById("logoutButton");
+
 
 function showLogin() {
 
@@ -180,6 +183,31 @@ loginForm?.addEventListener(
 
     }
 );
+
+
+// Cerrar únicamente la sesión de este navegador.
+logoutButton?.addEventListener("click", async () => {
+    if (logoutButton.disabled) return;
+
+    const originalLabel = logoutButton.innerHTML;
+    logoutButton.disabled = true;
+    logoutButton.setAttribute("aria-busy", "true");
+    logoutButton.innerHTML = "<span aria-hidden=\"true\">…</span><span>Cerrando sesión...</span>";
+
+    const { error } = await supabaseClient.auth.signOut({ scope: "local" });
+
+    if (error) {
+        console.error("Error cerrando sesión:", error);
+        showLoginMessage("No fue posible cerrar la sesión. Inténtalo de nuevo.");
+        logoutButton.disabled = false;
+        logoutButton.removeAttribute("aria-busy");
+        logoutButton.innerHTML = originalLabel;
+        return;
+    }
+
+    // Recargar limpia los datos financieros que permanecen en memoria.
+    window.location.reload();
+});
 
 
 // Detectar cambios de sesión
