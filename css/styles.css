@@ -7693,3 +7693,23 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
         letter-spacing: -.65px;
     }
 }
+
+
+/* Mantener el importe disponible legible sin que se recorte en tarjetas móviles. */
+@media (max-width: 600px) {
+    .summary-card.balance #dashboardBalance {
+        width: max-content;
+        max-width: none;
+        font-size: 18px;
+        letter-spacing: -.65px;
+        line-height: 1.15;
+        transform: scaleX(.86);
+        transform-origin: left center;
+    }
+}
+@media (max-width: 370px) {
+    .summary-card.balance #dashboardBalance {
+        font-size: 16px;
+        transform: scaleX(.88);
+    }
+}
