@@ -7672,40 +7672,44 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
 }
 
 
-/* Dashboard móvil: ajustar el saldo disponible al ancho real de su tarjeta. */
+/* En móvil, Disponible comparte exactamente la misma estructura de contenido
+   que Ingresos, Gastos y Gastos fijos. */
 @media (max-width: 600px) {
     .summary-card.balance {
         min-width: 0;
+        min-height: 142px;
+        padding: 13px;
+        grid-template-columns: minmax(0, 1fr) 29px;
+        grid-template-rows: 29px 1fr auto;
+        align-items: stretch;
+    }
+    .summary-card.balance .card-label,
+    .summary-card.balance .summary-icon {
+        grid-row: 1;
+        align-self: center;
     }
     .summary-card.balance #dashboardBalance {
-        display: block;
-        max-width: 100%;
-        min-width: 0;
-        white-space: nowrap;
-        font-size: clamp(14px, 3.8vw, 17px);
-        letter-spacing: -.55px;
-        font-variant-numeric: tabular-nums;
-    }
-}
-@media (max-width: 370px) {
-    .summary-card.balance #dashboardBalance {
-        font-size: 14px;
-        letter-spacing: -.65px;
-    }
-}
-
-
-/* El importe disponible usa exactamente la misma escala que las otras métricas. */
-@media (max-width: 600px) {
-    .summary-card.balance #dashboardBalance {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        align-self: end;
         display: block;
         width: auto;
         max-width: 100%;
         min-width: 0;
+        margin: 0 0 6px;
         white-space: nowrap;
         font-size: clamp(17px, 5vw, 21px);
+        font-weight: 720;
         letter-spacing: -.5px;
         line-height: 1.05;
         transform: none;
+    }
+    .summary-card.balance small {
+        grid-column: 1 / -1;
+        grid-row: 3;
+        align-self: end;
+        margin: 0;
+        font-size: 9px;
+        line-height: 1.45;
     }
 }
