@@ -7834,3 +7834,46 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
     .topbar .period-trigger { min-width: 98px; }
     .topbar .period-trigger-year { min-width: 62px; }
 }
+
+
+/* Distribución final del encabezado móvil: título y acciones arriba; periodo abajo. */
+@media (max-width: 600px) {
+    .topbar {
+        display: grid;
+        grid-template-columns: 40px minmax(0, 1fr) auto;
+        align-items: center;
+        column-gap: 10px;
+        row-gap: 10px;
+    }
+    .topbar > #mobileMenuToggle {
+        grid-column: 1;
+        grid-row: 1;
+        justify-self: start;
+        align-self: center;
+    }
+    .topbar > div:first-of-type {
+        grid-column: 2;
+        grid-row: 1;
+        min-width: 0;
+    }
+    .topbar > .auth-logout-button {
+        grid-column: 3;
+        grid-row: 1;
+        justify-self: end;
+        align-self: center;
+        width: auto;
+        height: 36px;
+        min-height: 36px;
+        padding: 0 9px;
+        gap: 5px;
+        font-size: 10px;
+    }
+    .topbar > .year-selector.period-selector {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        justify-self: start;
+        align-self: center;
+        width: fit-content;
+        max-width: 100%;
+    }
+}
