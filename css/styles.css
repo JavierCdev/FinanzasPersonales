@@ -8321,10 +8321,11 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
         justify-self: end;
         flex: 0 0 auto;
         width: auto;
-        min-width: 132px;
-        min-height: 42px;
-        padding: 0 14px;
-        font-size: 12px;
+        min-width: 0;
+        min-height: 40px;
+        height: auto;
+        padding: 0 12px;
+        font-size: 11px;
         font-weight: 650;
         white-space: nowrap;
     }
