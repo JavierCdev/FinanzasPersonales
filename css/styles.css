@@ -8430,14 +8430,14 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
     }
 }
 
-/* Reportes: conservar el encabezado alineado como el Dashboard en escritorio. */
-@media (min-width: 821px) {
+/* Reportes: el botón es hijo directo de .topbar, no de .topbar-controls. */
+@media (min-width: 601px) {
     body:has(#reportes.active) .topbar {
         display: flex;
         align-items: center;
         justify-content: space-between;
         flex-wrap: nowrap;
-        gap: 24px;
+        gap: 18px;
     }
 
     body:has(#reportes.active) .topbar > .topbar-heading {
@@ -8446,17 +8446,10 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
     }
 
     body:has(#reportes.active) .topbar > .topbar-controls {
-        display: flex;
-        flex: 0 0 auto;
-        align-items: center;
-        justify-content: flex-end;
-        width: auto;
-        max-width: none;
-        min-width: 0;
-        margin-left: auto;
+        display: contents;
     }
 
-    body:has(#reportes.active) .topbar-controls > .auth-logout-button {
+    body:has(#reportes.active) .topbar > .auth-logout-button {
         display: inline-flex;
         align-self: center;
         align-items: center;
@@ -8465,8 +8458,8 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
         width: auto;
         height: 40px;
         min-height: 40px;
-        margin: 0;
-        padding: 0 14px;
+        margin: 0 0 0 auto;
+        padding: 0 12px;
         font-size: 11px;
         white-space: nowrap;
         box-sizing: border-box;
