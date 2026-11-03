@@ -8430,3 +8430,33 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
     }
 }
 
+/* Reportes: el filtro propio de la sección reemplaza al selector global del dashboard. */
+@media (min-width: 821px) {
+    body:has(#reportes.active) .topbar {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        flex-wrap: nowrap;
+        gap: 24px;
+    }
+
+    body:has(#reportes.active) .topbar > .topbar-controls {
+        display: flex;
+        flex: 0 0 auto;
+        align-items: flex-start;
+        justify-content: flex-end;
+        width: auto;
+        max-width: none;
+        margin-left: auto;
+    }
+
+    body:has(#reportes.active) .topbar-controls > .auth-logout-button {
+        align-self: flex-start;
+        width: auto;
+        height: 40px;
+        min-height: 40px;
+        padding: 0 14px;
+        font-size: 11px;
+    }
+}
+
