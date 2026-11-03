@@ -7830,3 +7830,54 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
         align-self: center !important;
     }
 }
+
+
+/* Estructura estable: filtro y cierre de sesión comparten un contenedor real. */
+.topbar-controls { display: contents; }
+@media (max-width: 600px) {
+    .topbar {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        justify-content: flex-start !important;
+        gap: 12px !important;
+    }
+    .topbar > .topbar-heading {
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    .topbar > .topbar-controls {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 8px !important;
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+    .topbar-controls > .year-selector.period-selector {
+        display: flex !important;
+        flex: 0 1 auto !important;
+        align-self: center !important;
+        width: fit-content !important;
+        max-width: calc(100% - 112px) !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        padding: 5px 7px !important;
+        gap: 6px !important;
+        box-sizing: border-box !important;
+    }
+    .topbar-controls > .auth-logout-button {
+        display: inline-flex !important;
+        flex: 0 0 auto !important;
+        align-self: center !important;
+        width: auto !important;
+        min-width: 0 !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        margin: 0 !important;
+        padding: 0 9px !important;
+        font-size: 10px !important;
+        white-space: nowrap !important;
+    }
+}
