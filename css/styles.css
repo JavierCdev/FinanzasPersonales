@@ -7657,3 +7657,10 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
         box-sizing: border-box;
     }
 }
+
+
+/* Corrige la regla heredada que bajaba el selector hasta el borde inferior del topbar. */
+.topbar > .year-selector.period-selector,
+.topbar > .auth-logout-button {
+    align-self: center;
+}
