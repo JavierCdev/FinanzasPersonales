@@ -8038,8 +8038,7 @@ function populateYearSelectors() {
     }
 
     const yearSelectors = [
-        document.getElementById("year"),
-        document.getElementById("reportYear")
+        document.getElementById("year")
     ].filter(Boolean);
 
 
@@ -9520,6 +9519,7 @@ if (dashboardYear) {
             updateDashboard();
             renderIncomeTable();
             renderExpenseTable();
+            updateReports();
         }
     );
 }
@@ -9536,6 +9536,7 @@ if (dashboardMonth) {
             updateDashboard();
             renderIncomeTable();
             renderExpenseTable();
+            updateReports();
         }
     );
 }
@@ -9761,8 +9762,6 @@ function initializePeriodPicker(selectId, buttonId, valueId, optionsId) {
 
 initializePeriodPicker("month", "monthPickerButton", "monthPickerValue", "monthPickerOptions");
 initializePeriodPicker("year", "yearPickerButton", "yearPickerValue", "yearPickerOptions");
-initializePeriodPicker("reportYear", "reportYearPickerButton", "reportYearPickerValue", "reportYearPickerOptions");
-initializePeriodPicker("reportMonth", "reportMonthPickerButton", "reportMonthPickerValue", "reportMonthPickerOptions");
 
 // ============================================================
 // 13. GASTOS FIJOS
@@ -11869,12 +11868,6 @@ renderFixedExpenseTable();
 // 13. REPORTES
 // ============================================================
 
-const reportYear =
-    document.getElementById("reportYear");
-
-const reportMonth =
-    document.getElementById("reportMonth");
-
 const reportIncome =
     document.getElementById("reportIncome");
 
@@ -11904,19 +11897,12 @@ const reportMonthlyContainer =
 
 
 function getReportYear() {
-
-    return Number(
-        reportYear?.value ||
-        new Date().getFullYear()
-    );
-
+    return getDashboardYear();
 }
 
 
 function getReportMonth() {
-
-    return reportMonth?.value || "all";
-
+    return getDashboardMonth();
 }
 
 
@@ -12892,26 +12878,6 @@ function updateReports() {
     renderReportCategories();
 
     renderReportMonthly();
-
-}
-
-
-if (reportYear) {
-
-    reportYear.addEventListener(
-        "change",
-        updateReports
-    );
-
-}
-
-
-if (reportMonth) {
-
-    reportMonth.addEventListener(
-        "change",
-        updateReports
-    );
 
 }
 
