@@ -714,8 +714,8 @@ body {
     max-width: 100%;
     box-sizing: border-box;
 }
-.sidebar-footer {
-    display: none !important;
+@media (min-width: 601px) and (max-width: 1100px) {
+    .sidebar-footer { display: none; }
 }
 
 /* ========================================
@@ -3000,9 +3000,7 @@ body {
 
     /* SIDEBAR */
 
-    .sidebar-footer {
-        display: none !important;
-    }
+    
 
 
     /* GRÁFICA */
@@ -7546,54 +7544,7 @@ select option:hover {
 .mobile-menu-toggle span { width: 17px; height: 2px; border-radius: 2px; background: #d9e8dc; }
 .mobile-menu-backdrop { display: none; }
 @media (max-width: 600px) {
-    .topbar-heading {
-        position: relative;
-        padding-right: 0;
-        padding-left: 50px;
-    }
-    .topbar-heading::before {
-        transform: translateX(-50px);
-    }
-    .mobile-menu-toggle {
-        display: inline-flex;
-        position: absolute;
-        top: 28px;
-        left: 0;
-        right: auto;
-    }
-    .topbar > .year-selector.period-selector {
-        width: fit-content;
-        max-width: 100%;
-        padding: 5px 8px;
-        gap: 8px;
-        box-sizing: border-box;
-    }
-    .topbar .period-field { gap: 5px; }
-    .topbar .period-field > label { font-size: 9px; }
-    .topbar .period-trigger { min-width: 108px; min-height: 32px; padding: 0 8px; gap: 8px; font-size: 11px; }
-    .topbar .period-trigger-year { min-width: 68px; }
-    .topbar .period-divider { height: 22px; }
-    .topbar > .auth-logout-button { align-self: flex-end; width: auto; min-height: 36px; height: 36px; padding: 0 10px; font-size: 10px; }
-
-    .sidebar {
-        position: fixed;
-        inset: 0 auto 0 0;
-        z-index: 220;
-        display: flex;
-        flex-direction: column;
-        width: min(82vw, 300px);
-        height: 100dvh;
-        box-sizing: border-box;
-        padding: 22px 14px max(18px, env(safe-area-inset-bottom));
-        border: 0;
-        border-right: 1px solid #2b3b35;
-        border-radius: 0 18px 18px 0;
-        background: #101a17;
-        box-shadow: 18px 0 45px rgba(0,0,0,.32);
-        transform: translateX(-105%);
-        transition: transform .24s ease;
-        overflow-y: auto;
-    }
+    .sidebar { position: fixed; inset: 0 auto 0 0; z-index: 220; display: flex; flex-direction: column; width: min(82vw, 300px); height: 100dvh; box-sizing: border-box; padding: 22px 14px max(18px, env(safe-area-inset-bottom)); border: 0; border-right: 1px solid #2b3b35; border-radius: 0 18px 18px 0; background: #101a17; box-shadow: 18px 0 45px rgba(0,0,0,.32); transform: translateX(-105%); transition: transform .24s ease; overflow-y: auto; }
     .sidebar.is-open { transform: translateX(0); }
     .sidebar .logo, .sidebar .sidebar-footer { display: flex; }
     .sidebar .logo { margin-bottom: 24px; }
@@ -7650,165 +7601,23 @@ select option:hover {
 }
 
 
-/* FIX FINAL: encabezado móvil en dos filas, sin dejar Cerrar sesión debajo del selector. */
+/* Encabezado móvil: título y menú arriba; periodo y sesión en una sola fila. */
+.topbar-controls { display: flex; flex: 0 0 auto; align-items: center; justify-content: flex-end; gap: 12px; min-width: 0; }
 @media (max-width: 600px) {
-    .topbar {
-        display: grid !important;
-        grid-template-columns: minmax(0, 1fr) auto !important;
-        grid-template-rows: auto auto !important;
-        align-items: center !important;
-        justify-content: initial !important;
-        column-gap: 10px !important;
-        row-gap: 10px !important;
-    }
-    .topbar > .topbar-heading {
-        grid-column: 1 !important;
-        grid-row: 1 !important;
-        display: grid !important;
-        grid-template-columns: 40px minmax(0, 1fr) !important;
-        grid-template-rows: auto auto !important;
-        align-items: center !important;
-        column-gap: 10px !important;
-        min-width: 0 !important;
-        padding: 0 !important;
-        position: static !important;
-    }
-    .topbar > .topbar-heading::before { grid-column: 2 !important; grid-row: 1 !important; transform: none !important; }
-    .topbar > .topbar-heading #pageTitle { grid-column: 2 !important; grid-row: 1 !important; min-width: 0 !important; }
-    .topbar > .topbar-heading #pageSubtitle { grid-column: 2 !important; grid-row: 2 !important; min-width: 0 !important; margin-top: 4px !important; }
-    .topbar > .topbar-heading > .mobile-menu-toggle {
-        display: inline-flex !important;
-        position: static !important;
-        grid-column: 1 !important;
-        grid-row: 1 / span 2 !important;
-        transform: none !important;
-        align-self: center !important;
-    }
-    .topbar > .auth-logout-button {
-        grid-column: 2 !important;
-        grid-row: 1 !important;
-        justify-self: end !important;
-        align-self: center !important;
-        display: inline-flex !important;
-        width: auto !important;
-        min-width: 0 !important;
-        height: 36px !important;
-        min-height: 36px !important;
-        padding: 0 9px !important;
-        margin: 0 !important;
-        font-size: 10px !important;
-        white-space: nowrap !important;
-    }
-    .topbar > .year-selector.period-selector {
-        grid-column: 1 / -1 !important;
-        grid-row: 2 !important;
-        justify-self: start !important;
-        align-self: center !important;
-        width: fit-content !important;
-        max-width: 100% !important;
-        margin: 0 !important;
-    }
-}
-
-
-/* Corrección del encabezado móvil: cada línea del título ocupa su propia fila. */
-@media (max-width: 600px) {
-    .topbar > .topbar-heading {
-        display: grid !important;
-        grid-template-columns: 40px minmax(0, 1fr) !important;
-        grid-template-rows: auto auto auto !important;
-        align-items: center !important;
-        column-gap: 10px !important;
-        row-gap: 2px !important;
-        min-width: 0 !important;
-    }
-    .topbar > .topbar-heading::before {
-        grid-column: 2 !important;
-        grid-row: 1 !important;
-        transform: none !important;
-        align-self: end !important;
-        margin: 0 0 2px !important;
-    }
-    .topbar > .topbar-heading #pageTitle {
-        grid-column: 2 !important;
-        grid-row: 2 !important;
-        align-self: center !important;
-        margin: 0 !important;
-        line-height: 1.1 !important;
-        white-space: nowrap !important;
-    }
-    .topbar > .topbar-heading #pageSubtitle {
-        grid-column: 2 !important;
-        grid-row: 3 !important;
-        align-self: start !important;
-        margin: 3px 0 0 !important;
-        line-height: 1.35 !important;
-    }
-    .topbar > .topbar-heading > .mobile-menu-toggle {
-        grid-column: 1 !important;
-        grid-row: 1 / 4 !important;
-        position: static !important;
-        transform: none !important;
-        align-self: center !important;
-    }
-}
-
-
-/* Contenedor real de los controles del encabezado. */
-.topbar-controls {
-    display: flex;
-    flex: 0 0 auto;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 12px;
-    min-width: 0;
-}
-@media (max-width: 600px) {
-    .topbar {
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: stretch !important;
-        justify-content: flex-start !important;
-        gap: 12px !important;
-    }
-    .topbar > .topbar-heading {
-        width: 100% !important;
-        box-sizing: border-box !important;
-    }
-    .topbar > .topbar-controls {
-        display: flex !important;
-        flex-direction: row !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-        gap: 8px !important;
-        width: 100% !important;
-        min-width: 0 !important;
-    }
-    .topbar-controls > .year-selector.period-selector {
-        display: flex !important;
-        flex: 0 1 auto !important;
-        align-self: center !important;
-        width: fit-content !important;
-        max-width: calc(100% - 112px) !important;
-        min-width: 0 !important;
-        margin: 0 !important;
-        padding: 5px 7px !important;
-        gap: 6px !important;
-        box-sizing: border-box !important;
-    }
-    .topbar-controls > .auth-logout-button {
-        display: inline-flex !important;
-        flex: 0 0 auto !important;
-        align-self: center !important;
-        width: auto !important;
-        min-width: 0 !important;
-        height: 36px !important;
-        min-height: 36px !important;
-        margin: 0 !important;
-        padding: 0 9px !important;
-        font-size: 10px !important;
-        white-space: nowrap !important;
-    }
+    .topbar { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 12px; }
+    .topbar-heading { position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr); grid-template-rows: auto auto auto; align-items: center; column-gap: 10px; row-gap: 2px; width: 100%; min-width: 0; box-sizing: border-box; padding: 0; }
+    .topbar-heading::before { grid-column: 2; grid-row: 1; align-self: end; margin: 0 0 2px; transform: none; }
+    .topbar-heading #pageTitle { grid-column: 2; grid-row: 2; align-self: center; min-width: 0; margin: 0; line-height: 1.1; white-space: nowrap; }
+    .topbar-heading #pageSubtitle { grid-column: 2; grid-row: 3; align-self: start; min-width: 0; margin: 3px 0 0; line-height: 1.35; }
+    .topbar-heading > .mobile-menu-toggle { display: inline-flex; position: static; grid-column: 1; grid-row: 1 / 4; align-self: center; transform: none; }
+    .topbar-controls { display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-width: 0; }
+    .topbar-controls > .year-selector.period-selector { display: flex; flex: 0 1 auto; align-self: center; width: fit-content; max-width: calc(100% - 112px); min-width: 0; margin: 0; padding: 5px 7px; gap: 6px; box-sizing: border-box; }
+    .topbar-controls .period-field { gap: 5px; }
+    .topbar-controls .period-field > label { font-size: 9px; }
+    .topbar-controls .period-trigger { min-width: 108px; min-height: 32px; padding: 0 8px; gap: 8px; font-size: 11px; }
+    .topbar-controls .period-trigger-year { min-width: 68px; }
+    .topbar-controls .period-divider { height: 22px; }
+    .topbar-controls > .auth-logout-button { display: inline-flex; flex: 0 0 auto; align-self: center; width: auto; min-width: 0; height: 36px; min-height: 36px; margin: 0; padding: 0 9px; font-size: 10px; white-space: nowrap; }
 }
 
 
@@ -7936,46 +7745,14 @@ select option:hover {
 }
 
 
-/* Gastos en móvil: mantener buscador y acciones agrupados, sin huecos verticales. */
+/* Gastos en móvil: buscador y acciones agrupados sin forzar prioridades. */
 @media (max-width: 600px) {
-    #gastos > .expenses-section-header {
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: stretch !important;
-        justify-content: flex-start !important;
-        gap: 12px !important;
-        height: auto !important;
-        min-height: 0 !important;
-        margin: 0 0 18px !important;
-        padding: 0 !important;
-    }
-    #gastos > .expenses-section-header > .expense-audit-search {
-        flex: 0 0 auto !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        margin: 0 !important;
-    }
-    #gastos > .expenses-section-header > .section-actions {
-        display: grid !important;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
-        align-items: stretch !important;
-        gap: 9px !important;
-        width: 100% !important;
-        height: auto !important;
-        min-height: 0 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-    #gastos > .expenses-section-header > .section-actions button {
-        width: 100% !important;
-        min-width: 0 !important;
-        min-height: 42px !important;
-        margin: 0 !important;
-        padding: 9px 7px !important;
-        white-space: normal !important;
-        font-size: 11px !important;
-    }
+    #gastos > .expenses-section-header { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 12px; height: auto; min-height: 0; margin: 0 0 18px; padding: 0; }
+    #gastos > .expenses-section-header > .expense-audit-search { flex: 0 0 auto; width: 100%; max-width: 100%; margin: 0; }
+    #gastos > .expenses-section-header > .section-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; gap: 9px; width: 100%; height: auto; min-height: 0; margin: 0; padding: 0; }
+    #gastos > .expenses-section-header > .section-actions button { width: 100%; min-width: 0; min-height: 42px; margin: 0; padding: 9px 7px; white-space: normal; font-size: 11px; }
 }
+
 
 /* Cuentas: mantener las tres acciones en una sola fila en móvil. */
 @media (max-width: 680px) {
