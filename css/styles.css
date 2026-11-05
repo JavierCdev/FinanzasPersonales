@@ -714,8 +714,8 @@ body {
     max-width: 100%;
     box-sizing: border-box;
 }
-.sidebar-footer {
-    display: none !important;
+@media (min-width: 601px) and (max-width: 1100px) {
+    .sidebar-footer { display: none; }
 }
 
 /* ========================================
@@ -2604,16 +2604,6 @@ body {
    REPORTES
 ============================================================ */
 
-.report-filters-panel {
-    margin-bottom: 24px;
-}
-
-.report-filters {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(180px, 1fr));
-    gap: 18px;
-}
-
 .report-summary-cards {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -2803,11 +2793,7 @@ body {
 
 @media (max-width: 700px) {
 
-    .report-filters {
-        grid-template-columns: 1fr;
-    }
-
-    .report-summary-cards {
+        .report-summary-cards {
         grid-template-columns: 1fr;
     }
 
@@ -3014,9 +3000,7 @@ body {
 
     /* SIDEBAR */
 
-    .sidebar-footer {
-        display: none !important;
-    }
+    
 
 
     /* GRÁFICA */
@@ -6308,24 +6292,6 @@ select option:hover {
     }
 }
 /* Reportes: jerarquía compacta y paleta del tema actual. */
-body:has(#reportes.active) .topbar .period-selector { display: none; }
-.report-filters-panel {
-    display: grid;
-    grid-template-columns: minmax(180px, .8fr) minmax(340px, 1.2fr);
-    align-items: center;
-    gap: 18px 26px;
-    margin-bottom: 16px;
-    padding: 19px 21px;
-}
-.report-filters-panel .panel-header {
-    margin: 0;
-    padding: 0;
-    border: 0;
-}
-.report-filters-panel .panel-header h3 { margin: 0; color: #edf3ee; font-size: 16px; }
-.report-filters-panel .panel-header p { margin: 5px 0 0; color: #91a29a; font-size: 11px; }
-.report-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; }
-.report-filters .form-group { gap: 6px; }
 .report-summary-cards { gap: 11px; margin-bottom: 15px; }
 .report-summary-card {
     --report-accent: #c7ec75;
@@ -6385,8 +6351,7 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
 .report-negative { color: #f0837b !important; }
 .report-warning { color: #dfc16c !important; }
 @media (max-width: 760px) {
-    .report-filters-panel { grid-template-columns: 1fr; gap: 14px; padding: 16px; }
-    .report-summary-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .report-summary-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .report-summary-card { min-height: 100px; padding: 14px; }
     .report-category-row { grid-template-columns: minmax(90px, .9fr) minmax(55px, 1.4fr) minmax(78px, auto); gap: 8px; }
     .report-category-name, .report-category-amount { font-size: 10px; }
@@ -6721,52 +6686,7 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
 }
 .report-summary-card .summary-icon { margin: 0; }
 /* Filtros de reportes: usar el selector accesible del tema y evitar el menú nativo azul. */
-#reportes .report-filters-panel {
-    position: relative;
-    z-index: 30;
-}
-#reportes .report-period-field {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 6px;
-    width: 100%;
-}
-#reportes .report-period-field > label {
-    color: #a6b4ac;
-    font-size: 13px;
-    font-weight: 620;
-    letter-spacing: 0;
-    text-transform: none;
-}
-#reportes .report-period-field .period-control {
-    z-index: 1;
-    width: 100%;
-}
-#reportes .report-period-field:has(.period-trigger[aria-expanded="true"]) {
-    z-index: 100;
-}
-#reportes .report-filter-period-trigger {
-    width: 100%;
-    min-width: 0;
-    min-height: 44px;
-    gap: 12px;
-    padding: 10px 13px;
-    border-color: #34443e;
-    border-radius: 10px;
-    background: #111a18;
-    color: #eaf1ea;
-    font-size: 13px;
-    font-weight: 500;
-}
-#reportes .report-filter-period-trigger:hover { border-color: #53664f; background: #17221f; }
-#reportes .report-filter-period-trigger[aria-expanded="true"] { border-color: #9ac759; background: #111a18; }
-#reportes .report-period-field .period-options {
-    top: calc(100% + 6px);
-    width: max(100%, 174px);
-    max-height: min(272px, 45vh);
-}
-#reportes .report-period-field .period-options-year { width: max(100%, 92px); }
-/* Calendario de fecha: cuadrícula compacta sin una semana vacía al final. */
+#reportes /* Calendario de fecha: cuadrícula compacta sin una semana vacía al final. */
 .date-calendar {
     width: min(300px, calc(100vw - 32px));
     padding: 12px;
@@ -7586,3 +7506,625 @@ body:has(#reportes.active) .topbar .period-selector { display: none; }
 .custom-select-option[aria-selected="true"] .custom-select-check {
     color: #c7ec75;
 }
+
+
+/* Navegación móvil: estilos aislados para no alterar el layout original. */
+.auth-logout-button {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-self: stretch;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 40px;
+    padding: 0 12px;
+    border: 1px solid rgba(240,131,123,.3);
+    border-radius: 10px;
+    background: rgba(120,48,45,.13);
+    color: #e99a92;
+    font: inherit;
+    height: 38px;
+    min-height: 38px;
+    box-sizing: border-box;
+    font-size: 11px;
+    font-weight: 650;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.mobile-menu-toggle {
+    display: none;
+    width: 38px;
+    height: 38px;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 5px;
+    padding: 0;
+    border: 1px solid #30413a;
+    border-radius: 10px;
+    background: #1b2924;
+    cursor: pointer;
+}
+.mobile-menu-toggle span { width: 17px; height: 2px; border-radius: 2px; background: #d9e8dc; }
+.mobile-menu-backdrop { display: none; }
+@media (max-width: 600px) {
+    .sidebar { position: fixed; inset: 0 auto 0 0; z-index: 220; display: flex; flex-direction: column; width: min(82vw, 300px); height: 100dvh; box-sizing: border-box; padding: 22px 14px max(18px, env(safe-area-inset-bottom)); border: 0; border-right: 1px solid #2b3b35; border-radius: 0 18px 18px 0; background: #101a17; box-shadow: 18px 0 45px rgba(0,0,0,.32); transform: translateX(-105%); transition: transform .24s ease; overflow-y: auto; }
+    .sidebar.is-open { transform: translateX(0); }
+    .sidebar .logo, .sidebar .sidebar-footer { display: flex; }
+    .sidebar .logo { margin-bottom: 24px; }
+    .sidebar .menu { display: flex; flex: 1 1 auto; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 6px; height: auto; overflow: visible; }
+    .sidebar .menu-item { display: flex; flex: 0 0 auto; flex-direction: row; justify-content: flex-start; width: 100%; min-width: 0; min-height: 46px; height: 46px; gap: 12px; padding: 0 13px; border-radius: 11px; font-size: 13px; text-align: left; }
+    .sidebar .menu-item > span:last-child { display: block; max-width: none; overflow: visible; text-overflow: clip; white-space: nowrap; text-align: left; line-height: normal; }
+    .sidebar .menu-icon { width: 24px; font-size: 17px; text-align: center; }
+    .sidebar .sidebar-footer { margin-top: 20px; }
+    .mobile-menu-backdrop.is-visible { position: fixed; inset: 0; z-index: 210; display: block; border: 0; background: rgba(0,0,0,.55); backdrop-filter: blur(2px); }
+    body.mobile-menu-open { overflow: hidden; }
+}
+
+
+/* En móvil, Disponible comparte exactamente la misma estructura de contenido
+   que Ingresos, Gastos y Gastos fijos. */
+@media (max-width: 600px) {
+    .summary-card.balance {
+        min-width: 0;
+        min-height: 142px;
+        padding: 13px;
+        grid-template-columns: minmax(0, 1fr) 29px;
+        grid-template-rows: 29px 1fr auto;
+        align-items: stretch;
+    }
+    .summary-card.balance .card-label,
+    .summary-card.balance .summary-icon {
+        grid-row: 1;
+        align-self: center;
+    }
+    .summary-card.balance #dashboardBalance {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        align-self: end;
+        display: block;
+        width: auto;
+        max-width: 100%;
+        min-width: 0;
+        margin: 0 0 6px;
+        white-space: nowrap;
+        font-size: clamp(17px, 5vw, 21px);
+        font-weight: 720;
+        letter-spacing: -.5px;
+        line-height: 1.05;
+        transform: none;
+    }
+    .summary-card.balance small {
+        grid-column: 1 / -1;
+        grid-row: 3;
+        align-self: end;
+        margin: 0;
+        font-size: 9px;
+        line-height: 1.45;
+    }
+}
+
+
+/* Encabezado móvil: título y menú arriba; periodo y sesión en una sola fila. */
+.topbar-controls { display: flex; flex: 0 0 auto; align-items: center; justify-content: flex-end; gap: 12px; min-width: 0; }
+@media (max-width: 600px) {
+    .topbar { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 12px; }
+    .topbar-heading { position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr); grid-template-rows: auto auto auto; align-items: center; column-gap: 10px; row-gap: 2px; width: 100%; min-width: 0; box-sizing: border-box; padding: 0; }
+    .topbar-heading::before { grid-column: 2; grid-row: 1; align-self: end; margin: 0 0 2px; transform: none; }
+    .topbar-heading #pageTitle { grid-column: 2; grid-row: 2; align-self: center; min-width: 0; margin: 0; line-height: 1.1; white-space: nowrap; }
+    .topbar-heading #pageSubtitle { grid-column: 2; grid-row: 3; align-self: start; min-width: 0; margin: 3px 0 0; line-height: 1.35; }
+    .topbar-heading > .mobile-menu-toggle { display: inline-flex; position: static; grid-column: 1; grid-row: 1 / 4; align-self: center; transform: none; }
+    .topbar-controls { display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; justify-items: stretch; gap: 8px; width: 100%; min-width: 0; }
+    .topbar-controls > .year-selector.period-selector { display: grid; grid-template-columns: minmax(0, 1fr) 1px minmax(76px, 88px) auto; justify-content: start; align-self: center; width: 100%; max-width: none; min-width: 0; height: 44px; min-height: 44px; margin: 0; padding: 0 7px; gap: 6px; box-sizing: border-box; }
+    .topbar-controls .auth-logout-button { justify-self: end; align-self: center; height: 36px; min-height: 36px; margin: 0; padding: 0 9px; font-size: 10px; white-space: nowrap; }
+    .topbar-controls .period-field { display: grid; grid-template-columns: minmax(0, 1fr); align-content: center; gap: 0; min-width: 0; }
+    .topbar-controls .period-field > label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    .topbar-controls .period-control { width: 100%; min-width: 0; }
+    .topbar-controls .period-trigger { display: flex; width: 100%; min-width: 0; height: 36px; min-height: 36px; padding: 0 8px; gap: 5px; font-size: 11px; }
+    .topbar-controls .period-trigger > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .topbar-controls .period-trigger-year { min-width: 0; }
+    .topbar-controls .period-divider { height: 28px; }
+}
+
+
+/* Pagos de tarjetas: resumen compacto, tarjetas móviles y tabla de escritorio. */
+.dashboard-payment-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 14px;
+    padding: 14px 16px;
+    border: 1px solid #31463a;
+    border-radius: 13px;
+    background: linear-gradient(135deg, #1c3329, #192923);
+}
+.dashboard-payment-summary > div { display: grid; gap: 4px; min-width: 0; }
+.dashboard-payment-summary span { color: #a9b9ae; font-size: 11px; }
+.dashboard-payment-summary strong { color: #c7ec75; font-size: 22px; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.dashboard-payment-summary small { color: #9aaca1; font-size: 11px; white-space: nowrap; }
+.dashboard-payment-cards { display: none; }
+.dashboard-payment-table-wrap { width: 100%; overflow-x: auto; border: 1px solid #2b3a35; border-radius: 12px; }
+.dashboard-payment-table { width: 100%; min-width: 620px; border-collapse: collapse; }
+.dashboard-payment-table th, .dashboard-payment-table td { padding: 12px 13px; text-align: left; white-space: nowrap; }
+.dashboard-payment-table th { color: #9eafa5; background: #202d28; font-size: 10px; letter-spacing: .04em; }
+.dashboard-payment-table td { border-top: 1px solid #2b3a35; color: #dce6df; font-size: 12px; }
+.dashboard-payment-table td strong, .dashboard-payment-table .income-amount { font-weight: 700; }
+@media (max-width: 600px) {
+    .dashboard-payment-summary { align-items: flex-start; margin-bottom: 11px; padding: 12px; }
+    .dashboard-payment-summary strong { font-size: 20px; }
+    .dashboard-payment-summary small { padding-top: 3px; font-size: 10px; }
+    .dashboard-payment-cards { display: grid; gap: 10px; }
+    .dashboard-payment-table-wrap { display: none; }
+    .dashboard-payment-card {
+        display: grid;
+        gap: 12px;
+        min-width: 0;
+        padding: 13px;
+        border: 1px solid #2c4038;
+        border-radius: 13px;
+        background: linear-gradient(145deg, #192823, #15211e);
+    }
+    .dashboard-payment-card-heading,
+    .dashboard-payment-card-name,
+    .dashboard-payment-amounts > div {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        min-width: 0;
+    }
+    .dashboard-payment-card-name { justify-content: flex-start; }
+    .dashboard-payment-card-name strong { overflow: hidden; color: #e5eee7; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+    .dashboard-payment-card-icon { display: grid; place-items: center; flex: 0 0 30px; width: 30px; height: 30px; border: 1px solid #405447; border-radius: 9px; background: #24372d; color: #c7ec75; }
+    .dashboard-payment-status { flex: 0 0 auto; padding: 5px 8px; border: 1px solid transparent; border-radius: 999px; font-size: 9px; font-weight: 700; }
+    .dashboard-payment-status.is-upcoming { border-color: #42543c; background: #29382a; color: #c7ec75; }
+    .dashboard-payment-status.is-today { border-color: #80623a; background: #3a3020; color: #f2c66b; }
+    .dashboard-payment-status.is-overdue { border-color: #75413e; background: #392624; color: #f08a80; }
+    .dashboard-payment-dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 10px 0; border-top: 1px solid #2b3a35; border-bottom: 1px solid #2b3a35; }
+    .dashboard-payment-dates > div,
+    .dashboard-payment-amounts > div { display: grid; gap: 5px; min-width: 0; }
+    .dashboard-payment-dates span,
+    .dashboard-payment-amounts span { color: #91a49a; font-size: 10px; }
+    .dashboard-payment-dates strong { color: #dce6df; font-size: 11px; font-variant-numeric: tabular-nums; }
+    .dashboard-payment-amounts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .dashboard-payment-amounts > div { align-items: flex-start; }
+    .dashboard-payment-amounts strong { color: #dce6df; font-size: 13px; font-variant-numeric: tabular-nums; }
+    .dashboard-payment-amounts > div:first-child strong { color: #c7ec75; }
+}
+
+
+/* Compactar las tarjetas internas de pagos en móvil. */
+@media (max-width: 600px) {
+    .dashboard-payment-cards { gap: 7px; }
+    .dashboard-payment-card {
+        gap: 8px;
+        padding: 9px 10px;
+        border-radius: 10px;
+    }
+    .dashboard-payment-card-heading { gap: 6px; }
+    .dashboard-payment-card-name { gap: 7px; }
+    .dashboard-payment-card-name strong { font-size: 11px; }
+    .dashboard-payment-card-icon {
+        flex-basis: 25px;
+        width: 25px;
+        height: 25px;
+        border-radius: 7px;
+        font-size: 12px;
+    }
+    .dashboard-payment-status { padding: 4px 7px; font-size: 8px; }
+    .dashboard-payment-dates {
+        gap: 7px;
+        padding: 7px 0;
+    }
+    .dashboard-payment-dates > div,
+    .dashboard-payment-amounts > div { gap: 3px; }
+    .dashboard-payment-dates span,
+    .dashboard-payment-amounts span { font-size: 9px; }
+    .dashboard-payment-dates strong { font-size: 10px; }
+    .dashboard-payment-amounts { gap: 7px; }
+    .dashboard-payment-amounts strong { font-size: 12px; }
+}
+
+
+/* Separación uniforme entre las tarjetas de pago y el borde de su contenedor. */
+@media (max-width: 600px) {
+    .dashboard-payment-cards {
+        padding: 0 12px 12px;
+        box-sizing: border-box;
+    }
+    .dashboard-payment-card {
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+    }
+}
+
+
+/* Quitar el borde inferior del resumen de pagos en móvil. */
+@media (max-width: 600px) {
+    .dashboard-payment-summary {
+        border-bottom: 0;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+}
+
+
+/* Gastos en móvil: buscador y acciones agrupados sin forzar prioridades. */
+@media (max-width: 600px) {
+    #gastos > .expenses-section-header { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 12px; height: auto; min-height: 0; margin: 0 0 18px; padding: 0; }
+    #gastos > .expenses-section-header > .expense-audit-search { flex: 0 0 auto; width: 100%; max-width: 100%; margin: 0; }
+    #gastos > .expenses-section-header > .section-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; gap: 9px; width: 100%; height: auto; min-height: 0; margin: 0; padding: 0; }
+    #gastos > .expenses-section-header > .section-actions button { width: 100%; min-width: 0; min-height: 42px; margin: 0; padding: 9px 7px; white-space: normal; font-size: 11px; }
+}
+
+
+/* Cuentas: mantener las tres acciones en una sola fila en móvil. */
+@media (max-width: 680px) {
+    #cuentas > .account-section-header > .section-actions {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        align-items: stretch;
+        justify-content: initial;
+        gap: 6px;
+        width: 100%;
+        min-width: 0;
+    }
+
+    #cuentas > .account-section-header > .section-actions > button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        min-width: 0;
+        min-height: 42px;
+        flex: initial;
+        padding: 8px 4px;
+        font-size: clamp(9px, 2.7vw, 11px);
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+
+    #cuentas > .account-section-header > .section-actions > #newCardPaymentButton {
+        width: 100%;
+    }
+}
+
+/* Tarjetas de crédito: corregir el grid heredado en pantallas móviles. */
+@media (max-width: 650px) {
+    .credit-card-item {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        gap: 14px;
+        overflow: hidden;
+    }
+
+    .credit-card-main,
+    .credit-card-main .category-info {
+        display: flex;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .credit-card-title {
+        width: auto;
+        min-width: 0;
+        max-width: 100%;
+        flex-wrap: wrap;
+        overflow-wrap: anywhere;
+    }
+
+    .credit-card-details {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        gap: 8px;
+    }
+
+    .credit-card-detail {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .credit-card-detail span {
+        white-space: normal;
+        overflow-wrap: anywhere;
+        line-height: 1.25;
+    }
+
+    .credit-card-detail strong {
+        min-width: 0;
+        overflow-wrap: anywhere;
+        font-size: clamp(10px, 2.8vw, 12px);
+    }
+
+    .credit-card-item > .category-actions {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        gap: 6px;
+    }
+
+    .credit-card-item > .category-actions > button {
+        width: 100%;
+        min-width: 0;
+        padding: 8px 4px;
+        font-size: clamp(9px, 2.6vw, 11px);
+        white-space: nowrap;
+    }
+}
+
+/* Reporte mensual: tarjetas compactas en móvil, sin tabla de ancho fijo. */
+@media (max-width: 760px) {
+    #reportMonthlyContainer .report-monthly-table-wrapper {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        overflow: visible;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+    }
+
+    #reportMonthlyContainer table.report-monthly-table {
+        display: block;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        table-layout: auto;
+        border: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    #reportMonthlyContainer .report-monthly-table thead {
+        display: none;
+    }
+
+    #reportMonthlyContainer .report-monthly-table tbody {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 8px;
+        width: 100%;
+        min-width: 0;
+    }
+
+    #reportMonthlyContainer .report-monthly-table tbody tr {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        overflow: hidden;
+        border: 1px solid #2b3a36;
+        border-radius: 10px;
+        background: #172220;
+    }
+
+    #reportMonthlyContainer .report-monthly-table tbody td {
+        display: block;
+        width: auto;
+        min-width: 0;
+        max-width: 100%;
+        padding: 9px 6px;
+        border: 0;
+        text-align: left;
+        font-size: 11px;
+        line-height: 1.3;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: normal;
+        font-variant-numeric: tabular-nums;
+    }
+
+    #reportMonthlyContainer .report-monthly-table tbody td::before {
+        display: block;
+        margin-bottom: 5px;
+        color: #91a29a;
+        content: attr(data-label);
+        font-size: 9px;
+        font-weight: 600;
+        line-height: 1.2;
+    }
+
+    #reportMonthlyContainer .report-monthly-table tbody td.report-month-cell {
+        grid-column: 1 / -1;
+        padding: 9px 10px;
+        border-bottom: 1px solid #293833;
+        color: #edf3ee;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    #reportMonthlyContainer .report-monthly-table tbody td.report-month-cell::before {
+        display: none;
+        content: none;
+    }
+
+    #reportMonthlyContainer .report-monthly-table .report-table-number {
+        white-space: normal;
+    }
+}
+
+/* Tablet: ordenar encabezado y acciones sin cambiar la cuadrícula de cuentas. */
+@media (min-width: 601px) and (max-width: 820px) {
+    .topbar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+            "heading logout"
+            "controls controls";
+        align-items: center;
+        column-gap: 12px;
+        row-gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .topbar-heading {
+        grid-area: heading;
+        min-width: 0;
+    }
+
+    .topbar-heading h1 {
+        font-size: clamp(21px, 3vw, 25px);
+        line-height: 1.15;
+        overflow-wrap: anywhere;
+    }
+
+    .topbar-heading p {
+        max-width: 34ch;
+        font-size: 11px;
+        line-height: 1.4;
+    }
+
+    .topbar-controls {
+        grid-area: controls;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        align-items: stretch;
+        gap: 8px;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .topbar-controls .period-selector {
+        display: flex;
+        flex: 1 1 auto;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 10px;
+        width: 100%;
+        min-width: 0;
+        padding: 7px 10px;
+        box-sizing: border-box;
+    }
+
+    .topbar .period-field {
+        flex: 1 1 0;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 8px;
+        min-width: 0;
+    }
+
+    .topbar .period-field .period-control {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .topbar .period-trigger {
+        min-width: 0;
+        width: 100%;
+        min-height: 38px;
+        gap: 12px;
+        padding: 0 11px 0 13px;
+        font-size: 12px;
+    }
+
+    .topbar .period-trigger-year {
+        min-width: 0;
+    }
+
+
+    #cuentas > .account-section-header {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        align-items: start;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    #cuentas > .account-section-header > div:first-child {
+        min-width: 0;
+    }
+
+    #cuentas > .account-section-header > div:first-child > p {
+        max-width: 58ch;
+        font-size: 11px;
+    }
+
+    #cuentas > .account-section-header > .section-actions {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        align-items: stretch;
+        justify-content: initial;
+        gap: 8px;
+        width: 100%;
+        min-width: 0;
+    }
+
+    #cuentas > .account-section-header > .section-actions > button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        min-width: 0;
+        min-height: 38px;
+        padding: 8px 6px;
+        font-size: 10px;
+        line-height: 1.2;
+        white-space: normal;
+        text-align: center;
+    }
+
+    #cuentas .account-card-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 11px;
+    }
+
+    #cuentas .account-total-card,
+    #cuentas .account-card {
+        min-width: 0;
+        padding: 13px;
+        border-radius: 14px;
+    }
+
+    #cuentas .account-total-card strong {
+        font-size: clamp(18px, 2.5vw, 22px);
+        overflow-wrap: anywhere;
+    }
+
+    #cuentas .account-card {
+        gap: 8px;
+    }
+
+    #cuentas .account-card-top {
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+
+    #cuentas .account-institution,
+    #cuentas .account-type-label,
+    #cuentas .account-card small {
+        font-size: 10px;
+    }
+
+    #cuentas .account-card h3,
+    #cuentas .account-card strong {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    #cuentas .account-card .account-card-actions,
+    #cuentas .account-card .card-actions {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+}
+
+/* Reportes utiliza el mismo encabezado y botón global que las demás secciones. */
+
+/* Reportes desktop: conserva la alineación nativa compartida del encabezado. */
+

@@ -100,7 +100,7 @@
      SIDEBAR
 ========================================= -->
 
-<aside class="sidebar">
+<aside class="sidebar" id="appSidebar">
 
 
         <!-- LOGO -->
@@ -294,6 +294,8 @@
 
     </aside>
 
+    <button class="mobile-menu-backdrop" id="mobileMenuBackdrop" type="button" aria-label="Cerrar menú" tabindex="-1"></button>
+
 
     <!-- ========================================
          CONTENIDO PRINCIPAL
@@ -309,7 +311,7 @@
         <header class="topbar">
 
 
-            <div>
+            <div class="topbar-heading">
 
                 <h1 id="pageTitle">
                     Dashboard
@@ -319,8 +321,12 @@
                     Resumen de tus finanzas personales
                 </p>
 
+                <button id="mobileMenuToggle" class="mobile-menu-toggle" type="button" aria-label="Abrir menú" aria-expanded="false" aria-controls="appSidebar">
+                    <span></span><span></span><span></span>
+                </button>
             </div>
 
+            <div class="topbar-controls">
  <div class="year-selector period-selector" role="group" aria-label="Periodo del dashboard">
     <div class="period-field">
         <label id="monthPickerLabel" for="monthPickerButton">Mes</label>
@@ -362,7 +368,13 @@
             <div id="yearPickerOptions" class="period-options period-options-year" role="listbox" aria-labelledby="yearPickerLabel" hidden></div>
         </div>
     </div>
+    <span class="period-divider" aria-hidden="true"></span>
+    <button id="logoutButton" class="auth-logout-button" type="button" aria-label="Cerrar sesión">
+        <span aria-hidden="true">↪</span>
+        <span>Cerrar sesión</span>
+    </button>
 </div>
+            </div>
 
         </header>
 
@@ -2175,83 +2187,6 @@
 <section
     id="reportes"
     class="page-section">
-
-
-    <!-- FILTROS -->
-
-    <div class="panel report-filters-panel">
-
-        <div class="panel-header">
-
-            <div>
-
-                <h3>
-                    Filtros
-                </h3>
-
-                <p>
-                    Selecciona el período que deseas analizar.
-                </p>
-
-            </div>
-
-        </div>
-
-
-        <div class="report-filters">
-
-
-            <div class="form-group">
-    <div class="period-field report-period-field">
-        <label id="reportYearPickerLabel" for="reportYearPickerButton">Año</label>
-        <select id="reportYear" class="period-native-select" aria-hidden="true" tabindex="-1">
-            <option value="2026">2026</option>
-            <option value="2025">2025</option>
-            <option value="2024">2024</option>
-        </select>
-        <div class="period-control">
-            <button id="reportYearPickerButton" class="period-trigger period-trigger-year report-filter-period-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="reportYearPickerOptions">
-                <span id="reportYearPickerValue">2026</span>
-                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg>
-            </button>
-            <div id="reportYearPickerOptions" class="period-options period-options-year" role="listbox" aria-labelledby="reportYearPickerLabel" hidden></div>
-        </div>
-    </div>
-</div>
-
-
-            <div class="form-group">
-    <div class="period-field report-period-field">
-        <label id="reportMonthPickerLabel" for="reportMonthPickerButton">Mes</label>
-        <select id="reportMonth" class="period-native-select" aria-hidden="true" tabindex="-1">
-            <option value="all">Todos los meses</option>
-            <option value="01">Enero</option>
-            <option value="02">Febrero</option>
-            <option value="03">Marzo</option>
-            <option value="04">Abril</option>
-            <option value="05">Mayo</option>
-            <option value="06">Junio</option>
-            <option value="07">Julio</option>
-            <option value="08">Agosto</option>
-            <option value="09">Septiembre</option>
-            <option value="10">Octubre</option>
-            <option value="11">Noviembre</option>
-            <option value="12">Diciembre</option>
-        </select>
-        <div class="period-control">
-            <button id="reportMonthPickerButton" class="period-trigger report-filter-period-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="reportMonthPickerOptions">
-                <span id="reportMonthPickerValue">Todos los meses</span>
-                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg>
-            </button>
-            <div id="reportMonthPickerOptions" class="period-options" role="listbox" aria-labelledby="reportMonthPickerLabel" hidden></div>
-        </div>
-    </div>
-</div>
-
-
-        </div>
-
-    </div>
 
 
     <!-- RESUMEN -->

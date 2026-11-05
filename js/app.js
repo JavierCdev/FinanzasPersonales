@@ -39,6 +39,9 @@ const loginPassword =
 const loginMessage =
     document.getElementById("loginMessage");
 
+const logoutButton =
+    document.getElementById("logoutButton");
+
 
 function showLogin() {
 
@@ -182,6 +185,31 @@ loginForm?.addEventListener(
 );
 
 
+// Cerrar únicamente la sesión de este navegador.
+logoutButton?.addEventListener("click", async () => {
+    if (logoutButton.disabled) return;
+
+    const originalLabel = logoutButton.innerHTML;
+    logoutButton.disabled = true;
+    logoutButton.setAttribute("aria-busy", "true");
+    logoutButton.innerHTML = "<span aria-hidden=\"true\">…</span><span>Cerrando sesión...</span>";
+
+    const { error } = await supabaseClient.auth.signOut({ scope: "local" });
+
+    if (error) {
+        console.error("Error cerrando sesión:", error);
+        showLoginMessage("No fue posible cerrar la sesión. Inténtalo de nuevo.");
+        logoutButton.disabled = false;
+        logoutButton.removeAttribute("aria-busy");
+        logoutButton.innerHTML = originalLabel;
+        return;
+    }
+
+    // Recargar limpia los datos financieros que permanecen en memoria.
+    window.location.reload();
+});
+
+
 // Detectar cambios de sesión
 
 supabaseClient.auth.onAuthStateChange((_event, session) => {
@@ -207,6 +235,26 @@ checkAuthentication();
 // ============================================================
 
 const menuButtons = document.querySelectorAll(".menu-item");
+const mobileMenuToggle = document.getElementById("mobileMenuToggle");
+const mobileMenuBackdrop = document.getElementById("mobileMenuBackdrop");
+const appSidebar = document.getElementById("appSidebar");
+
+function setMobileMenuOpen(isOpen) {
+    if (!appSidebar || !mobileMenuToggle || !mobileMenuBackdrop) return;
+    appSidebar.classList.toggle("is-open", isOpen);
+    mobileMenuBackdrop.classList.toggle("is-visible", isOpen);
+    mobileMenuToggle.setAttribute("aria-expanded", String(isOpen));
+    mobileMenuToggle.setAttribute("aria-label", isOpen ? "Cerrar menú" : "Abrir menú");
+    document.body.classList.toggle("mobile-menu-open", isOpen);
+}
+
+mobileMenuToggle?.addEventListener("click", () => {
+    setMobileMenuOpen(mobileMenuToggle.getAttribute("aria-expanded") !== "true");
+});
+mobileMenuBackdrop?.addEventListener("click", () => setMobileMenuOpen(false));
+window.addEventListener("keydown", event => {
+    if (event.key === "Escape") setMobileMenuOpen(false);
+});
 const pageSections = document.querySelectorAll(".page-section");
 const pageTitle = document.getElementById("pageTitle");
 
@@ -224,6 +272,8 @@ const sectionTitles = {
 menuButtons.forEach(button => {
 
     button.addEventListener("click", () => {
+
+        setMobileMenuOpen(false);
 
         const section = button.dataset.section;
 
@@ -7988,8 +8038,7 @@ function populateYearSelectors() {
     }
 
     const yearSelectors = [
-        document.getElementById("year"),
-        document.getElementById("reportYear")
+        document.getElementById("year")
     ].filter(Boolean);
 
 
@@ -9377,52 +9426,82 @@ if (expense.isProjected) {
         0
     );
 
-    let html = `
-        <div class="dashboard-payment-summary">
-    <span>Total estimado a pagar este mes</span>
-    <strong>${formatCurrency(totalDue, "GTQ")}</strong>
-</div>
+    const today = new Date();
+    const todayISO = [
+        today.getFullYear(),
+        String(today.getMonth() + 1).padStart(2, "0"),
+        String(today.getDate()).padStart(2, "0")
+    ].join("-");
 
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Tarjeta</th>
-                    <th>Fecha de corte</th>
-                    <th>Fecha de pago</th>
-                    <th>Pendiente (GTQ)</th>
-                    <th>Previsto (GTQ)</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
-
-    visibleMonthlyPayments.forEach(payment => {
+    const mobileCards = visibleMonthlyPayments.map(payment => {
         const card = creditCards.find(
-            item => item.id === payment.creditCardId
+            item => String(item.id) === String(payment.creditCardId)
         );
-
         const cardName = card
             ? `${card.bank} - ${card.name}`
             : "Tarjeta de crédito";
 
-        html += `
+        const status = payment.dueDate < todayISO
+            ? { label: "Vencido", className: "is-overdue" }
+            : payment.dueDate === todayISO
+                ? { label: "Vence hoy", className: "is-today" }
+                : { label: "Próximo", className: "is-upcoming" };
+
+        return `
+            <article class="dashboard-payment-card">
+                <div class="dashboard-payment-card-heading">
+                    <div class="dashboard-payment-card-name">
+                        <span class="dashboard-payment-card-icon" aria-hidden="true">▣</span>
+                        <strong>${escapeHtml(cardName)}</strong>
+                    </div>
+                    <span class="dashboard-payment-status ${status.className}">${status.label}</span>
+                </div>
+                <div class="dashboard-payment-dates">
+                    <div><span>Fecha de corte</span><strong>${formatDate(payment.cutoffDate)}</strong></div>
+                    <div><span>Fecha de pago</span><strong>${formatDate(payment.dueDate)}</strong></div>
+                </div>
+                <div class="dashboard-payment-amounts">
+                    <div><span>Pendiente</span><strong>${formatCurrency(payment.totalGTQ, "GTQ")}</strong></div>
+                    <div><span>Previsto</span><strong>${formatCurrency(payment.projectedGTQ, "GTQ")}</strong></div>
+                </div>
+            </article>
+        `;
+    }).join("");
+
+    const tableRows = visibleMonthlyPayments.map(payment => {
+        const card = creditCards.find(
+            item => String(item.id) === String(payment.creditCardId)
+        );
+        const cardName = card
+            ? `${card.bank} - ${card.name}`
+            : "Tarjeta de crédito";
+
+        return `
             <tr>
                 <td>${escapeHtml(cardName)}</td>
                 <td>${formatDate(payment.cutoffDate)}</td>
                 <td>${formatDate(payment.dueDate)}</td>
-                <td class="income-amount">
-                   ${formatCurrency(payment.totalGTQ, "GTQ")}
-                           </td>
-                     <td>
-    ${formatCurrency(payment.projectedGTQ, "GTQ")}
-</td>
+                <td class="income-amount">${formatCurrency(payment.totalGTQ, "GTQ")}</td>
+                <td>${formatCurrency(payment.projectedGTQ, "GTQ")}</td>
             </tr>
         `;
-    });
+    }).join("");
 
-    html += `
-            </tbody>
-        </table>
+    const html = `
+        <div class="dashboard-payment-summary">
+            <div>
+                <span>Total pendiente este mes</span>
+                <strong>${formatCurrency(totalDue, "GTQ")}</strong>
+            </div>
+            <small>${visibleMonthlyPayments.length} ${visibleMonthlyPayments.length === 1 ? "pago programado" : "pagos programados"}</small>
+        </div>
+        <div class="dashboard-payment-cards">${mobileCards}</div>
+        <div class="dashboard-payment-table-wrap">
+            <table class="data-table dashboard-payment-table">
+                <thead><tr><th>Tarjeta</th><th>Fecha de corte</th><th>Fecha de pago</th><th>Pendiente (GTQ)</th><th>Previsto (GTQ)</th></tr></thead>
+                <tbody>${tableRows}</tbody>
+            </table>
+        </div>
     `;
 
     dashboardCardPayments.innerHTML = html;
@@ -9440,6 +9519,7 @@ if (dashboardYear) {
             updateDashboard();
             renderIncomeTable();
             renderExpenseTable();
+            updateReports();
         }
     );
 }
@@ -9456,6 +9536,7 @@ if (dashboardMonth) {
             updateDashboard();
             renderIncomeTable();
             renderExpenseTable();
+            updateReports();
         }
     );
 }
@@ -9681,8 +9762,6 @@ function initializePeriodPicker(selectId, buttonId, valueId, optionsId) {
 
 initializePeriodPicker("month", "monthPickerButton", "monthPickerValue", "monthPickerOptions");
 initializePeriodPicker("year", "yearPickerButton", "yearPickerValue", "yearPickerOptions");
-initializePeriodPicker("reportYear", "reportYearPickerButton", "reportYearPickerValue", "reportYearPickerOptions");
-initializePeriodPicker("reportMonth", "reportMonthPickerButton", "reportMonthPickerValue", "reportMonthPickerOptions");
 
 // ============================================================
 // 13. GASTOS FIJOS
@@ -11789,12 +11868,6 @@ renderFixedExpenseTable();
 // 13. REPORTES
 // ============================================================
 
-const reportYear =
-    document.getElementById("reportYear");
-
-const reportMonth =
-    document.getElementById("reportMonth");
-
 const reportIncome =
     document.getElementById("reportIncome");
 
@@ -11824,19 +11897,12 @@ const reportMonthlyContainer =
 
 
 function getReportYear() {
-
-    return Number(
-        reportYear?.value ||
-        new Date().getFullYear()
-    );
-
+    return getDashboardYear();
 }
 
 
 function getReportMonth() {
-
-    return reportMonth?.value || "all";
-
+    return getDashboardMonth();
 }
 
 
@@ -12250,9 +12316,9 @@ function renderReportBudget() {
 
     reportBudgetContainer.innerHTML = `
 
-        <div class="report-table-wrapper">
+        <div class="report-table-wrapper report-monthly-table-wrapper">
 
-            <table class="report-table">
+            <table class="report-table report-monthly-table">
 
                 <thead>
 
@@ -12688,9 +12754,9 @@ function renderReportMonthly() {
 
     let html = `
 
-        <div class="report-table-wrapper">
+        <div class="report-table-wrapper report-monthly-table-wrapper">
 
-            <table class="report-table">
+            <table class="report-table report-monthly-table">
 
                 <thead>
 
@@ -12733,14 +12799,14 @@ function renderReportMonthly() {
 
                 <tr>
 
-                    <td>
+                    <td class="report-month-cell" data-label="Mes">
 
                         ${monthNames[index]}
 
                     </td>
 
 
-                    <td class="report-table-number">
+                    <td class="report-table-number" data-label="Ingresos">
 
                         ${formatCurrency(
                             item.income,
@@ -12750,7 +12816,7 @@ function renderReportMonthly() {
                     </td>
 
 
-                    <td class="report-table-number">
+                    <td class="report-table-number" data-label="Gastos">
 
                         ${formatCurrency(
                             item.expense,
@@ -12761,6 +12827,7 @@ function renderReportMonthly() {
 
 
                     <td
+                        data-label="Balance"
                         class="
                             report-table-number
                             ${
@@ -12811,26 +12878,6 @@ function updateReports() {
     renderReportCategories();
 
     renderReportMonthly();
-
-}
-
-
-if (reportYear) {
-
-    reportYear.addEventListener(
-        "change",
-        updateReports
-    );
-
-}
-
-
-if (reportMonth) {
-
-    reportMonth.addEventListener(
-        "change",
-        updateReports
-    );
 
 }
 
@@ -13486,6 +13533,7 @@ async function initializeAppData() {
         renderIncomeTable();
         renderAccounts();
         updateDashboard();
+        updateReports();
 
         await budgetsLoad;
         renderBudgetTable();
