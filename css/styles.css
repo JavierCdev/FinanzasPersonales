@@ -7512,6 +7512,7 @@ select option:hover {
 .auth-logout-button {
     display: inline-flex;
     flex: 0 0 auto;
+    align-self: stretch;
     align-items: center;
     justify-content: center;
     gap: 6px;
