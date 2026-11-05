@@ -2685,15 +2685,15 @@ body {
 }
 
 .report-positive {
-    color: #16a34a !important;
+    color: #16a34a;
 }
 
 .report-negative {
-    color: #dc2626 !important;
+    color: #dc2626;
 }
 
 .report-warning {
-    color: #d97706 !important;
+    color: #d97706;
 }
 
 .report-progress-container {
@@ -5307,7 +5307,7 @@ body {
 }
 .category-chart-bar {
     min-width: 3px;
-    background: linear-gradient(90deg, #168c79, #c1e878) !important;
+    background: linear-gradient(90deg, #168c79, #c1e878);
     box-shadow: 0 0 12px rgba(22, 140, 121, .18);
 }
 @media (max-width: 1000px) {
@@ -5847,7 +5847,7 @@ body {
 .category-chart-name { font-size: 11px; }
 .category-chart-amount { text-align: right; white-space: nowrap; font-size: 11px; font-variant-numeric: tabular-nums; }
 .category-chart-bar-container { height: 6px; background: #2b3935; }
-.category-chart-bar { min-width: 3px; border-radius: 99px; background: linear-gradient(90deg, #63c99a, #c7ec75) !important; box-shadow: none; }
+.category-chart-bar { min-width: 3px; border-radius: 99px; background: linear-gradient(90deg, #63c99a, #c7ec75); box-shadow: none; }
 .dashboard-empty, .empty-table { color: #91a29a; }
 
 /* Tema común para formularios, listas, reportes y diálogos */
@@ -6347,9 +6347,9 @@ select option:hover {
 .report-category-bar { background: linear-gradient(90deg, #63c99a, #c7ec75); }
 .report-category-amount { color: #eaf1ea; font-size: 12px; font-variant-numeric: tabular-nums; }
 .report-empty { color: #91a29a; }
-.report-positive { color: #73d7ac !important; }
-.report-negative { color: #f0837b !important; }
-.report-warning { color: #dfc16c !important; }
+.report-positive { color: #73d7ac; }
+.report-negative { color: #f0837b; }
+.report-warning { color: #dfc16c; }
 @media (max-width: 760px) {
         .report-summary-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .report-summary-card { min-height: 100px; padding: 14px; }
