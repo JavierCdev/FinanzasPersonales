@@ -9233,7 +9233,7 @@ const cutoffMonthDate =
 projectedCharges.push({
     creditCardId: expense.creditCardId,
     statementCutoffDate: buildISODate(cutoffMonthDate.getFullYear(), cutoffMonthDate.getMonth(), cardCutoffDay),
-    statementDueDate: buildISODate(selectedYear, selectedMonthIndex - 1, cardPaymentDay),
+    statementDueDate: buildISODate(selectedYear, selectedMonthIndex, cardPaymentDay),
     amountGTQ: installmentAmountGTQ,
     isProjected: true
 });
