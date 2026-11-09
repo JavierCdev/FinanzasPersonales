@@ -5531,14 +5531,17 @@ const expenseCreditCardId =
     document.getElementById("expenseCreditCardId");
 
 expensePaymentMethod?.addEventListener("change", () => {
-    const usesCard =
-        expensePaymentMethod.value === "card";
+    const usesCard = expensePaymentMethod.value === "card";
 
     expenseCreditCardGroup.hidden = !usesCard;
     expenseCreditCardId.required = usesCard;
     populateTransactionAccountSelectors();
 
-    if (!usesCard) {
+    if (usesCard) {
+        const lastUsedCardId = getLastUsedExpenseCreditCardId();
+        populateExpenseCreditCardOptions(lastUsedCardId);
+        expenseCreditCardId.value = lastUsedCardId ? String(lastUsedCardId) : "";
+    } else {
         expenseCreditCardId.value = "";
     }
 });
@@ -6297,7 +6300,7 @@ if (accountsSchemaReady && paymentMethod !== "card") {
     paymentMethod === "card"
         ? creditCards.find(
             card =>
-                card.id === creditCardId &&
+                String(card.id) === String(creditCardId) &&
                 card.active !== false
         )
         : null;
@@ -7491,24 +7494,50 @@ creditCardForm?.addEventListener(
 
 let creditCards = [];
 
+function getLastUsedExpenseCreditCardId() {
+    const activeCardIds = new Set(
+        creditCards
+            .filter(card => card.active !== false)
+            .map(card => String(card.id))
+    );
+
+    const lastCardExpense = expenses
+        .filter(expense =>
+            expense.paymentMethod === "card" &&
+            expense.creditCardId &&
+            activeCardIds.has(String(expense.creditCardId))
+        )
+        .sort((a, b) => {
+            const dateA = new Date(a.createdAt || a.updatedAt || a.date || 0).getTime();
+            const dateB = new Date(b.createdAt || b.updatedAt || b.date || 0).getTime();
+            return dateB - dateA;
+        })[0];
+
+    return lastCardExpense?.creditCardId || "";
+}
+
 function populateExpenseCreditCardOptions(selectedCardId = null) {
     if (!expenseCreditCardId) return;
 
-    const availableCards = creditCards.filter(
-        card =>
-            card.active !== false ||
-            card.id === selectedCardId
+    const selectedId = selectedCardId == null ? "" : String(selectedCardId);
+    const availableCards = creditCards.filter(card =>
+        card.active !== false || String(card.id) === selectedId
     );
 
-    expenseCreditCardId.innerHTML =
-        '<option value="">Selecciona una tarjeta</option>';
+    expenseCreditCardId.replaceChildren(
+        new Option("Selecciona una tarjeta", "")
+    );
 
     availableCards.forEach(card => {
         const option = document.createElement("option");
-        option.value = card.id;
+        option.value = String(card.id);
         option.textContent = `${card.bank} - ${card.name}`;
         expenseCreditCardId.appendChild(option);
     });
+
+    if (selectedId && [...expenseCreditCardId.options].some(option => option.value === selectedId)) {
+        expenseCreditCardId.value = selectedId;
+    }
 }
 
 function populateFixedExpenseCreditCardOptions(selectedCardId = null) {
