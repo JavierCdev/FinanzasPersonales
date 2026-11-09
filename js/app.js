@@ -20,6 +20,72 @@ const supabaseClient =
         SUPABASE_PUBLISHABLE_KEY
     );
 
+// ============================================================
+// NOTIFICACIONES TOAST
+// ============================================================
+
+let toastContainer = null;
+
+function showToast(message, type = "success") {
+    const normalizedMessage = String(message ?? "").trim();
+    if (!normalizedMessage) return;
+
+    if (!toastContainer) {
+        toastContainer = document.createElement("div");
+        toastContainer.className = "toast-container";
+        toastContainer.setAttribute("aria-label", "Notificaciones");
+        document.body.appendChild(toastContainer);
+    }
+
+    const toast = document.createElement("div");
+    toast.className = `app-toast app-toast--${type}`;
+    toast.setAttribute("role", type === "error" ? "alert" : "status");
+    toast.setAttribute("aria-live", type === "error" ? "assertive" : "polite");
+
+    const icon = document.createElement("span");
+    icon.className = "app-toast__icon";
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = type === "error" ? "!" : type === "warning" ? "⚠" : type === "info" ? "i" : "✓";
+
+    const text = document.createElement("span");
+    text.className = "app-toast__message";
+    text.textContent = normalizedMessage;
+
+    const closeButton = document.createElement("button");
+    closeButton.className = "app-toast__close";
+    closeButton.type = "button";
+    closeButton.setAttribute("aria-label", "Cerrar notificación");
+    closeButton.textContent = "×";
+
+    toast.append(icon, text, closeButton);
+    toastContainer.appendChild(toast);
+
+    let dismissTimer;
+    const dismiss = () => {
+        window.clearTimeout(dismissTimer);
+        toast.classList.add("is-leaving");
+        toast.addEventListener("transitionend", () => toast.remove(), { once: true });
+        window.setTimeout(() => toast.remove(), 250);
+    };
+
+    closeButton.addEventListener("click", dismiss);
+    dismissTimer = window.setTimeout(dismiss, type === "error" ? 6500 : 4200);
+}
+
+// Las llamadas alert() existentes pasan a ser notificaciones no bloqueantes.
+// confirm() y los demás diálogos de decisión conservan su comportamiento.
+window.alert = function (message) {
+    const text = String(message ?? "");
+    const type = /no se pudo|no fue posible|error|incorrect[oa]|fall[oó]|inv[aá]lid[oa]/i.test(text)
+        ? "error"
+        : /atenci[oó]n|advertencia|pendiente|revis[aá]/i.test(text)
+            ? "warning"
+            : "success";
+
+    showToast(text, type);
+};
+
+
     // ============================================================
 // AUTENTICACIÓN
 // ============================================================
