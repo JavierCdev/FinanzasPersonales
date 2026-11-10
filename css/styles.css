@@ -8136,8 +8136,10 @@ select option:hover {
 
 .toast-container {
     position: fixed;
-    top: 22px;
+    top: auto;
     right: 22px;
+    bottom: 22px;
+    left: auto;
     z-index: 10000;
     display: grid;
     gap: 10px;
@@ -8255,8 +8257,9 @@ select option:hover {
 
 @media (max-width: 600px) {
     .toast-container {
-        top: 12px;
+        top: auto;
         right: 12px;
+        bottom: 12px;
         left: 12px;
         width: auto;
     }
