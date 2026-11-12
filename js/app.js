@@ -13344,6 +13344,9 @@ initializeSpanishDatePicker("fixedExpensePurchaseDate");
 initializeSpanishDatePicker("accountOpeningDate");
 initializeSpanishDatePicker("transferDate");
 initializeSpanishDatePicker("cardPaymentDate");
+initializeSpanishDatePicker("debtStartDate");
+initializeSpanishDatePicker("debtFirstPaymentDate");
+initializeSpanishDatePicker("debtEndDate");
 function escapeHtml(
     value
 ) {
