@@ -565,17 +565,17 @@ async function initializeAccounts() {
 
 function calculateBankAccountBalance(account) {
     let balance = Number(account.openingBalance) || 0;
-    const afterOpening = date => String(date || "") > String(account.openingDate || "");
+    const onOrAfterOpening = date => String(date || "") >= String(account.openingDate || "");
     incomes.forEach(income => {
-        if (String(income.accountId || "") !== String(account.id) || !afterOpening(income.date) || income.currency !== account.currency) return;
+        if (String(income.accountId || "") !== String(account.id) || !onOrAfterOpening(income.date) || income.currency !== account.currency) return;
         balance += Number(income.amount) || 0;
     });
     expenses.forEach(expense => {
-        if (expense.paymentMethod === "card" || String(expense.accountId || "") !== String(account.id) || !afterOpening(expense.date) || expense.currency !== account.currency) return;
+        if (expense.paymentMethod === "card" || String(expense.accountId || "") !== String(account.id) || !onOrAfterOpening(expense.date) || expense.currency !== account.currency) return;
         balance -= Number(expense.amount) || 0;
     });
     accountTransfers.forEach(transfer => {
-        if (!afterOpening(transfer.date)) return;
+        if (!onOrAfterOpening(transfer.date)) return;
         if (String(transfer.fromAccountId) === String(account.id)) balance -= Number(transfer.sentAmount) || 0;
         if (String(transfer.toAccountId) === String(account.id)) balance += Number(transfer.receivedAmount) || 0;
     });
@@ -583,7 +583,7 @@ function calculateBankAccountBalance(account) {
         if (
             String(payment.accountId) === String(account.id) &&
             payment.currency === account.currency &&
-            afterOpening(payment.date)
+            onOrAfterOpening(payment.date)
         ) {
             balance -= Number(payment.amount) || 0;
         }
@@ -604,7 +604,7 @@ function renderAccounts() {
             <h3>${escapeHtml(account.name)}</h3>
             <span class="account-type-label">${escapeHtml(accountTypeLabels[account.type] || "Cuenta")} · ${escapeHtml(account.currency)}</span>
             <strong class="account-balance">${formatCurrency(calculateBankAccountBalance(account), account.currency)}</strong>
-            <small>Saldo al ${escapeHtml(formatDate(account.openingDate))} + movimientos posteriores</small>
+            <small>Saldo al ${escapeHtml(formatDate(account.openingDate))} + movimientos desde esa fecha</small>
             <div class="account-card-actions">
                 <button type="button" class="secondary-button" data-account-action="edit" data-account-id="${escapeHtml(account.id)}">Editar</button>
                 <button type="button" class="secondary-button" data-account-action="toggle" data-account-id="${escapeHtml(account.id)}">${account.isActive ? "Archivar" : "Reactivar"}</button>
