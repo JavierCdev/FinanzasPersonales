@@ -15,6 +15,7 @@
 <link
     rel="stylesheet"
     href="css/styles.css">
+<link rel="stylesheet" href="css/debts.css">
 </head>
 
 <body>
@@ -221,6 +222,10 @@
 
             </button>
 
+
+            <button type="button" class="menu-item" data-section="deudas">
+                <span class="menu-icon">$</span><span>Deudas</span>
+            </button>
 
             <button
                 type="button"
@@ -2180,6 +2185,50 @@
 
 
 
+<!-- MÓDULO DEUDAS -->
+<section id="deudas" class="page-section debts-section">
+ <div class="section-header debts-section-header">
+  <div><h2>Control de deudas</h2><p>Administra préstamos, tarjetas y financiamientos desde un solo lugar.</p></div>
+  <button type="button" class="primary-button" id="debtNewButton">+ Nueva deuda</button>
+ </div>
+ <div class="debts-summary-grid">
+  <article class="debt-summary-card"><span>Deuda pendiente</span><strong id="debtsTotalBalance">Q 0.00</strong><small>Saldo total por pagar</small></article>
+  <article class="debt-summary-card"><span>Pagos mensuales</span><strong id="debtsMonthlyPayments">Q 0.00</strong><small>Compromisos equivalentes al mes</small></article>
+  <article class="debt-summary-card"><span>Deudas activas</span><strong id="debtsActiveCount">0</strong><small>Obligaciones registradas</small></article>
+  <article class="debt-summary-card"><span>Pagado este mes</span><strong id="debtsPaidThisMonth">Q 0.00</strong><small>Abonos registrados</small></article>
+ </div>
+ <div class="debts-toolbar"><div><h3>Mis deudas</h3><p>Consulta saldos, cuotas y próximos vencimientos.</p></div>
+  <div class="debts-filters"><input id="debtsSearch" type="search" placeholder="Buscar deuda o institución" aria-label="Buscar deuda o institución">
+   <select id="debtsStatusFilter" aria-label="Filtrar por estado"><option value="all">Todos los estados</option><option value="active">Activas</option><option value="overdue">Atrasadas</option><option value="paid">Pagadas</option></select>
+   <select id="debtsTypeFilter" aria-label="Filtrar por tipo"><option value="all">Todos los tipos</option><option value="loan">Préstamos</option><option value="card">Tarjetas</option><option value="financing">Financiamientos</option></select>
+  </div>
+ </div>
+ <div id="debtsList" class="debts-empty-state"><div class="debts-empty-icon">₲</div><h3>Aún no tienes deudas registradas</h3><p>Registra tu primer préstamo o financiamiento. Las tarjetas se vincularán desde las que ya tienes registradas.</p><button type="button" class="primary-button" id="debtEmptyNewButton">Registrar primera deuda</button></div>
+ <div class="debts-secondary-grid">
+  <section class="panel"><div class="panel-header"><div><h3>Próximos vencimientos</h3><p>Pagos que se acercan.</p></div><button type="button" class="text-button" data-debts-view="calendar">Ver calendario</button></div><div id="debtsUpcomingList" class="debts-inline-empty">No hay vencimientos programados.</div></section>
+  <section class="panel"><div class="panel-header"><div><h3>Calendario de pagos</h3><p>Organiza tus próximos compromisos.</p></div><button type="button" class="text-button" data-debts-view="calendar">Abrir calendario</button></div><div class="debts-calendar-preview"><strong>Consulta tus fechas de pago</strong><p>Los vencimientos se mostrarán aquí cuando registres tus deudas.</p></div></section>
+ </div>
+ <div class="panel debts-form-panel" id="debtFormPanel" hidden>
+  <div class="panel-header"><div><h3>Nueva deuda</h3><p>Completa la información de la obligación.</p></div><button type="button" id="debtFormClose" aria-label="Cerrar formulario">×</button></div>
+  <form id="debtForm"><div class="form-grid">
+   <div class="form-group"><label for="debtType">Tipo de deuda</label><select id="debtType"><option value="loan">Préstamo</option><option value="financing">Financiamiento</option><option value="card">Tarjeta existente</option></select></div>
+   <div class="form-group" id="debtCardField" hidden><label for="debtCreditCard">Tarjeta registrada</label><select id="debtCreditCard"><option value="">Selecciona una tarjeta</option></select></div>
+   <div class="form-group" id="debtNameField"><label for="debtName">Nombre de la deuda</label><input id="debtName" maxlength="120" placeholder="Ej. Préstamo personal"></div>
+   <div class="form-group" id="debtInstitutionField"><label for="debtInstitution">Institución o comercio</label><input id="debtInstitution" maxlength="120" placeholder="Nombre de la entidad"></div>
+   <div class="form-group"><label for="debtCurrency">Moneda</label><select id="debtCurrency"><option value="GTQ">GTQ · Quetzales</option><option value="USD">USD · Dólares</option></select></div>
+   <div class="form-group" id="debtOriginalAmountField"><label for="debtOriginalAmount">Monto original</label><input id="debtOriginalAmount" type="number" min=".01" step=".01"></div>
+   <div class="form-group" id="debtInitialBalanceField"><label for="debtInitialBalance">Saldo inicial pendiente</label><input id="debtInitialBalance" type="number" min=".01" step=".01"></div>
+   <div class="form-group" id="debtInterestField"><label for="debtInterestRate">Tasa de interés anual (%)</label><input id="debtInterestRate" type="number" min="0" max="1000" step=".01"></div>
+   <div class="form-group" id="debtInstallmentField"><label for="debtInstallment">Cuota establecida</label><input id="debtInstallment" type="number" min="0" step=".01"></div>
+   <div class="form-group" id="debtFrequencyField"><label for="debtFrequency">Periodicidad</label><select id="debtFrequency"><option value="weekly">Semanal</option><option value="biweekly">Quincenal</option><option value="monthly" selected>Mensual</option></select></div>
+   <div class="form-group"><label for="debtStartDate">Fecha de inicio</label><input id="debtStartDate" type="date"></div>
+   <div class="form-group"><label for="debtFirstPaymentDate">Fecha del primer pago</label><input id="debtFirstPaymentDate" type="date"></div>
+   <div class="form-group"><label for="debtEndDate">Fecha de finalización (opcional)</label><input id="debtEndDate" type="date"></div>
+   <div class="form-group debts-form-full"><label for="debtNotes">Notas</label><textarea id="debtNotes" rows="3" maxlength="1000"></textarea></div>
+  </div><div class="debts-form-actions"><button type="button" class="secondary-button" id="debtFormCancel">Cancelar</button><button type="submit" class="primary-button">Guardar deuda</button></div><p id="debtFormNotice" class="debts-form-notice" role="status">El guardado se habilitará después de verificar el esquema y las políticas de Supabase.</p></form>
+ </div>
+</section>
+
 <!-- ========================================
      REPORTES
 ========================================= -->
@@ -2634,6 +2683,7 @@
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <script src="js/app.js"></script>
 <script src="js/statement-import.js"></script>
+<script src="js/debts.js"></script>
 
 </body>
 

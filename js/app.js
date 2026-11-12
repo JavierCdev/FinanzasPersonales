@@ -331,6 +331,7 @@ const sectionTitles = {
     cuentas: "Cuentas bancarias",
     presupuesto: "Presupuesto",
     fijos: "Gastos Fijos",
+    deudas: "Deudas",
     reportes: "Reportes",
     configuracion: "Configuración"
 };
