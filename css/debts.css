@@ -136,8 +136,6 @@
 .debts-filters input,
 .debts-filters select {
     box-sizing: border-box;
-    height: 68px;
-    min-height: 68px;
     padding: 0 12px;
     line-height: normal;
     border: 1px solid #30403b;
@@ -149,8 +147,19 @@
     font-size: 12px;
 }
 
-.debts-filters input { min-width: 0; width: 100%; }
-.debts-filters select { min-width: 0; width: 100%; }
+.debts-filters input {
+    width: 100%;
+    min-width: 0;
+    height: 85px;
+    min-height: 85px;
+}
+
+.debts-filters select {
+    width: 100%;
+    min-width: 0;
+    height: 85px;
+    min-height: 85px;
+}
 
 .debts-filters input::placeholder { color: #82938b; }
 .debts-filters input:focus,
