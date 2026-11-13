@@ -125,7 +125,7 @@
 
 .debts-filters {
     display: grid;
-    grid-template-columns: minmax(210px, 1.35fr) repeat(2, minmax(155px, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     align-items: center;
     flex: 1 1 680px;
     max-width: 760px;
