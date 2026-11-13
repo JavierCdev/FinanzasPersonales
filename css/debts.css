@@ -139,8 +139,13 @@
     display: block;
     box-sizing: border-box;
     width: 100%;
+    height: 68px !important;
+    min-height: 68px !important;
     min-width: 0;
     max-width: none;
+    padding-top: 0;
+    padding-bottom: 0;
+    line-height: normal;
     justify-self: stretch;
 }
 
