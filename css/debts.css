@@ -123,14 +123,25 @@
     min-width: 210px;
 }
 
-.debts-filters {
+.debts-section .debts-filters {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     align-items: center;
-    flex: 1 1 680px;
-    max-width: 760px;
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: none;
     min-width: 0;
     gap: 9px;
+}
+
+.debts-section .debts-filters > input,
+.debts-section .debts-filters > select {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    justify-self: stretch;
 }
 
 .debts-toolbar h3,
