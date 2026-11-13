@@ -147,18 +147,12 @@
     font-size: 12px;
 }
 
-.debts-filters input {
-    width: 100%;
-    min-width: 0;
-    height: 85px;
-    min-height: 85px;
-}
-
+.debts-filters input,
 .debts-filters select {
     width: 100%;
     min-width: 0;
-    height: 85px;
-    min-height: 85px;
+    height: 48px;
+    min-height: 48px;
 }
 
 .debts-filters input::placeholder { color: #82938b; }
@@ -285,9 +279,12 @@
 
 @media (max-width: 1100px) {
     .debts-section .debts-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 900px) {
     .debts-toolbar { align-items: stretch; flex-direction: column; gap: 14px; }
     .debts-toolbar > div:first-child { min-width: 0; }
-    .debts-filters { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); max-width: none; flex: 1 1 auto; }
+    .debts-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: none; flex: 1 1 auto; }
     .debts-filters input { grid-column: 1 / -1; }
 }
 
