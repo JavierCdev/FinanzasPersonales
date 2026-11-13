@@ -112,10 +112,25 @@
 
 .debts-toolbar {
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     justify-content: space-between;
-    gap: 18px;
+    gap: 22px;
     margin: 28px 0 15px;
+}
+
+.debts-toolbar > div:first-child {
+    flex: 0 0 auto;
+    min-width: 210px;
+}
+
+.debts-filters {
+    display: grid;
+    grid-template-columns: minmax(210px, 1.35fr) repeat(2, minmax(155px, 1fr));
+    align-items: center;
+    flex: 1 1 680px;
+    max-width: 760px;
+    min-width: 0;
+    gap: 9px;
 }
 
 .debts-toolbar h3,
@@ -135,12 +150,6 @@
     line-height: 1.5;
 }
 
-.debts-filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 9px;
-}
-
 .debts-filters input,
 .debts-filters select {
     min-width: 145px;
@@ -155,7 +164,8 @@
     font-size: 12px;
 }
 
-.debts-filters input { min-width: 220px; }
+.debts-filters input { min-width: 0; width: 100%; }
+.debts-filters select { min-width: 0; width: 100%; }
 .debts-filters input::placeholder { color: #82938b; }
 .debts-filters input:focus,
 .debts-filters select:focus { border-color: #789b69; box-shadow: 0 0 0 3px rgba(199,236,117,.08); }
@@ -280,8 +290,10 @@
 
 @media (max-width: 1100px) {
     .debts-section .debts-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .debts-toolbar { align-items: stretch; flex-direction: column; }
-    .debts-filters > * { flex: 1 1 180px; }
+    .debts-toolbar { align-items: stretch; flex-direction: column; gap: 14px; }
+    .debts-toolbar > div:first-child { min-width: 0; }
+    .debts-filters { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); max-width: none; flex: 1 1 auto; }
+    .debts-filters input { grid-column: 1 / -1; }
 }
 
 @media (max-width: 700px) {
