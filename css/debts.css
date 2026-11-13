@@ -147,7 +147,13 @@
     font-size: 12px;
 }
 
-.debts-filters input,
+.debts-filters input {
+    width: 100%;
+    min-width: 0;
+    height: 48px;
+    min-height: 48px;
+}
+
 .debts-filters select {
     width: 100%;
     min-width: 0;
