@@ -175,6 +175,13 @@
 
 .debts-filters input { min-width: 0; width: 100%; }
 .debts-filters select { min-width: 0; width: 100%; }
+
+/* Igualar exclusivamente la altura de los dropdowns al buscador */
+.debts-section .debts-filters > select {
+    box-sizing: border-box;
+    height: 68px !important;
+    min-height: 68px !important;
+}
 .debts-filters input::placeholder { color: #82938b; }
 .debts-filters input:focus,
 .debts-filters select:focus { border-color: #789b69; box-shadow: 0 0 0 3px rgba(199,236,117,.08); }
