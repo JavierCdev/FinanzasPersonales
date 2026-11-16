@@ -15,6 +15,7 @@ const statusFilter = document.getElementById("debtsStatusFilter");
 const typeFilter = document.getElementById("debtsTypeFilter");
 
 let debts = [];
+let debtPayments = [];
 let loading = false;
 
 const regular = [
@@ -197,18 +198,29 @@ function render() {
     return matchesTerm && matchesType && matchesStatus;
   });
 
-  const totalGTQ = all.reduce((sum, item) => sum + (item.currency === "GTQ" ? Number(item.current_balance ?? item.balance) || 0 : 0), 0);
-  const monthly = debts.filter(item => item.is_active).reduce((sum, item) => {
-    const amount = Number(item.installment_amount) || 0;
+  const sumByCurrency = (rows, amountOf) => {
+    const totals = new Map();
+    rows.forEach(item => {
+      const currency = item.currency || "GTQ";
+      totals.set(currency, (totals.get(currency) || 0) + (Number(amountOf(item)) || 0));
+    });
+    return [...totals.entries()].map(([currency, amount]) => money(amount, currency)).join(" · ") || money(0, "GTQ");
+  };
+  const activeDebts = all.filter(item => item.is_active !== false && Number(item.current_balance ?? item.balance) > 0.009);
+  const monthlyRows = debts.filter(item => item.is_active && Number(item.installment_amount) > 0).map(item => {
     const factor = item.frequency === "weekly" ? 52/12 : item.frequency === "biweekly" ? 26/12 : item.frequency === "quarterly" ? 1/3 : item.frequency === "yearly" ? 1/12 : 1;
-    return sum + amount * factor;
-  }, 0);
-  const paidThisMonth = 0;
+    return { currency: item.currency || "GTQ", monthlyAmount: Number(item.installment_amount) * factor };
+  });
+  const now = new Date();
+  const paidRows = debtPayments.filter(payment => {
+    const date = String(payment.payment_date || "");
+    return date.startsWith(`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-`);
+  });
 
-  byId("debtsTotalBalance").textContent = money(totalGTQ, "GTQ");
-  byId("debtsMonthlyPayments").textContent = money(monthly, "GTQ");
-  byId("debtsActiveCount").textContent = String(all.filter(item => item.is_active !== false && Number(item.current_balance ?? item.balance) > 0.009).length);
-  byId("debtsPaidThisMonth").textContent = money(paidThisMonth, "GTQ");
+  byId("debtsTotalBalance").textContent = sumByCurrency(activeDebts, item => item.current_balance ?? item.balance);
+  byId("debtsMonthlyPayments").textContent = sumByCurrency(monthlyRows, item => item.monthlyAmount);
+  byId("debtsActiveCount").textContent = String(activeDebts.length);
+  byId("debtsPaidThisMonth").textContent = sumByCurrency(paidRows, item => item.total_amount);
 
   if (!filtered.length) {
     list.className = "debts-empty-state";
@@ -249,6 +261,11 @@ async function loadDebts() {
       .order("created_at", { ascending: false });
     if (error) throw error;
     debts = data || [];
+    const { data: paymentRows, error: paymentError } = await supabaseClient
+      .from("deuda_pagos")
+      .select("id,debt_id,payment_date,principal_amount,interest_amount,charges_amount,total_amount,expense_id");
+    if (paymentError) throw paymentError;
+    debtPayments = paymentRows || [];
     render();
     populateCards();
   } catch (error) {
