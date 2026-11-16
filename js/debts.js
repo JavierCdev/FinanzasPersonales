@@ -212,10 +212,14 @@ function render() {
     return { currency: item.currency || "GTQ", monthlyAmount: Number(item.installment_amount) * factor };
   });
   const now = new Date();
+  const debtCurrencyById = new Map(debts.map(item => [String(item.id), item.currency || "GTQ"]));
   const paidRows = debtPayments.filter(payment => {
     const date = String(payment.payment_date || "");
     return date.startsWith(`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-`);
-  });
+  }).map(payment => ({
+    ...payment,
+    currency: debtCurrencyById.get(String(payment.debt_id)) || "GTQ"
+  }));
 
   byId("debtsTotalBalance").textContent = sumByCurrency(activeDebts, item => item.current_balance ?? item.balance);
   byId("debtsMonthlyPayments").textContent = sumByCurrency(monthlyRows, item => item.monthlyAmount);
