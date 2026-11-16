@@ -357,12 +357,17 @@
     }
 
     .debts-section .debts-filters > select {
+        box-sizing: border-box;
+        display: block;
         width: 100%;
         min-width: 0;
+        height: 48px;
+        min-height: 48px;
+        padding: 0 8px;
         justify-self: stretch;
         white-space: nowrap;
-        font-size: 13px;
-        text-overflow: ellipsis;
+        font-size: 12px;
+        line-height: 46px;
     }
 }
 
