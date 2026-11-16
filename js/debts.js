@@ -339,9 +339,13 @@ document.querySelectorAll('[data-debts-view="calendar"]').forEach(button => butt
   byId("debtsUpcomingList").scrollIntoView({ behavior: "smooth", block: "center" });
 }));
 toggleFields();
-loadDebts();
 window.addEventListener("finanzas:data-ready", () => {
+  loadDebts();
   populateCards();
-  render();
 });
+if (typeof initializeAppData === "function") {
+  initializeAppData().then(loadDebts).catch(error => console.error("No se pudo inicializar Deudas:", error));
+} else {
+  loadDebts();
+}
 })();
