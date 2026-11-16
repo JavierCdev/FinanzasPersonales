@@ -420,7 +420,7 @@ async function saveDebt(event) {
     frequency: value("debtFrequency") || "monthly",
     start_date: startDate,
     first_due_date: firstDue,
-    notes: value("debtNotes") || null,
+    notes: value("debtNotes") || "",
     is_active: balance > 0
   };
 
