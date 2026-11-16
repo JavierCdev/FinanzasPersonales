@@ -2199,8 +2199,8 @@
  </div>
  <div class="debts-toolbar"><div><h3>Mis deudas</h3><p>Consulta saldos, cuotas y próximos vencimientos.</p></div>
   <div class="debts-filters"><input id="debtsSearch" type="search" placeholder="Buscar deuda o institución" aria-label="Buscar deuda o institución">
-   <select id="debtsStatusFilter" aria-label="Filtrar por estado"><option value="all" data-mobile-label="Estado">Todos los estados</option><option value="active" data-mobile-label="Activas">Activas</option><option value="overdue" data-mobile-label="Atrasadas">Atrasadas</option><option value="paid" data-mobile-label="Pagadas">Pagadas</option></select>
-   <select id="debtsTypeFilter" aria-label="Filtrar por tipo"><option value="all" data-mobile-label="Tipo">Todos los tipos</option><option value="loan" data-mobile-label="Préstamos">Préstamos</option><option value="card" data-mobile-label="Tarjetas">Tarjetas</option><option value="financing" data-mobile-label="Financ.">Financiamientos</option></select>
+   <div class="custom-select-shell"><select id="debtsStatusFilter" aria-label="Filtrar por estado"><option value="all">Todos los estados</option><option value="active">Activas</option><option value="overdue">Atrasadas</option><option value="paid">Pagadas</option></select></div>
+   <div class="custom-select-shell"><select id="debtsTypeFilter" aria-label="Filtrar por tipo"><option value="all">Todos los tipos</option><option value="loan">Préstamos</option><option value="card">Tarjetas</option><option value="financing">Financiamientos</option></select></div>
   </div>
  </div>
  <div id="debtsList" class="debts-empty-state"><div class="debts-empty-icon">₲</div><h3>Aún no tienes deudas registradas</h3><p>Registra tu primer préstamo o financiamiento. Las tarjetas se vincularán desde las que ya tienes registradas.</p><button type="button" class="primary-button" id="debtEmptyNewButton">Registrar primera deuda</button></div>
