@@ -300,9 +300,21 @@
     .debt-summary-card { min-height: 125px; padding: 16px; }
     .debts-section .debts-section-header { align-items: flex-start; flex-direction: column; }
     .debts-section-header .primary-button { width: 100%; }
-    .debts-filters { display: grid; grid-template-columns: 1fr 1fr; }
-    .debts-filters input { min-width: 0; grid-column: 1 / -1; }
-    .debts-filters select { min-width: 0; width: 100%; }
+    .debts-toolbar { gap: 12px; margin-top: 22px; }
+    .debts-filters {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        width: 100%;
+        max-width: none;
+        gap: 8px;
+    }
+    .debts-filters input,
+    .debts-filters select {
+        width: 100%;
+        min-width: 0;
+        height: 48px;
+        min-height: 48px;
+    }
     .debts-form-actions { flex-direction: column-reverse; }
     .debts-form-actions button { width: 100%; }
 }
