@@ -345,3 +345,30 @@
     .debts-form-actions { flex-direction: column-reverse; }
     .debts-form-actions button { width: 100%; }
 }
+
+/* Ajuste final móvil: los selectores ocupan las dos columnas disponibles. */
+@media (max-width: 600px) {
+    .debts-section .debts-filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .debts-section .debts-filters > input {
+        grid-column: 1 / -1;
+    }
+
+    .debts-section .debts-filters > select {
+        width: 100%;
+        min-width: 0;
+        justify-self: stretch;
+    }
+}
+
+@media (max-width: 360px) {
+    .debts-section .debts-filters {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .debts-section .debts-filters > input {
+        grid-column: auto;
+    }
+}
