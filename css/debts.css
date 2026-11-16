@@ -299,6 +299,28 @@
     .debts-filters input { grid-column: auto; }
 }
 
+/* En teléfonos: buscador en su propia fila y filtros debajo. */
+@media (max-width: 600px) {
+    .debts-filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .debts-filters input {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 360px) {
+    .debts-filters {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .debts-filters input {
+        grid-column: auto;
+    }
+}
+
 @media (max-width: 700px) {
     .debts-section .debts-summary-grid,
     .debts-secondary-grid { grid-template-columns: 1fr; }
