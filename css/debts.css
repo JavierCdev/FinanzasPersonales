@@ -359,15 +359,28 @@
     .debts-section .debts-filters > select {
         box-sizing: border-box;
         display: block;
+        appearance: none;
+        -webkit-appearance: none;
         width: 100%;
         min-width: 0;
         height: 48px;
         min-height: 48px;
-        padding: 0 8px;
+        padding: 0 26px 0 8px;
         justify-self: stretch;
+        overflow: hidden;
         white-space: nowrap;
+        text-overflow: ellipsis;
+        font-family: inherit;
         font-size: 12px;
-        line-height: 46px;
+        line-height: normal;
+        background-image:
+            linear-gradient(45deg, transparent 50%, #dce6df 50%),
+            linear-gradient(135deg, #dce6df 50%, transparent 50%);
+        background-position:
+            calc(100% - 13px) 21px,
+            calc(100% - 8px) 21px;
+        background-size: 5px 5px;
+        background-repeat: no-repeat;
     }
 }
 
