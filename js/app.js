@@ -13637,6 +13637,7 @@ async function initializeAppData() {
         await budgetsLoad;
         renderBudgetTable();
         if (categoriesReady) appDataInitializedForUserId = user.id;
+        window.dispatchEvent(new CustomEvent("finanzas:data-ready"));
         return true;
     })();
 
