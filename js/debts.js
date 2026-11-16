@@ -435,8 +435,18 @@ async function saveDebt(event) {
     setNotice("Deuda guardada correctamente.");
     showToast("Deuda registrada correctamente.");
   } catch (error) {
-    console.error("Error guardando deuda:", error);
-    setNotice(error.message?.includes("currency") ? "La base de datos aún no tiene la columna currency. Ejecuta la migración 20261116_deudas_currency.sql." : "No se pudo guardar la deuda. Revisa la migración y las políticas de Supabase.", true);
+    console.error("Error guardando deuda en Supabase:", {
+      message: error?.message,
+      code: error?.code,
+      details: error?.details,
+      hint: error?.hint,
+      error
+    });
+    const message = error?.message || "Error desconocido al guardar la deuda.";
+    const code = error?.code ? ` [${error.code}]` : "";
+    const details = error?.details ? ` Detalle: ${error.details}` : "";
+    const hint = error?.hint ? ` Sugerencia: ${error.hint}` : "";
+    setNotice(`Supabase: ${message}${code}${details}${hint}`, true);
   } finally {
     submit.disabled = false;
   }
