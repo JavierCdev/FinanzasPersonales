@@ -145,6 +145,7 @@ function toggleFields() {
 
 function openForm() {
   editingDebtId = null;
+  ["debtCurrency","debtOriginalAmount","debtInitialBalance"].forEach(id => { byId(id).disabled = false; });
   form.reset();
   byId("debtFormTitle").textContent = "Nueva deuda";
   form.querySelector('button[type="submit"]').textContent = "Guardar deuda";
@@ -158,6 +159,7 @@ function openForm() {
 function closeForm() {
   panel.hidden = true;
   editingDebtId = null;
+  ["debtCurrency","debtOriginalAmount","debtInitialBalance"].forEach(id => { byId(id).disabled = false; });
   form.reset();
   toggleFields();
 }
