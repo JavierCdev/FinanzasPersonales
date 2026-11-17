@@ -371,10 +371,9 @@ function render() {
 
   const upcoming = all.map(item => ({...item, upcomingDate: item.type === "card" ? item.nextDue : getNextDebtDue(item)}))
     .filter(item => item.is_active !== false && item.upcomingDate)
-    .sort((a,b) => String(a.upcomingDate).localeCompare(String(b.upcomingDate)))
-    .slice(0,5);
+    .sort((a,b) => String(a.upcomingDate).localeCompare(String(b.upcomingDate)));
   byId("debtsUpcomingList").innerHTML = upcoming.length
-    ? upcoming.map(item => `<div class="debt-upcoming-row"><span>${escape(item.name)}</span><strong>${escape(item.upcomingDate)}</strong></div>`).join("")
+    ? upcoming.slice(0,5).map(item => `<div class="debt-upcoming-row"><span>${escape(item.name)}</span><strong>${escape(item.upcomingDate)}</strong></div>`).join("")
     : "No hay vencimientos programados.";
   renderDebtCalendar(upcoming);
 }
