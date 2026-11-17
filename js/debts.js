@@ -10,9 +10,6 @@ const type = document.getElementById("debtType");
 const notice = document.getElementById("debtFormNotice");
 const list = document.getElementById("debtsList");
 const cardSelect = document.getElementById("debtCreditCard");
-const financingCardSelect = byId("debtFinancingCreditCard");
-const financingCategorySelect = byId("debtFinancingCategory");
-const linkFinancingCard = byId("debtLinkCreditCard");
 const search = document.getElementById("debtsSearch");
 const statusFilter = document.getElementById("debtsStatusFilter");
 const typeFilter = document.getElementById("debtsTypeFilter");
@@ -30,6 +27,9 @@ const regular = [
 
 const byId = id => document.getElementById(id);
 const value = id => byId(id)?.value?.trim() || "";
+const financingCardSelect = byId("debtFinancingCreditCard");
+const financingCategorySelect = byId("debtFinancingCategory");
+const linkFinancingCard = byId("debtLinkCreditCard");
 const money = (amount, currency) => formatCurrency(Number(amount) || 0, currency || "GTQ");
 const escape = input => String(input ?? "").replace(/[&<>"']/g, char => ({
   "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
@@ -209,8 +209,9 @@ function openEditForm(debtId) {
   byId("debtDefaultPaymentMethod").value = debt.default_payment_method || "cash";
   populateDefaultPaymentCards(debt.default_credit_card_id);
   const hasPayments = debtPayments.some(payment => String(payment.debt_id) === String(debt.id));
+  const hasInitialCardExpense = Boolean(debt.initial_expense_id);
   ["debtCurrency","debtOriginalAmount","debtInitialBalance"].forEach(id => {
-    byId(id).disabled = hasPayments;
+    byId(id).disabled = hasPayments || (hasInitialCardExpense && ["debtCurrency","debtOriginalAmount"].includes(id));
   });
   byId("debtInitialBalance").value = hasPayments ? debt.current_balance : debt.initial_balance;
   byId("debtFormTitle").textContent = "Editar deuda";
