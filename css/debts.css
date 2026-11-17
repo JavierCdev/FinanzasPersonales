@@ -521,3 +521,10 @@
     .debt-payment-card { padding: 18px; }
     .debt-pay-button { width: 100%; }
 }
+
+.debt-item-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.debt-item-actions button { white-space: nowrap; }
+@media (max-width: 520px) {
+  .debt-item-actions { width: 100%; }
+  .debt-item-actions button { flex: 1 1 130px; }
+}
