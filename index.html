@@ -2209,7 +2209,7 @@
   <section class="panel"><div class="panel-header"><div><h3>Calendario de pagos</h3><p>Organiza tus próximos compromisos.</p></div><button type="button" class="text-button" data-debts-view="calendar">Abrir calendario</button></div><div class="debts-calendar-preview"><strong>Consulta tus fechas de pago</strong><p>Los vencimientos se mostrarán aquí cuando registres tus deudas.</p></div></section>
  </div>
  <div class="panel debts-form-panel" id="debtFormPanel" hidden>
-  <div class="panel-header"><div><h3>Nueva deuda</h3><p>Completa la información de la obligación.</p></div><button type="button" id="debtFormClose" aria-label="Cerrar formulario">×</button></div>
+  <div class="panel-header"><div><h3 id="debtFormTitle">Nueva deuda</h3><p>Completa la información de la obligación.</p></div><button type="button" id="debtFormClose" aria-label="Cerrar formulario">×</button></div>
   <form id="debtForm"><div class="form-grid">
    <div class="form-group"><label for="debtType">Tipo de deuda</label><select id="debtType"><option value="loan">Préstamo</option><option value="financing">Financiamiento</option><option value="card">Tarjeta existente</option></select></div>
    <div class="form-group" id="debtCardField" hidden><label for="debtCreditCard">Tarjeta registrada</label><select id="debtCreditCard"><option value="">Selecciona una tarjeta</option></select></div>
