@@ -10,6 +10,9 @@ const type = document.getElementById("debtType");
 const notice = document.getElementById("debtFormNotice");
 const list = document.getElementById("debtsList");
 const cardSelect = document.getElementById("debtCreditCard");
+const financingCardSelect = byId("debtFinancingCreditCard");
+const financingCategorySelect = byId("debtFinancingCategory");
+const linkFinancingCard = byId("debtLinkCreditCard");
 const search = document.getElementById("debtsSearch");
 const statusFilter = document.getElementById("debtsStatusFilter");
 const typeFilter = document.getElementById("debtsTypeFilter");
@@ -134,6 +137,9 @@ document.addEventListener("click", event => {
 
 function toggleFields() {
   const isCard = type.value === "card";
+  const isFinancing = type.value === "financing";
+  byId("debtFinancingCardToggleField").hidden = !isFinancing;
+  toggleFinancingCardFields();
   byId("debtCardField").hidden = !isCard;
   regular.forEach(id => { byId(id).hidden = isCard; });
   cardSelect.required = isCard;
@@ -143,11 +149,23 @@ function toggleFields() {
   byId("debtStartDate").required = !isCard;
 }
 
+function toggleFinancingCardFields() {
+  const linked = type.value === "financing" && Boolean(linkFinancingCard?.checked);
+  byId("debtFinancingCardField").hidden = !linked;
+  byId("debtFinancingCategoryField").hidden = !linked;
+  byId("debtFinancingRateField").hidden = !linked || value("debtCurrency") !== "USD";
+  financingCardSelect.required = linked;
+  financingCategorySelect.required = linked;
+}
+
 function openForm() {
   editingDebtId = null;
   ["debtCurrency","debtOriginalAmount","debtInitialBalance"].forEach(id => { byId(id).disabled = false; });
   form.reset();
   toggleDefaultPaymentFields();
+  if (linkFinancingCard) linkFinancingCard.checked = false;
+  if (financingCardSelect) financingCardSelect.disabled = false;
+  toggleFinancingCardFields();
   byId("debtFormTitle").textContent = "Nueva deuda";
   form.querySelector('button[type="submit"]').textContent = "Guardar deuda";
   toggleFields();
@@ -160,6 +178,8 @@ function openForm() {
 function closeForm() {
   panel.hidden = true;
   editingDebtId = null;
+  if (linkFinancingCard) linkFinancingCard.disabled = false;
+  if (financingCategorySelect) financingCategorySelect.disabled = false;
   ["debtCurrency","debtOriginalAmount","debtInitialBalance"].forEach(id => { byId(id).disabled = false; });
   form.reset();
   toggleFields();
@@ -183,6 +203,9 @@ function openEditForm(debtId) {
   byId("debtStartDate").value = debt.start_date || "";
   byId("debtFirstPaymentDate").value = debt.first_due_date || "";
   byId("debtNotes").value = debt.notes || "";
+  if (linkFinancingCard) linkFinancingCard.checked = Boolean(debt.credit_card_id);
+  if (financingCardSelect) financingCardSelect.value = debt.credit_card_id ? String(debt.credit_card_id) : "";
+  if (financingCardSelect) financingCardSelect.disabled = Boolean(debt.initial_expense_id);
   byId("debtDefaultPaymentMethod").value = debt.default_payment_method || "cash";
   populateDefaultPaymentCards(debt.default_credit_card_id);
   const hasPayments = debtPayments.some(payment => String(payment.debt_id) === String(debt.id));
@@ -194,6 +217,14 @@ function openEditForm(debtId) {
   form.querySelector('button[type="submit"]').textContent = "Guardar cambios";
   toggleFields();
   toggleDefaultPaymentFields();
+  toggleFinancingCardFields();
+  if (debt.initial_expense_id) {
+    linkFinancingCard.disabled = true;
+    financingCategorySelect.disabled = true;
+    setNotice("Este financiamiento ya generó su compra en la tarjeta. La tarjeta y el monto original quedan protegidos para evitar duplicados.");
+  } else if (linkFinancingCard) {
+    linkFinancingCard.disabled = false;
+  }
   panel.hidden = false;
   setNotice(hasPayments
     ? "Puedes editar los datos y condiciones. La moneda y los saldos quedan bloqueados porque ya existen pagos registrados."
@@ -209,7 +240,22 @@ function populateCards() {
   activeCards.forEach(card => {
     cardSelect.add(new Option(`${card.bank} · ${card.name}`, String(card.id)));
   });
+  if (financingCardSelect) {
+    const selected = financingCardSelect.value;
+    financingCardSelect.replaceChildren(new Option("Selecciona una tarjeta", ""));
+    activeCards.forEach(card => financingCardSelect.add(new Option(`${card.bank} · ${card.name}`, String(card.id))));
+    financingCardSelect.value = selected;
+  }
+  populateFinancingCategories();
   populateDefaultPaymentCards();
+}
+
+function populateFinancingCategories(selectedId = null) {
+  if (!financingCategorySelect) return;
+  const options = (typeof categories !== "undefined" ? categories.expense : []).filter(item => item.active !== false);
+  financingCategorySelect.replaceChildren(new Option("Selecciona una categoría", ""));
+  options.forEach(item => financingCategorySelect.add(new Option(item.name, String(item.id))));
+  if (selectedId) financingCategorySelect.value = String(selectedId);
 }
 
 function populateDefaultPaymentCards(selectedId = null) {
@@ -384,7 +430,7 @@ async function loadDebts() {
   try {
     const { data, error } = await supabaseClient
       .from("deudas")
-      .select("id,type,name,institution,currency,original_amount,initial_balance,current_balance,interest_rate,installment_amount,frequency,start_date,first_due_date,notes,is_active,default_payment_method,default_credit_card_id")
+      .select("id,type,name,institution,currency,original_amount,initial_balance,current_balance,interest_rate,installment_amount,frequency,start_date,first_due_date,notes,is_active,default_payment_method,default_credit_card_id,credit_card_id,initial_expense_id")
       .order("created_at", { ascending: false });
     if (error) throw error;
     debts = data || [];
@@ -573,6 +619,23 @@ async function saveDebt(event) {
     return;
   }
 
+  const linkedCard = type.value === "financing" && Boolean(linkFinancingCard?.checked);
+  const selectedFinancingCard = linkedCard
+    ? (typeof creditCards !== "undefined" ? creditCards.find(card => String(card.id) === value("debtFinancingCreditCard") && card.active !== false) : null)
+    : null;
+  const financingCategory = linkedCard
+    ? (typeof categories !== "undefined" ? categories.expense.find(item => String(item.id) === value("debtFinancingCategory") && item.active !== false) : null)
+    : null;
+  const exchangeRate = currency === "USD" ? Number(value("debtFinancingExchangeRate")) : 1;
+  if (linkedCard && (!selectedFinancingCard || !financingCategory || !Number.isFinite(exchangeRate) || exchangeRate <= 0)) {
+    setNotice("Selecciona una tarjeta, una categoría válida y un tipo de cambio correcto.", true);
+    return;
+  }
+  if (editingDebtId && debts.find(item => String(item.id) === editingDebtId)?.initial_expense_id && linkedCard) {
+    setNotice("Este financiamiento ya tiene una compra registrada en la tarjeta. No se puede volver a generar.", true);
+    return;
+  }
+
   const payload = {
     type: type.value,
     name: value("debtName"),
@@ -610,16 +673,62 @@ async function saveDebt(event) {
   const submit = form.querySelector('button[type="submit"]');
   submit.disabled = true;
   try {
-    const query = editingDebtId
-      ? supabaseClient.from("deudas").update(payload).eq("id", editingDebtId)
-      : supabaseClient.from("deudas").insert(payload);
-    const { data, error } = await query.select().single();
+    let data;
+    let error;
+    if (!editingDebtId && linkedCard) {
+      const debtId = payload.id;
+      const expenseId = createId("expense");
+      const statementDates = getCreditCardStatementDates(startDate, selectedFinancingCard);
+      const amountGTQ = original * exchangeRate;
+      const expense = {
+        id: expenseId,
+        date: startDate,
+        description: payload.name,
+        category_id: financingCategory.id,
+        category_name: financingCategory.name,
+        currency,
+        amount: original,
+        exchange_rate: exchangeRate,
+        amount_gtq: amountGTQ,
+        exchange_rate_source: currency === "USD" ? "Manual" : "N/A",
+        notes: payload.notes || "Compra registrada desde un financiamiento vinculado a tarjeta.",
+        payment_method: "card",
+        credit_card_id: selectedFinancingCard.id,
+        statement_cutoff_date: statementDates.statementCutoffDate,
+        statement_due_date: statementDates.statementDueDate
+      };
+      const response = await supabaseClient.rpc("registrar_financiamiento_con_tarjeta", {
+        p_debt: payload,
+        p_expense: expense,
+        p_credit_card_id: selectedFinancingCard.id
+      });
+      error = response.error;
+      if (!error) {
+        const result = Array.isArray(response.data) ? response.data[0] : response.data;
+        data = result?.debt || result;
+      }
+    } else {
+      const query = editingDebtId
+        ? supabaseClient.from("deudas").update(payload).eq("id", editingDebtId)
+        : supabaseClient.from("deudas").insert(payload);
+      const response = await query.select().single();
+      data = response.data;
+      error = response.error;
+    }
     if (error) throw error;
     const wasEditing = Boolean(editingDebtId);
     if (wasEditing) {
-      debts = debts.map(item => String(item.id) === editingDebtId ? data : item);
+      debts = debts.map(item => String(item.id) === editingDebtId ? { ...item, ...data } : item);
     } else {
       debts.unshift(data);
+    }
+    if (linkedCard) {
+      if (typeof initializeExpenses === "function") await initializeExpenses();
+      if (typeof renderExpenseTable === "function") renderExpenseTable();
+      if (typeof renderCreditCardStatements === "function") renderCreditCardStatements();
+      if (typeof updateDashboard === "function") updateDashboard();
+      if (typeof updateReports === "function") updateReports();
+      await loadDebts();
     }
     render();
     closeForm();
@@ -653,6 +762,8 @@ byId("debtEmptyNewButton")?.addEventListener("click", openForm);
 byId("debtFormClose")?.addEventListener("click", closeForm);
 byId("debtFormCancel")?.addEventListener("click", closeForm);
 type?.addEventListener("change", toggleFields);
+linkFinancingCard?.addEventListener("change", toggleFinancingCardFields);
+byId("debtCurrency")?.addEventListener("change", toggleFinancingCardFields);
 byId("debtDefaultPaymentMethod")?.addEventListener("change", toggleDefaultPaymentFields);
 form?.addEventListener("submit", saveDebt);
 search?.addEventListener("input", render);
