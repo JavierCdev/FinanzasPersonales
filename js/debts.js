@@ -338,7 +338,7 @@ function openPaymentForm(debtId) {
           <div class="form-group"><label for="debtPayCharges">Otros cargos (${debt.currency})</label><input id="debtPayCharges" type="number" min="0" step="0.01" value="0" required></div>
           ${debt.currency === "USD" ? `<div class="form-group"><label for="debtPayRate">Tipo de cambio (GTQ por USD)</label><input id="debtPayRate" type="number" min="0.0001" step="0.0001" value="1" required></div>` : ""}
           <div class="form-group"><label for="debtPayMethod">Método de pago</label><select id="debtPayMethod"><option value="cash">Efectivo / cuenta bancaria</option><option value="card">Tarjeta de crédito</option></select></div>
-          <div class="form-group" id="debtPayAccountGroup"><label for="debtPayAccount">Cuenta de pago</label><select id="debtPayAccount"><option value="">Selecciona una cuenta</option>${accountsList.map(item=>`<option value="${escape(item.id)}">${escape(item.name)}</option>`).join("")}</select></div>
+          <div class="form-group" id="debtPayAccountGroup"><label for="debtPayAccount">Cuenta de pago (opcional)</label><select id="debtPayAccount"><option value="">Selecciona una cuenta</option>${accountsList.map(item=>`<option value="${escape(item.id)}">${escape(item.name)}</option>`).join("")}</select></div>
           <div class="form-group" id="debtPayCardGroup" hidden><label for="debtPayCard">Tarjeta de crédito</label><select id="debtPayCard"><option value="">Selecciona una tarjeta</option>${availableCards.map(item=>`<option value="${escape(item.id)}">${escape(item.bank)} · ${escape(item.name)}</option>`).join("")}</select></div>
           <div class="form-group debts-form-full"><label for="debtPayNotes">Notas (opcional)</label><textarea id="debtPayNotes" rows="2" maxlength="1000"></textarea></div>
         </div>
@@ -360,7 +360,7 @@ function openPaymentForm(debtId) {
     const byCard = methodSelect.value === "card";
     byId("debtPayCardGroup").hidden = !byCard;
     byId("debtPayAccountGroup").hidden = byCard;
-    byId("debtPayAccount").required = !byCard;
+    byId("debtPayAccount").required = false;
     byId("debtPayCard").required = byCard;
   };
   methodSelect.addEventListener("change", togglePaymentMethod);
@@ -394,7 +394,6 @@ function openPaymentForm(debtId) {
     }
     if (!categoryId || !paymentDate) { payNotice.textContent = "Selecciona una categoría y fecha válida."; return; }
     if (paymentMethod === "card" && !creditCardId) { payNotice.textContent = "Selecciona la tarjeta de crédito utilizada."; return; }
-    if (paymentMethod !== "card" && !accountId) { payNotice.textContent = "Selecciona la cuenta desde la que se realizará el pago."; return; }
     if (accountId && !accountsList.some(item=>String(item.id)===accountId)) { payNotice.textContent = "La cuenta seleccionada no corresponde a la moneda de esta deuda."; return; }
     const button = paymentForm.querySelector('button[type="submit"]');
     button.disabled = true;
@@ -402,7 +401,7 @@ function openPaymentForm(debtId) {
     const paymentId = createId("debt-payment");
     const expenseId = createId("expense");
     try {
-      const { data, error } = await supabaseClient.rpc("registrar_pago_deuda", {
+      const commonArgs = {
         p_payment_id: paymentId,
         p_expense_id: expenseId,
         p_debt_id: debt.id,
@@ -415,13 +414,30 @@ function openPaymentForm(debtId) {
         p_currency: debt.currency,
         p_amount: amount,
         p_exchange_rate: rate,
-        p_amount_gtq: amount * rate,
-        p_payment_method: paymentMethod,
-        p_account_id: accountId,
-        p_credit_card_id: creditCardId,
-        p_notes: valueFrom("debtPayNotes"),
-        p_exchange_rate_source: debt.currency === "USD" ? "Manual" : "N/A"
-      });
+        p_amount_gtq: amount * rate
+      };
+      let response;
+      if (paymentMethod === "card") {
+        const selectedCard = availableCards.find(card => String(card.id) === String(creditCardId));
+        if (!selectedCard) throw new Error("No se encontró la tarjeta seleccionada.");
+        const statementDates = getCreditCardStatementDates(paymentDate, selectedCard);
+        response = await supabaseClient.rpc("registrar_pago_deuda_con_tarjeta", {
+          ...commonArgs,
+          p_credit_card_id: creditCardId,
+          p_statement_cutoff_date: statementDates.statementCutoffDate,
+          p_statement_due_date: statementDates.statementDueDate,
+          p_notes: valueFrom("debtPayNotes")
+        });
+      } else {
+        response = await supabaseClient.rpc("registrar_pago_deuda", {
+          ...commonArgs,
+          p_payment_method: "cash",
+          p_account_id: accountId,
+          p_notes: valueFrom("debtPayNotes"),
+          p_exchange_rate_source: debt.currency === "USD" ? "Manual" : "N/A"
+        });
+      }
+      const { data, error } = response;
       if (error) throw error;
       await loadDebts();
       if (typeof initializeExpenses === "function") await initializeExpenses();
