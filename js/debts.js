@@ -147,6 +147,7 @@ function openForm() {
   editingDebtId = null;
   ["debtCurrency","debtOriginalAmount","debtInitialBalance"].forEach(id => { byId(id).disabled = false; });
   form.reset();
+  toggleDefaultPaymentFields();
   byId("debtFormTitle").textContent = "Nueva deuda";
   form.querySelector('button[type="submit"]').textContent = "Guardar deuda";
   toggleFields();
@@ -162,6 +163,7 @@ function closeForm() {
   ["debtCurrency","debtOriginalAmount","debtInitialBalance"].forEach(id => { byId(id).disabled = false; });
   form.reset();
   toggleFields();
+  toggleDefaultPaymentFields();
 }
 
 function openEditForm(debtId) {
@@ -191,6 +193,7 @@ function openEditForm(debtId) {
   byId("debtFormTitle").textContent = "Editar deuda";
   form.querySelector('button[type="submit"]').textContent = "Guardar cambios";
   toggleFields();
+  toggleDefaultPaymentFields();
   panel.hidden = false;
   setNotice(hasPayments
     ? "Puedes editar los datos y condiciones. La moneda y los saldos quedan bloqueados porque ya existen pagos registrados."
@@ -244,14 +247,10 @@ function addFrequency(dateString, frequency, count = 1) {
 
 function getNextDebtDue(debt) {
   if (!debt.first_due_date || !debt.is_active) return null;
-  const payments = debtPayments
-    .filter(payment => String(payment.debt_id) === String(debt.id))
-    .map(payment => String(payment.payment_date))
-    .sort();
-  let next = debt.first_due_date;
-  let guard = 0;
-  while (payments.includes(next) && guard++ < 600) next = addFrequency(next, debt.frequency);
-  return next;
+  const completedInstallments = debtPayments.filter(
+    payment => String(payment.debt_id) === String(debt.id)
+  ).length;
+  return addFrequency(debt.first_due_date, debt.frequency, completedInstallments);
 }
 
 function getCardBalances() {
