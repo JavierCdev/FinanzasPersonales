@@ -324,6 +324,7 @@ function openPaymentForm(debtId) {
   if (!debt) return;
   const categoriesList = (typeof categories !== "undefined" ? categories.expense : []).filter(item => item.active !== false);
   const accountsList = (typeof bankAccounts !== "undefined" ? bankAccounts : []).filter(item => item.isActive && item.currency === debt.currency);
+  const availableCards = (typeof creditCards !== "undefined" ? creditCards : []).filter(item => item.active !== false);
   const overlay = byId("debtPaymentPanel");
   overlay.innerHTML = `
     <div class="debt-payment-card" role="dialog" aria-modal="true" aria-labelledby="debtPaymentTitle">
@@ -336,7 +337,9 @@ function openPaymentForm(debtId) {
           <div class="form-group"><label for="debtPayInterest">Intereses (${debt.currency})</label><input id="debtPayInterest" type="number" min="0" step="0.01" value="0" required></div>
           <div class="form-group"><label for="debtPayCharges">Otros cargos (${debt.currency})</label><input id="debtPayCharges" type="number" min="0" step="0.01" value="0" required></div>
           ${debt.currency === "USD" ? `<div class="form-group"><label for="debtPayRate">Tipo de cambio (GTQ por USD)</label><input id="debtPayRate" type="number" min="0.0001" step="0.0001" value="1" required></div>` : ""}
-          <div class="form-group"><label for="debtPayAccount">Cuenta de pago (opcional)</label><select id="debtPayAccount"><option value="">Efectivo / sin cuenta</option>${accountsList.map(item=>`<option value="${escape(item.id)}">${escape(item.name)}</option>`).join("")}</select></div>
+          <div class="form-group"><label for="debtPayMethod">Método de pago</label><select id="debtPayMethod"><option value="cash">Efectivo / cuenta bancaria</option><option value="card">Tarjeta de crédito</option></select></div>
+          <div class="form-group" id="debtPayAccountGroup"><label for="debtPayAccount">Cuenta de pago</label><select id="debtPayAccount"><option value="">Selecciona una cuenta</option>${accountsList.map(item=>`<option value="${escape(item.id)}">${escape(item.name)}</option>`).join("")}</select></div>
+          <div class="form-group" id="debtPayCardGroup" hidden><label for="debtPayCard">Tarjeta de crédito</label><select id="debtPayCard"><option value="">Selecciona una tarjeta</option>${availableCards.map(item=>`<option value="${escape(item.id)}">${escape(item.bank)} · ${escape(item.name)}</option>`).join("")}</select></div>
           <div class="form-group debts-form-full"><label for="debtPayNotes">Notas (opcional)</label><textarea id="debtPayNotes" rows="2" maxlength="1000"></textarea></div>
         </div>
         <p class="debt-payment-total" id="debtPayTotal">Total del pago: ${money(0,debt.currency)}</p>
@@ -352,6 +355,16 @@ function openPaymentForm(debtId) {
   const suggestedPrincipal = Math.max(0, Math.min(Number(debt.current_balance), Math.round((scheduledPayment - estimatedInterest) * 100) / 100));
   byId("debtPayPrincipal").value = suggestedPrincipal > 0 ? suggestedPrincipal.toFixed(2) : "";
   byId("debtPayInterest").value = estimatedInterest.toFixed(2);
+  const methodSelect = byId("debtPayMethod");
+  const togglePaymentMethod = () => {
+    const byCard = methodSelect.value === "card";
+    byId("debtPayCardGroup").hidden = !byCard;
+    byId("debtPayAccountGroup").hidden = byCard;
+    byId("debtPayAccount").required = !byCard;
+    byId("debtPayCard").required = byCard;
+  };
+  methodSelect.addEventListener("change", togglePaymentMethod);
+  togglePaymentMethod();
   const amountFields = ["debtPayPrincipal","debtPayInterest","debtPayCharges"];
   const total = () => amountFields.reduce((sum,id)=>sum+(Number(byId(id).value)||0),0);
   if (scheduledPayment > 0 && suggestedPrincipal === 0) {
@@ -370,7 +383,9 @@ function openPaymentForm(debtId) {
     const amount = principal + interest + charges;
     const rate = debt.currency === "USD" ? Number(byId("debtPayRate").value) : 1;
     const categoryId = byId("debtPayCategory").value;
-    const accountId = byId("debtPayAccount").value || null;
+    const paymentMethod = byId("debtPayMethod").value;
+    const accountId = paymentMethod === "card" ? null : (byId("debtPayAccount").value || null);
+    const creditCardId = paymentMethod === "card" ? byId("debtPayCard").value : null;
     const paymentDate = byId("debtPayDate").value;
     const payNotice = byId("debtPayNotice");
     if (![principal,interest,charges,amount,rate].every(Number.isFinite) || principal <= 0 || interest < 0 || charges < 0 || amount <= 0 || rate <= 0 || principal > Number(debt.current_balance) + 0.00001) {
@@ -378,6 +393,8 @@ function openPaymentForm(debtId) {
       return;
     }
     if (!categoryId || !paymentDate) { payNotice.textContent = "Selecciona una categoría y fecha válida."; return; }
+    if (paymentMethod === "card" && !creditCardId) { payNotice.textContent = "Selecciona la tarjeta de crédito utilizada."; return; }
+    if (paymentMethod !== "card" && !accountId) { payNotice.textContent = "Selecciona la cuenta desde la que se realizará el pago."; return; }
     if (accountId && !accountsList.some(item=>String(item.id)===accountId)) { payNotice.textContent = "La cuenta seleccionada no corresponde a la moneda de esta deuda."; return; }
     const button = paymentForm.querySelector('button[type="submit"]');
     button.disabled = true;
@@ -399,8 +416,9 @@ function openPaymentForm(debtId) {
         p_amount: amount,
         p_exchange_rate: rate,
         p_amount_gtq: amount * rate,
-        p_payment_method: "cash",
+        p_payment_method: paymentMethod,
         p_account_id: accountId,
+        p_credit_card_id: creditCardId,
         p_notes: valueFrom("debtPayNotes"),
         p_exchange_rate_source: debt.currency === "USD" ? "Manual" : "N/A"
       });
@@ -492,14 +510,15 @@ async function saveDebt(event) {
       : supabaseClient.from("deudas").insert(payload);
     const { data, error } = await query.select().single();
     if (error) throw error;
-    if (editingDebtId) {
+    const wasEditing = Boolean(editingDebtId);
+    if (wasEditing) {
       debts = debts.map(item => String(item.id) === editingDebtId ? data : item);
     } else {
       debts.unshift(data);
     }
     render();
     closeForm();
-    showToast(editingDebtId ? "Deuda actualizada correctamente." : "Deuda registrada correctamente.");
+    showToast(wasEditing ? "Deuda actualizada correctamente." : "Deuda registrada correctamente.");
   } catch (error) {
     console.error("Error guardando deuda en Supabase:", {
       message: error?.message,
