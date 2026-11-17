@@ -181,6 +181,8 @@ function openEditForm(debtId) {
   byId("debtStartDate").value = debt.start_date || "";
   byId("debtFirstPaymentDate").value = debt.first_due_date || "";
   byId("debtNotes").value = debt.notes || "";
+  byId("debtDefaultPaymentMethod").value = debt.default_payment_method || "cash";
+  populateDefaultPaymentCards(debt.default_credit_card_id);
   const hasPayments = debtPayments.some(payment => String(payment.debt_id) === String(debt.id));
   ["debtCurrency","debtOriginalAmount","debtInitialBalance"].forEach(id => {
     byId(id).disabled = hasPayments;
@@ -204,6 +206,52 @@ function populateCards() {
   activeCards.forEach(card => {
     cardSelect.add(new Option(`${card.bank} · ${card.name}`, String(card.id)));
   });
+  populateDefaultPaymentCards();
+}
+
+function populateDefaultPaymentCards(selectedId = null) {
+  const select = byId("debtDefaultCreditCard");
+  if (!select) return;
+  const cards = (typeof creditCards !== "undefined" ? creditCards : []).filter(card => card.active !== false);
+  select.replaceChildren(new Option("Selecciona una tarjeta", ""));
+  cards.forEach(card => select.add(new Option(`${card.bank} · ${card.name}`, String(card.id))));
+  if (selectedId) select.value = String(selectedId);
+}
+
+function toggleDefaultPaymentFields() {
+  const byCard = byId("debtDefaultPaymentMethod")?.value === "card";
+  byId("debtDefaultCardField").hidden = !byCard;
+  byId("debtDefaultCreditCard").required = byCard;
+}
+
+function addFrequency(dateString, frequency, count = 1) {
+  if (!dateString) return null;
+  const date = new Date(`${dateString}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return null;
+  if (frequency === "weekly") date.setDate(date.getDate() + 7 * count);
+  else if (frequency === "biweekly") date.setDate(date.getDate() + 14 * count);
+  else if (frequency === "quarterly") date.setMonth(date.getMonth() + 3 * count);
+  else if (frequency === "yearly") date.setFullYear(date.getFullYear() + count);
+  else {
+    const originalDay = date.getDate();
+    date.setDate(1);
+    date.setMonth(date.getMonth() + count);
+    const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+    date.setDate(Math.min(originalDay, lastDay));
+  }
+  return date.toISOString().slice(0, 10);
+}
+
+function getNextDebtDue(debt) {
+  if (!debt.first_due_date || !debt.is_active) return null;
+  const payments = debtPayments
+    .filter(payment => String(payment.debt_id) === String(debt.id))
+    .map(payment => String(payment.payment_date))
+    .sort();
+  let next = debt.first_due_date;
+  let guard = 0;
+  while (payments.includes(next) && guard++ < 600) next = addFrequency(next, debt.frequency);
+  return next;
 }
 
 function getCardBalances() {
@@ -278,7 +326,7 @@ function render() {
       const balance = Number(item.current_balance ?? item.balance) || 0;
       const currency = item.currency || "GTQ";
       const label = item.type === "card" ? "Tarjeta de crédito" : item.type === "loan" ? "Préstamo" : "Financiamiento";
-      const due = item.nextDue || item.first_due_date;
+      const due = item.type === "card" ? item.nextDue : getNextDebtDue(item);
       return `<article class="debt-item">
         <div class="debt-item-main"><span class="debt-item-type">${label}</span><h3>${escape(item.name)}</h3><p>${escape(item.institution || (item.type === "card" ? "Tarjeta registrada" : ""))}</p></div>
         <div class="debt-item-balance"><span>Saldo pendiente</span><strong>${money(balance, currency)}</strong>${due ? `<small>Próximo vencimiento: ${escape(due)}</small>` : ""}</div>
@@ -287,11 +335,12 @@ function render() {
     }).join("");
   }
 
-  const upcoming = all.filter(item => item.is_active !== false && (item.nextDue || item.first_due_date))
-    .sort((a,b) => String(a.nextDue || a.first_due_date).localeCompare(String(b.nextDue || b.first_due_date)))
+  const upcoming = all.map(item => ({...item, upcomingDate: item.type === "card" ? item.nextDue : getNextDebtDue(item)}))
+    .filter(item => item.is_active !== false && item.upcomingDate)
+    .sort((a,b) => String(a.upcomingDate).localeCompare(String(b.upcomingDate)))
     .slice(0,5);
   byId("debtsUpcomingList").innerHTML = upcoming.length
-    ? upcoming.map(item => `<div class="debt-upcoming-row"><span>${escape(item.name)}</span><strong>${escape(item.nextDue || item.first_due_date)}</strong></div>`).join("")
+    ? upcoming.map(item => `<div class="debt-upcoming-row"><span>${escape(item.name)}</span><strong>${escape(item.upcomingDate)}</strong></div>`).join("")
     : "No hay vencimientos programados.";
 }
 
@@ -301,7 +350,7 @@ async function loadDebts() {
   try {
     const { data, error } = await supabaseClient
       .from("deudas")
-      .select("id,type,name,institution,currency,original_amount,initial_balance,current_balance,interest_rate,installment_amount,frequency,start_date,first_due_date,notes,is_active")
+      .select("id,type,name,institution,currency,original_amount,initial_balance,current_balance,interest_rate,installment_amount,frequency,start_date,first_due_date,notes,is_active,default_payment_method,default_credit_card_id")
       .order("created_at", { ascending: false });
     if (error) throw error;
     debts = data || [];
@@ -358,6 +407,8 @@ function openPaymentForm(debtId) {
   byId("debtPayPrincipal").value = suggestedPrincipal > 0 ? suggestedPrincipal.toFixed(2) : "";
   byId("debtPayInterest").value = estimatedInterest.toFixed(2);
   const methodSelect = byId("debtPayMethod");
+  methodSelect.value = debt.default_payment_method || "cash";
+  if (debt.default_credit_card_id) byId("debtPayCard").value = String(debt.default_credit_card_id);
   const togglePaymentMethod = () => {
     const byCard = methodSelect.value === "card";
     byId("debtPayCardGroup").hidden = !byCard;
@@ -497,7 +548,9 @@ async function saveDebt(event) {
     frequency: value("debtFrequency") || "monthly",
     start_date: startDate,
     first_due_date: firstDue,
-    notes: value("debtNotes") || ""
+    notes: value("debtNotes") || "",
+    default_payment_method: value("debtDefaultPaymentMethod") || "cash",
+    default_credit_card_id: value("debtDefaultPaymentMethod") === "card" ? (value("debtDefaultCreditCard") || null) : null
   };
   if (!editingDebtId) {
     Object.assign(payload, {
@@ -566,6 +619,7 @@ byId("debtEmptyNewButton")?.addEventListener("click", openForm);
 byId("debtFormClose")?.addEventListener("click", closeForm);
 byId("debtFormCancel")?.addEventListener("click", closeForm);
 type?.addEventListener("change", toggleFields);
+byId("debtDefaultPaymentMethod")?.addEventListener("change", toggleDefaultPaymentFields);
 form?.addEventListener("submit", saveDebt);
 search?.addEventListener("input", render);
 statusFilter?.addEventListener("change", render);
@@ -574,6 +628,7 @@ document.querySelectorAll('[data-debts-view="calendar"]').forEach(button => butt
   byId("debtsUpcomingList").scrollIntoView({ behavior: "smooth", block: "center" });
 }));
 toggleFields();
+toggleDefaultPaymentFields();
 window.addEventListener("finanzas:data-ready", () => {
   loadDebts();
   populateCards();
