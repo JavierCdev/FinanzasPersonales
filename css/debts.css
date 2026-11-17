@@ -528,3 +528,13 @@
   .debt-item-actions { width: 100%; }
   .debt-item-actions button { flex: 1 1 130px; }
 }
+
+.debts-calendar-preview { display: grid; gap: 12px; }
+.debts-calendar-preview > strong { color: #e5eee7; text-transform: capitalize; }
+.debts-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; }
+.debt-calendar-weekday { padding: 5px 0; color: #91a29a; font-size: 10px; font-weight: 700; text-align: center; }
+.debt-calendar-day { position: relative; display: flex; align-items: center; justify-content: center; min-height: 34px; border: 1px solid #293a34; border-radius: 8px; background: #192722; color: #dce7df; font-size: 12px; }
+.debt-calendar-day.is-empty { border-color: transparent; background: transparent; }
+.debt-calendar-day.has-event { border-color: #91b94e; background: rgba(185, 231, 102, .12); color: #d9f59c; font-weight: 750; }
+.debt-calendar-day i { position: absolute; top: 2px; right: 4px; color: #d9f59c; font-size: 8px; font-style: normal; }
+.debts-calendar-preview > p { margin: 0; color: #91a29a; font-size: 11px; }
