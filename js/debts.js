@@ -269,6 +269,41 @@ function getCardBalances() {
   });
 }
 
+function renderDebtCalendar(items) {
+  const title = byId("debtsCalendarMonth");
+  const grid = byId("debtsCalendarGrid");
+  const empty = byId("debtsCalendarEmpty");
+  if (!title || !grid) return;
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  title.textContent = new Intl.DateTimeFormat("es-GT", { month: "long", year: "numeric" }).format(now);
+  const headers = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
+  const firstDay = new Date(year, month, 1).getDay();
+  const offset = (firstDay + 6) % 7;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const eventsByDay = new Map();
+  items.forEach(item => {
+    const date = item.upcomingDate;
+    if (!date || !date.startsWith(`${year}-${String(month + 1).padStart(2,"0")}-`)) return;
+    const day = Number(date.slice(8,10));
+    if (!eventsByDay.has(day)) eventsByDay.set(day, []);
+    eventsByDay.get(day).push(item.name);
+  });
+  const cells = [];
+  headers.forEach(day => cells.push(`<span class="debt-calendar-weekday">${day}</span>`));
+  for (let i = 0; i < offset; i++) cells.push('<span class="debt-calendar-day is-empty"></span>');
+  for (let day = 1; day <= daysInMonth; day++) {
+    const names = eventsByDay.get(day) || [];
+    const titleText = names.length ? ` title="${escape(names.join(", "))}"` : "";
+    cells.push(`<span class="debt-calendar-day ${names.length ? "has-event" : ""}"${titleText}><span>${day}</span>${names.length ? `<i>${names.length}</i>` : ""}</span>`);
+  }
+  grid.innerHTML = cells.join("");
+  if (empty) empty.textContent = eventsByDay.size
+    ? "Los números marcados indican vencimientos. Pasa el cursor para ver las deudas."
+    : "No hay vencimientos de deudas este mes.";
+}
+
 function render() {
   const cards = getCardBalances();
   const all = [
@@ -341,6 +376,7 @@ function render() {
   byId("debtsUpcomingList").innerHTML = upcoming.length
     ? upcoming.map(item => `<div class="debt-upcoming-row"><span>${escape(item.name)}</span><strong>${escape(item.upcomingDate)}</strong></div>`).join("")
     : "No hay vencimientos programados.";
+  renderDebtCalendar(upcoming);
 }
 
 async function loadDebts() {
