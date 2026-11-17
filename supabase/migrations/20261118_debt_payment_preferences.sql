@@ -16,4 +16,13 @@ create index if not exists idx_deudas_default_credit_card
   on public.deudas(default_credit_card_id)
   where default_credit_card_id is not null;
 
+alter table public.deudas
+  drop constraint if exists deudas_default_credit_card_fkey;
+
+alter table public.deudas
+  add constraint deudas_default_credit_card_fkey
+  foreign key (default_credit_card_id)
+  references public.tarjetas_credito(id)
+  on delete set null;
+
 commit;
