@@ -17,6 +17,7 @@ const typeFilter = document.getElementById("debtsTypeFilter");
 let debts = [];
 let debtPayments = [];
 let loading = false;
+let editingDebtId = null;
 
 const regular = [
   "debtNameField", "debtInstitutionField", "debtOriginalAmountField",
@@ -143,7 +144,10 @@ function toggleFields() {
 }
 
 function openForm() {
+  editingDebtId = null;
   form.reset();
+  byId("debtFormTitle").textContent = "Nueva deuda";
+  form.querySelector('button[type="submit"]').textContent = "Guardar deuda";
   toggleFields();
   setNotice("Completa los datos para registrar el préstamo o financiamiento.");
   panel.hidden = false;
@@ -153,8 +157,42 @@ function openForm() {
 
 function closeForm() {
   panel.hidden = true;
+  editingDebtId = null;
   form.reset();
   toggleFields();
+}
+
+function openEditForm(debtId) {
+  const debt = debts.find(item => String(item.id) === String(debtId));
+  if (!debt) return;
+  editingDebtId = String(debt.id);
+  form.reset();
+  type.value = debt.type;
+  byId("debtName").value = debt.name || "";
+  byId("debtInstitution").value = debt.institution || "";
+  byId("debtCurrency").value = debt.currency || "GTQ";
+  byId("debtOriginalAmount").value = debt.original_amount ?? "";
+  byId("debtInitialBalance").value = debt.current_balance ?? "";
+  byId("debtInterestRate").value = debt.interest_rate ?? 0;
+  byId("debtInstallment").value = debt.installment_amount ?? "";
+  byId("debtFrequency").value = debt.frequency || "monthly";
+  byId("debtStartDate").value = debt.start_date || "";
+  byId("debtFirstPaymentDate").value = debt.first_due_date || "";
+  byId("debtNotes").value = debt.notes || "";
+  const hasPayments = debtPayments.some(payment => String(payment.debt_id) === String(debt.id));
+  ["debtCurrency","debtOriginalAmount","debtInitialBalance"].forEach(id => {
+    byId(id).disabled = hasPayments;
+  });
+  byId("debtInitialBalance").value = hasPayments ? debt.current_balance : debt.initial_balance;
+  byId("debtFormTitle").textContent = "Editar deuda";
+  form.querySelector('button[type="submit"]').textContent = "Guardar cambios";
+  toggleFields();
+  panel.hidden = false;
+  setNotice(hasPayments
+    ? "Puedes editar los datos y condiciones. La moneda y los saldos quedan bloqueados porque ya existen pagos registrados."
+    : "Actualiza la información de esta deuda.");
+  panel.scrollIntoView({ behavior: "smooth", block: "start" });
+  byId("debtName").focus();
 }
 
 function populateCards() {
@@ -242,7 +280,7 @@ function render() {
       return `<article class="debt-item">
         <div class="debt-item-main"><span class="debt-item-type">${label}</span><h3>${escape(item.name)}</h3><p>${escape(item.institution || (item.type === "card" ? "Tarjeta registrada" : ""))}</p></div>
         <div class="debt-item-balance"><span>Saldo pendiente</span><strong>${money(balance, currency)}</strong>${due ? `<small>Próximo vencimiento: ${escape(due)}</small>` : ""}</div>
-        ${item.type === "card" ? "" : `<button type="button" class="secondary-button debt-pay-button" data-debt-pay="${escape(item.id)}">Registrar pago</button>`}
+        ${item.type === "card" ? "" : `<div class="debt-item-actions"><button type="button" class="secondary-button" data-debt-edit="${escape(item.id)}">Editar</button><button type="button" class="secondary-button debt-pay-button" data-debt-pay="${escape(item.id)}">Registrar pago</button></div>`}
       </article>`;
     }).join("");
   }
@@ -308,8 +346,17 @@ function openPaymentForm(debtId) {
     </div>`;
   overlay.hidden = false;
   const paymentForm = byId("debtPaymentForm");
+  const periodsPerYear = debt.frequency === "weekly" ? 52 : debt.frequency === "biweekly" ? 26 : debt.frequency === "quarterly" ? 4 : debt.frequency === "yearly" ? 1 : 12;
+  const estimatedInterest = Math.round((Number(debt.current_balance) * (Number(debt.interest_rate) / 100) / periodsPerYear) * 100) / 100;
+  const scheduledPayment = Number(debt.installment_amount) || 0;
+  const suggestedPrincipal = Math.max(0, Math.min(Number(debt.current_balance), Math.round((scheduledPayment - estimatedInterest) * 100) / 100));
+  byId("debtPayPrincipal").value = suggestedPrincipal > 0 ? suggestedPrincipal.toFixed(2) : "";
+  byId("debtPayInterest").value = estimatedInterest.toFixed(2);
   const amountFields = ["debtPayPrincipal","debtPayInterest","debtPayCharges"];
   const total = () => amountFields.reduce((sum,id)=>sum+(Number(byId(id).value)||0),0);
+  if (scheduledPayment > 0 && suggestedPrincipal === 0) {
+    byId("debtPayNotice").textContent = "La cuota establecida no cubre los intereses estimados del período. Revisa el monto de la cuota.";
+  }
   const updateTotal = () => { byId("debtPayTotal").textContent = "Total del pago: " + money(total(),debt.currency); };
   amountFields.forEach(id=>byId(id).addEventListener("input",updateTotal));
   const close = () => { overlay.hidden = true; overlay.replaceChildren(); };
@@ -406,34 +453,53 @@ async function saveDebt(event) {
   }
 
   const payload = {
-    id: createId("debt"),
-    user_id: user.id,
     type: type.value,
     name: value("debtName"),
     institution: value("debtInstitution") || null,
-    currency,
-    original_amount: original,
-    initial_balance: balance,
-    current_balance: balance,
     interest_rate: interest,
     installment_amount: installment,
     frequency: value("debtFrequency") || "monthly",
     start_date: startDate,
     first_due_date: firstDue,
-    notes: value("debtNotes") || "",
-    is_active: balance > 0
+    notes: value("debtNotes") || ""
   };
+  if (!editingDebtId) {
+    Object.assign(payload, {
+      id: createId("debt"),
+      user_id: user.id,
+      currency,
+      original_amount: original,
+      initial_balance: balance,
+      current_balance: balance,
+      is_active: balance > 0
+    });
+  } else {
+    const hasPayments = debtPayments.some(payment => String(payment.debt_id) === editingDebtId);
+    if (!hasPayments) Object.assign(payload, {
+      currency,
+      original_amount: original,
+      initial_balance: balance,
+      current_balance: balance,
+      is_active: balance > 0
+    });
+  }
 
   const submit = form.querySelector('button[type="submit"]');
   submit.disabled = true;
   try {
-    const { data, error } = await supabaseClient.from("deudas").insert(payload).select().single();
+    const query = editingDebtId
+      ? supabaseClient.from("deudas").update(payload).eq("id", editingDebtId)
+      : supabaseClient.from("deudas").insert(payload);
+    const { data, error } = await query.select().single();
     if (error) throw error;
-    debts.unshift(data);
+    if (editingDebtId) {
+      debts = debts.map(item => String(item.id) === editingDebtId ? data : item);
+    } else {
+      debts.unshift(data);
+    }
     render();
     closeForm();
-    setNotice("Deuda guardada correctamente.");
-    showToast("Deuda registrada correctamente.");
+    showToast(editingDebtId ? "Deuda actualizada correctamente." : "Deuda registrada correctamente.");
   } catch (error) {
     console.error("Error guardando deuda en Supabase:", {
       message: error?.message,
@@ -453,8 +519,10 @@ async function saveDebt(event) {
 }
 
 list.addEventListener("click", event => {
-  const button = event.target.closest("[data-debt-pay]");
-  if (button) openPaymentForm(button.dataset.debtPay);
+  const editButton = event.target.closest("[data-debt-edit]");
+  if (editButton) { openEditForm(editButton.dataset.debtEdit); return; }
+  const payButton = event.target.closest("[data-debt-pay]");
+  if (payButton) openPaymentForm(payButton.dataset.debtPay);
 });
 byId("debtNewButton")?.addEventListener("click", openForm);
 byId("debtEmptyNewButton")?.addEventListener("click", openForm);
