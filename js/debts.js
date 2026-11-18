@@ -411,7 +411,7 @@ function render() {
       return `<article class="debt-item">
         <div class="debt-item-main"><span class="debt-item-type">${label}</span><h3>${escape(item.name)}</h3><p>${escape(item.institution || (item.type === "card" ? "Tarjeta registrada" : ""))}</p></div>
         <div class="debt-item-balance"><span>Saldo pendiente</span><strong>${money(balance, currency)}</strong>${due ? `<small>Próximo vencimiento: ${escape(due)}</small>` : ""}</div>
-        ${item.type === "card" ? "" : `<div class="debt-item-actions"><button type="button" class="secondary-button" data-debt-edit="${escape(item.id)}">Editar</button><button type="button" class="secondary-button debt-pay-button" data-debt-pay="${escape(item.id)}">Registrar pago</button></div>`}
+        ${item.type === "card" ? "" : `<div class="debt-item-actions"><button type="button" class="secondary-button" data-debt-edit="${escape(item.id)}">Editar</button><button type="button" class="secondary-button" data-debt-history="${escape(item.id)}">Pagos anteriores</button><button type="button" class="secondary-button debt-pay-button" data-debt-pay="${escape(item.id)}">Registrar pago</button></div>`}
       </article>`;
     }).join("");
   }
@@ -449,6 +449,76 @@ async function loadDebts() {
   } finally {
     loading = false;
   }
+}
+
+function openHistoricalPaymentForm(debtId) {
+  const debt = debts.find(item => String(item.id) === String(debtId));
+  if (!debt) return;
+  const overlay = byId("debtPaymentPanel");
+  overlay.innerHTML = `
+    <div class="debt-payment-card" role="dialog" aria-modal="true" aria-labelledby="debtHistoricalTitle">
+      <div class="debt-payment-header"><div><span class="debt-item-type">Importar historial</span><h3 id="debtHistoricalTitle">${escape(debt.name)}</h3><p>Saldo actual: <strong>${money(debt.current_balance, debt.currency)}</strong></p></div><button type="button" class="debt-payment-close" aria-label="Cerrar">×</button></div>
+      <form id="debtHistoricalForm">
+        <div class="form-grid">
+          <div class="form-group"><label for="debtHistoryDate">Fecha del pago anterior</label><input id="debtHistoryDate" type="date" required></div>
+          <div class="form-group"><label for="debtHistoryPrincipal">Capital amortizado (${debt.currency})</label><input id="debtHistoryPrincipal" type="number" min="0.01" step="0.01" required></div>
+          <div class="form-group"><label for="debtHistoryInterest">Intereses pagados (${debt.currency})</label><input id="debtHistoryInterest" type="number" min="0" step="0.01" value="0" required></div>
+          <div class="form-group"><label for="debtHistoryCharges">Otros cargos (${debt.currency})</label><input id="debtHistoryCharges" type="number" min="0" step="0.01" value="0" required></div>
+          <div class="form-group debts-form-full"><label for="debtHistoryNotes">Nota (opcional)</label><textarea id="debtHistoryNotes" rows="2" maxlength="1000" placeholder="Ej. Pago realizado antes de registrar la deuda"></textarea></div>
+        </div>
+        <p class="debt-payment-total" id="debtHistoryTotal">Total del pago: ${money(0,debt.currency)}</p>
+        <p class="debts-form-notice" id="debtHistoryNotice" role="status">Este registro actualiza el saldo por el capital amortizado y no crea un gasto nuevo.</p>
+        <div class="debts-form-actions"><button type="button" class="secondary-button debt-payment-cancel">Cancelar</button><button type="submit" class="primary-button">Guardar pago anterior</button></div>
+      </form>
+    </div>`;
+  overlay.hidden = false;
+  const close = () => { overlay.hidden = true; overlay.replaceChildren(); };
+  overlay.querySelector(".debt-payment-close").addEventListener("click", close);
+  overlay.querySelector(".debt-payment-cancel").addEventListener("click", close);
+  const fields = ["debtHistoryPrincipal","debtHistoryInterest","debtHistoryCharges"];
+  const updateTotal = () => {
+    const total = fields.reduce((sum,id)=>sum+(Number(byId(id).value)||0),0);
+    byId("debtHistoryTotal").textContent = "Total del pago: " + money(total,debt.currency);
+  };
+  fields.forEach(id=>byId(id).addEventListener("input",updateTotal));
+  byId("debtHistoricalForm").addEventListener("submit", async event => {
+    event.preventDefault();
+    const principal=Number(byId("debtHistoryPrincipal").value);
+    const interest=Number(byId("debtHistoryInterest").value);
+    const charges=Number(byId("debtHistoryCharges").value);
+    const paymentDate=byId("debtHistoryDate").value;
+    const notice=byId("debtHistoryNotice");
+    if(!paymentDate || ![principal,interest,charges].every(Number.isFinite) || principal<=0 || interest<0 || charges<0) {
+      notice.textContent="Revisa la fecha y los importes del pago.";
+      return;
+    }
+    if(principal>Number(debt.current_balance)+0.00001) {
+      notice.textContent="El capital amortizado no puede superar el saldo pendiente.";
+      return;
+    }
+    const button=event.currentTarget.querySelector('button[type="submit"]');
+    button.disabled=true;
+    notice.textContent="Guardando pago anterior…";
+    try {
+      const {error}=await supabaseClient.rpc("registrar_pago_historico_deuda",{
+        p_payment_id:createId("debt-payment"),
+        p_debt_id:debt.id,
+        p_payment_date:paymentDate,
+        p_principal_amount:principal,
+        p_interest_amount:interest,
+        p_charges_amount:charges,
+        p_notes:valueFrom("debtHistoryNotes")
+      });
+      if(error) throw error;
+      await loadDebts();
+      close();
+      showToast("Pago anterior registrado. El saldo se actualizó por el capital amortizado.");
+    } catch(error) {
+      console.error("Error registrando pago histórico:",error);
+      notice.textContent=error.message || "No se pudo registrar el pago anterior.";
+      button.disabled=false;
+    }
+  });
 }
 
 function openPaymentForm(debtId) {
@@ -755,6 +825,8 @@ async function saveDebt(event) {
 list.addEventListener("click", event => {
   const editButton = event.target.closest("[data-debt-edit]");
   if (editButton) { openEditForm(editButton.dataset.debtEdit); return; }
+  const historyButton = event.target.closest("[data-debt-history]");
+  if (historyButton) { openHistoricalPaymentForm(historyButton.dataset.debtHistory); return; }
   const payButton = event.target.closest("[data-debt-pay]");
   if (payButton) openPaymentForm(payButton.dataset.debtPay);
 });
