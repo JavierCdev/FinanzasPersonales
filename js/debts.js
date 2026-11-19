@@ -859,9 +859,48 @@ form?.addEventListener("submit", saveDebt);
 search?.addEventListener("input", render);
 statusFilter?.addEventListener("change", render);
 typeFilter?.addEventListener("change", render);
-document.querySelectorAll('[data-debts-view="calendar"]').forEach(button => button.addEventListener("click", () => {
-  byId("debtsUpcomingList").scrollIntoView({ behavior: "smooth", block: "center" });
-}));
+const calendarPanel = byId("debtsCalendarGrid")?.closest(".panel");
+const upcomingPanel = byId("debtsUpcomingList")?.closest(".panel");
+
+document.querySelectorAll('[data-debts-view="calendar"]').forEach(button => {
+  button.addEventListener("click", () => {
+    if (button.textContent.toLowerCase().includes("ver calendario")) {
+      calendarPanel?.scrollIntoView({ behavior: "smooth", block: "center" });
+      byId("debtsCalendarGrid")?.focus?.({ preventScroll: true });
+      return;
+    }
+
+    const existing = document.getElementById("debtsCalendarDialog");
+    if (existing) existing.remove();
+
+    const overlay = document.createElement("div");
+    overlay.id = "debtsCalendarDialog";
+    overlay.className = "debts-calendar-dialog";
+    overlay.innerHTML = `
+      <section class="debts-calendar-dialog-card" role="dialog" aria-modal="true" aria-labelledby="debtsCalendarDialogTitle">
+        <header class="debts-calendar-dialog-header">
+          <div><span>PLANIFICACIÓN</span><h3 id="debtsCalendarDialogTitle">Calendario de pagos</h3></div>
+          <button type="button" class="debts-calendar-dialog-close" aria-label="Cerrar calendario">×</button>
+        </header>
+        <div class="debts-calendar-dialog-month"></div>
+        <div class="debts-calendar-dialog-grid"></div>
+        <p class="debts-calendar-dialog-note">Las fechas marcadas indican vencimientos registrados para este mes.</p>
+      </section>`;
+    overlay.querySelector(".debts-calendar-dialog-month").textContent = byId("debtsCalendarMonth")?.textContent || "";
+    overlay.querySelector(".debts-calendar-dialog-grid").innerHTML = byId("debtsCalendarGrid")?.innerHTML || "";
+    document.body.appendChild(overlay);
+    const close = () => overlay.remove();
+    overlay.querySelector(".debts-calendar-dialog-close").addEventListener("click", close);
+    overlay.addEventListener("click", event => { if (event.target === overlay) close(); });
+    document.addEventListener("keydown", function onEscape(event) {
+      if (event.key === "Escape" && document.getElementById("debtsCalendarDialog")) {
+        close();
+        document.removeEventListener("keydown", onEscape);
+      }
+    });
+    overlay.querySelector(".debts-calendar-dialog-close").focus();
+  });
+});
 toggleFields();
 toggleDefaultPaymentFields();
 window.addEventListener("finanzas:data-ready", () => {
