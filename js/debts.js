@@ -320,24 +320,45 @@ let calendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
 let calendarEvents = [];
 
 function buildCalendarEvents(items) {
-  const events = [];
+  const uniqueEvents = new Map();
   const today = new Date();
+  const firstVisibleMonth = new Date(today.getFullYear(), today.getMonth(), 1);
   const horizon = new Date(today.getFullYear(), today.getMonth() + 18, 1);
+
   items.forEach(item => {
     let due = item.upcomingDate;
     if (!due) return;
+
     const isRecurring = item.type !== "card";
     let guard = 0;
+
     while (due && guard++ < 24) {
       const dueDate = new Date(`${due}T12:00:00`);
-      if (dueDate >= new Date(today.getFullYear(), today.getMonth(), 1) && dueDate < horizon) {
-        events.push({ ...item, date: due });
+      if (Number.isNaN(dueDate.getTime())) break;
+
+      if (dueDate >= firstVisibleMonth && dueDate < horizon) {
+        // Una deuda solo puede generar un vencimiento por fecha.
+        const eventKey = `${item.type}:${String(item.id)}:${due}`;
+        if (!uniqueEvents.has(eventKey)) {
+          uniqueEvents.set(eventKey, { ...item, date: due });
+        }
       }
+
       if (!isRecurring || dueDate >= horizon) break;
-      due = addFrequency(due, item.frequency || "monthly", 1);
+
+      const nextDue = addFrequency(due, item.frequency || "monthly", 1);
+
+      // Protección contra frecuencias inválidas que no avanzan la fecha.
+      if (!nextDue || nextDue <= due) break;
+
+      due = nextDue;
     }
   });
-  return events;
+
+  return [...uniqueEvents.values()].sort((a, b) =>
+    a.date.localeCompare(b.date) ||
+    String(a.name).localeCompare(String(b.name))
+  );
 }
 
 function formatCalendarMonth(date) {
