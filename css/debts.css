@@ -873,3 +873,74 @@
     font-size: 12px;
   }
 }
+
+
+/* Calendario interactivo */
+.debt-calendar-heading {
+  display: grid;
+  grid-template-columns: 38px minmax(0,1fr) 38px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+.debt-calendar-heading strong,
+.debts-calendar-dialog-month {
+  color: #edf3ee;
+  text-align: center;
+  text-transform: capitalize;
+  font-size: 15px;
+  font-weight: 750;
+}
+.debt-calendar-nav {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid #35483e;
+  border-radius: 11px;
+  background: #22332b;
+  color: #d8f59b;
+  cursor: pointer;
+  font-size: 25px;
+  line-height: 1;
+}
+.debt-calendar-nav:hover { background: #30483a; border-color: #6f925a; }
+.debt-calendar-day {
+  width: 100%;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+}
+.debt-calendar-day[aria-pressed="true"] {
+  outline: 2px solid #c7ec75;
+  outline-offset: 1px;
+  background: #2c4435;
+}
+.debt-calendar-day:focus-visible,
+.debt-calendar-nav:focus-visible {
+  outline: 2px solid #d8f59b;
+  outline-offset: 2px;
+}
+.debt-calendar-selection {
+  min-height: 44px;
+  padding: 12px 14px;
+  border: 1px solid #2d4036;
+  border-radius: 12px;
+  background: rgba(10,20,16,.28);
+  color: #9eafa4;
+  font-size: 12px;
+}
+.debt-calendar-selection > strong { display:block; margin-bottom:8px; color:#d8f59b; text-transform:capitalize; }
+.debt-calendar-selection ul { display:grid; gap:7px; margin:0; padding:0; list-style:none; }
+.debt-calendar-selection li { display:flex; justify-content:space-between; gap:12px; color:#e3ebe4; }
+.debt-calendar-selection li b { color:#d8f59b; white-space:nowrap; }
+.debts-calendar-dialog-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:8px; }
+.debts-calendar-dialog-grid .debt-calendar-day { min-height:clamp(48px,6vw,64px); }
+.debts-calendar-dialog-card .debt-calendar-heading { margin:4px 0 18px; }
+@media(max-width:600px) {
+  .debt-calendar-heading { grid-template-columns:34px minmax(0,1fr) 34px; gap:6px; }
+  .debt-calendar-nav { width:34px; height:34px; }
+  .debts-calendar-grid { gap:4px; }
+  .debt-calendar-day { min-height:38px; }
+  .debts-calendar-dialog-grid { gap:4px; }
+}
