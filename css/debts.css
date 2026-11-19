@@ -538,3 +538,116 @@
 .debt-calendar-day.has-event { border-color: #91b94e; background: rgba(185, 231, 102, .12); color: #d9f59c; font-weight: 750; }
 .debt-calendar-day i { position: absolute; top: 2px; right: 4px; color: #d9f59c; font-size: 8px; font-style: normal; }
 .debts-calendar-preview > p { margin: 0; color: #91a29a; font-size: 11px; }
+
+
+/* Ajustes de presentación del calendario y paneles secundarios */
+.debts-secondary-grid {
+  align-items: start;
+  grid-auto-rows: auto;
+}
+
+.debts-secondary-grid > .panel {
+  align-self: start;
+  height: auto;
+  min-height: 0;
+}
+
+.debts-secondary-grid .panel-header {
+  min-width: 0;
+}
+
+.debts-calendar-preview {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.debts-calendar-preview > strong {
+  display: block;
+  text-align: center;
+  font-size: 15px;
+}
+
+.debts-calendar-grid {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: clamp(5px, 1vw, 9px);
+}
+
+.debt-calendar-weekday,
+.debt-calendar-day {
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.debt-calendar-day {
+  min-height: 42px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.debts-calendar-preview > p {
+  text-align: center;
+  line-height: 1.5;
+}
+
+.debt-upcoming-row {
+  min-width: 0;
+  gap: 16px;
+  padding: 13px 4px;
+}
+
+.debt-upcoming-name {
+  min-width: 0;
+  line-height: 1.45;
+}
+
+.debt-upcoming-meta {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.debt-upcoming-meta small {
+  color: #91a29a;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.debt-upcoming-meta strong {
+  color: #c7ec75;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.debt-upcoming-row.is-overdue .debt-upcoming-meta small,
+.debt-item-balance small.is-overdue {
+  color: #f0a19a;
+}
+
+.debt-upcoming-row.is-overdue .debt-upcoming-meta strong {
+  color: #f0a19a;
+}
+
+@media (max-width: 600px) {
+  .debts-secondary-grid {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .debts-secondary-grid > .panel {
+    width: 100%;
+  }
+
+  .debt-calendar-day {
+    min-height: 38px;
+  }
+}
