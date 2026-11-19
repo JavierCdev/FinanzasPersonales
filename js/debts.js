@@ -316,39 +316,136 @@ function getCardBalances() {
   });
 }
 
+let calendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+let calendarEvents = [];
+
+function buildCalendarEvents(items) {
+  const events = [];
+  const today = new Date();
+  const horizon = new Date(today.getFullYear(), today.getMonth() + 18, 1);
+  items.forEach(item => {
+    let due = item.upcomingDate;
+    if (!due) return;
+    const isRecurring = item.type !== "card";
+    let guard = 0;
+    while (due && guard++ < 24) {
+      const dueDate = new Date(`${due}T12:00:00`);
+      if (dueDate >= new Date(today.getFullYear(), today.getMonth(), 1) && dueDate < horizon) {
+        events.push({ ...item, date: due });
+      }
+      if (!isRecurring || dueDate >= horizon) break;
+      due = addFrequency(due, item.frequency || "monthly", 1);
+    }
+  });
+  return events;
+}
+
+function formatCalendarMonth(date) {
+  return new Intl.DateTimeFormat("es-GT", { month: "long", year: "numeric" }).format(date);
+}
+
+function drawCalendarGrid(grid, monthDate) {
+  if (!grid) return;
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const offset = (firstDay + 6) % 7;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const byDay = new Map();
+  calendarEvents.forEach(item => {
+    if (!item.date.startsWith(`${year}-${String(month + 1).padStart(2, "0")}-`)) return;
+    const day = Number(item.date.slice(8, 10));
+    if (!byDay.has(day)) byDay.set(day, []);
+    byDay.get(day).push(item);
+  });
+
+  const cells = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"]
+    .map(day => `<span class="debt-calendar-weekday">${day}</span>`);
+  for (let i = 0; i < offset; i++) cells.push('<span class="debt-calendar-day is-empty" aria-hidden="true"></span>');
+  for (let day = 1; day <= daysInMonth; day++) {
+    const entries = byDay.get(day) || [];
+    const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const names = entries.map(item => item.name).join(", ");
+    cells.push(`<button type="button" class="debt-calendar-day ${entries.length ? "has-event" : ""}" data-calendar-date="${dateKey}" aria-label="${day} ${formatCalendarMonth(monthDate)}${entries.length ? ": " + escape(names) : ""}" aria-pressed="false"><span>${day}</span>${entries.length ? `<i>${entries.length}</i>` : ""}</button>`);
+  }
+  grid.innerHTML = cells.join("");
+  grid.querySelectorAll("[data-calendar-date]").forEach(button => {
+    button.addEventListener("click", () => {
+      grid.querySelectorAll("[data-calendar-date]").forEach(item => item.setAttribute("aria-pressed", "false"));
+      button.setAttribute("aria-pressed", "true");
+      const selected = calendarEvents.filter(item => item.date === button.dataset.calendarDate);
+      const target = grid.parentElement.querySelector(".debt-calendar-selection");
+      if (target) {
+        target.innerHTML = selected.length
+          ? `<strong>${escape(new Intl.DateTimeFormat("es-GT", { dateStyle: "long", timeZone: "UTC" }).format(new Date(`${button.dataset.calendarDate}T12:00:00Z`)))}</strong><ul>${selected.map(item => `<li><span>${escape(item.name)}</span><b>${escape(money(item.installment_amount || item.balance || item.current_balance || 0, item.currency || "GTQ"))}</b></li>`).join("")}</ul>`
+          : `<span>Sin vencimientos para este día.</span>`;
+      }
+    });
+  });
+}
+
 function renderDebtCalendar(items) {
+  calendarEvents = buildCalendarEvents(items);
   const title = byId("debtsCalendarMonth");
   const grid = byId("debtsCalendarGrid");
   const empty = byId("debtsCalendarEmpty");
   if (!title || !grid) return;
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  title.textContent = new Intl.DateTimeFormat("es-GT", { month: "long", year: "numeric" }).format(now);
-  const headers = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
-  const firstDay = new Date(year, month, 1).getDay();
-  const offset = (firstDay + 6) % 7;
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const eventsByDay = new Map();
-  items.forEach(item => {
-    const date = item.upcomingDate;
-    if (!date || !date.startsWith(`${year}-${String(month + 1).padStart(2,"0")}-`)) return;
-    const day = Number(date.slice(8,10));
-    if (!eventsByDay.has(day)) eventsByDay.set(day, []);
-    eventsByDay.get(day).push(item.name);
+  title.textContent = formatCalendarMonth(calendarMonth);
+  drawCalendarGrid(grid, calendarMonth);
+  if (empty) empty.textContent = "Seleccioná un día para consultar sus vencimientos.";
+  const prev = byId("debtsCalendarPrev");
+  const next = byId("debtsCalendarNext");
+  if (prev) prev.disabled = false;
+  if (next) next.disabled = false;
+}
+
+function openDebtCalendar() {
+  const existing = document.getElementById("debtsCalendarDialog");
+  if (existing) existing.remove();
+  const overlay = document.createElement("div");
+  overlay.id = "debtsCalendarDialog";
+  overlay.className = "debts-calendar-dialog";
+  overlay.innerHTML = `
+    <section class="debts-calendar-dialog-card" role="dialog" aria-modal="true" aria-labelledby="debtsCalendarDialogTitle">
+      <header class="debts-calendar-dialog-header">
+        <div><span>PLANIFICACIÓN</span><h3 id="debtsCalendarDialogTitle">Calendario de pagos</h3></div>
+        <button type="button" class="debts-calendar-dialog-close" aria-label="Cerrar calendario">×</button>
+      </header>
+      <div class="debt-calendar-heading">
+        <button type="button" class="debt-calendar-nav" data-calendar-prev aria-label="Mes anterior">‹</button>
+        <strong class="debts-calendar-dialog-month"></strong>
+        <button type="button" class="debt-calendar-nav" data-calendar-next aria-label="Mes siguiente">›</button>
+      </div>
+      <div class="debts-calendar-dialog-grid"></div>
+      <div class="debt-calendar-selection">Seleccioná un día para ver los pagos.</div>
+    </section>`;
+  document.body.appendChild(overlay);
+  const grid = overlay.querySelector(".debts-calendar-dialog-grid");
+  const monthLabel = overlay.querySelector(".debts-calendar-dialog-month");
+  const paint = () => {
+    monthLabel.textContent = formatCalendarMonth(calendarMonth);
+    drawCalendarGrid(grid, calendarMonth);
+  };
+  overlay.querySelector("[data-calendar-prev]").addEventListener("click", () => {
+    calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1);
+    paint();
   });
-  const cells = [];
-  headers.forEach(day => cells.push(`<span class="debt-calendar-weekday">${day}</span>`));
-  for (let i = 0; i < offset; i++) cells.push('<span class="debt-calendar-day is-empty"></span>');
-  for (let day = 1; day <= daysInMonth; day++) {
-    const names = eventsByDay.get(day) || [];
-    const titleText = names.length ? ` title="${escape(names.join(", "))}"` : "";
-    cells.push(`<span class="debt-calendar-day ${names.length ? "has-event" : ""}"${titleText}><span>${day}</span>${names.length ? `<i>${names.length}</i>` : ""}</span>`);
-  }
-  grid.innerHTML = cells.join("");
-  if (empty) empty.textContent = eventsByDay.size
-    ? "Los números marcados indican vencimientos. Pasa el cursor para ver las deudas."
-    : "No hay vencimientos de deudas este mes.";
+  overlay.querySelector("[data-calendar-next]").addEventListener("click", () => {
+    calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1);
+    paint();
+  });
+  const close = () => overlay.remove();
+  overlay.querySelector(".debts-calendar-dialog-close").addEventListener("click", close);
+  overlay.addEventListener("click", event => { if (event.target === overlay) close(); });
+  const onEscape = event => {
+    if (event.key === "Escape" && document.getElementById("debtsCalendarDialog")) {
+      close();
+      document.removeEventListener("keydown", onEscape);
+    }
+  };
+  document.addEventListener("keydown", onEscape);
+  paint();
+  overlay.querySelector(".debts-calendar-dialog-close").focus();
 }
 
 function render() {
@@ -859,47 +956,16 @@ form?.addEventListener("submit", saveDebt);
 search?.addEventListener("input", render);
 statusFilter?.addEventListener("change", render);
 typeFilter?.addEventListener("change", render);
-const calendarPanel = byId("debtsCalendarGrid")?.closest(".panel");
-const upcomingPanel = byId("debtsUpcomingList")?.closest(".panel");
-
+byId("debtsCalendarPrev")?.addEventListener("click", () => {
+  calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1);
+  renderDebtCalendar(calendarEvents);
+});
+byId("debtsCalendarNext")?.addEventListener("click", () => {
+  calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1);
+  renderDebtCalendar(calendarEvents);
+});
 document.querySelectorAll('[data-debts-view="calendar"]').forEach(button => {
-  button.addEventListener("click", () => {
-    if (button.textContent.toLowerCase().includes("ver calendario")) {
-      calendarPanel?.scrollIntoView({ behavior: "smooth", block: "center" });
-      byId("debtsCalendarGrid")?.focus?.({ preventScroll: true });
-      return;
-    }
-
-    const existing = document.getElementById("debtsCalendarDialog");
-    if (existing) existing.remove();
-
-    const overlay = document.createElement("div");
-    overlay.id = "debtsCalendarDialog";
-    overlay.className = "debts-calendar-dialog";
-    overlay.innerHTML = `
-      <section class="debts-calendar-dialog-card" role="dialog" aria-modal="true" aria-labelledby="debtsCalendarDialogTitle">
-        <header class="debts-calendar-dialog-header">
-          <div><span>PLANIFICACIÓN</span><h3 id="debtsCalendarDialogTitle">Calendario de pagos</h3></div>
-          <button type="button" class="debts-calendar-dialog-close" aria-label="Cerrar calendario">×</button>
-        </header>
-        <div class="debts-calendar-dialog-month"></div>
-        <div class="debts-calendar-dialog-grid"></div>
-        <p class="debts-calendar-dialog-note">Las fechas marcadas indican vencimientos registrados para este mes.</p>
-      </section>`;
-    overlay.querySelector(".debts-calendar-dialog-month").textContent = byId("debtsCalendarMonth")?.textContent || "";
-    overlay.querySelector(".debts-calendar-dialog-grid").innerHTML = byId("debtsCalendarGrid")?.innerHTML || "";
-    document.body.appendChild(overlay);
-    const close = () => overlay.remove();
-    overlay.querySelector(".debts-calendar-dialog-close").addEventListener("click", close);
-    overlay.addEventListener("click", event => { if (event.target === overlay) close(); });
-    document.addEventListener("keydown", function onEscape(event) {
-      if (event.key === "Escape" && document.getElementById("debtsCalendarDialog")) {
-        close();
-        document.removeEventListener("keydown", onEscape);
-      }
-    });
-    overlay.querySelector(".debts-calendar-dialog-close").focus();
-  });
+  button.addEventListener("click", openDebtCalendar);
 });
 toggleFields();
 toggleDefaultPaymentFields();
