@@ -410,19 +410,36 @@ function render() {
       const due = item.type === "card" ? item.nextDue : getNextDebtDue(item);
       return `<article class="debt-item">
         <div class="debt-item-main"><span class="debt-item-type">${label}</span><h3>${escape(item.name)}</h3><p>${escape(item.institution || (item.type === "card" ? "Tarjeta registrada" : ""))}</p></div>
-        <div class="debt-item-balance"><span>Saldo pendiente</span><strong>${money(balance, currency)}</strong>${due ? `<small>Próximo vencimiento: ${escape(due)}</small>` : ""}</div>
+        <div class="debt-item-balance"><span>Saldo pendiente</span><strong>${money(balance, currency)}</strong>${due ? `<small class="${due < new Date().toISOString().slice(0,10) ? "is-overdue" : ""}">${due < new Date().toISOString().slice(0,10) ? "Vencido desde" : "Próximo vencimiento"}: ${escape(due)}</small>` : ""}</div>
         ${item.type === "card" ? "" : `<div class="debt-item-actions"><button type="button" class="secondary-button" data-debt-edit="${escape(item.id)}">Editar</button><button type="button" class="secondary-button" data-debt-history="${escape(item.id)}">Pagos anteriores</button><button type="button" class="secondary-button debt-pay-button" data-debt-pay="${escape(item.id)}">Registrar pago</button></div>`}
       </article>`;
     }).join("");
   }
 
-  const upcoming = all.map(item => ({...item, upcomingDate: item.type === "card" ? item.nextDue : getNextDebtDue(item)}))
-    .filter(item => item.is_active !== false && item.upcomingDate)
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const dueItems = all.map(item => ({
+    ...item,
+    upcomingDate: item.type === "card" ? item.nextDue : getNextDebtDue(item)
+  })).filter(item => item.is_active !== false && item.upcomingDate);
+  const overdue = dueItems
+    .filter(item => item.upcomingDate < todayKey)
     .sort((a,b) => String(a.upcomingDate).localeCompare(String(b.upcomingDate)));
-  byId("debtsUpcomingList").innerHTML = upcoming.length
-    ? upcoming.slice(0,5).map(item => `<div class="debt-upcoming-row"><span>${escape(item.name)}</span><strong>${escape(item.upcomingDate)}</strong></div>`).join("")
-    : "No hay vencimientos programados.";
-  renderDebtCalendar(upcoming);
+  const upcoming = dueItems
+    .filter(item => item.upcomingDate >= todayKey)
+    .sort((a,b) => String(a.upcomingDate).localeCompare(String(b.upcomingDate)));
+  const visibleDueItems = [...overdue, ...upcoming];
+  byId("debtsUpcomingList").innerHTML = visibleDueItems.length
+    ? visibleDueItems.slice(0,5).map(item => {
+        const isOverdue = item.upcomingDate < todayKey;
+        const dateLabel = new Intl.DateTimeFormat("es-GT", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" })
+          .format(new Date(`${item.upcomingDate}T12:00:00Z`));
+        return `<div class="debt-upcoming-row ${isOverdue ? "is-overdue" : ""}">
+          <span class="debt-upcoming-name">${escape(item.name)}</span>
+          <span class="debt-upcoming-meta"><small>${isOverdue ? "Vencido" : "Próximo"}</small><strong>${escape(dateLabel)}</strong></span>
+        </div>`;
+      }).join("")
+    : "No hay vencimientos pendientes.";
+  renderDebtCalendar(visibleDueItems);
 }
 
 async function loadDebts() {
