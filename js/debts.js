@@ -586,6 +586,122 @@ async function loadDebts() {
   }
 }
 
+function mountDebtDatePicker(inputId, { min = "", max = "" } = {}) {
+  const input = byId(inputId);
+  if (!input || input.dataset.customDatePicker === "true") return;
+
+  input.dataset.customDatePicker = "true";
+  input.type = "hidden";
+  input.required = false;
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "debt-date-picker";
+  wrapper.innerHTML = `
+    <button type="button" class="debt-date-trigger" aria-haspopup="dialog" aria-expanded="false">
+      <span class="debt-date-value">Seleccionar fecha</span>
+      <span aria-hidden="true">▦</span>
+    </button>
+    <div class="debt-date-popover" hidden>
+      <div class="debt-date-popover-head">
+        <button type="button" data-date-prev aria-label="Mes anterior">‹</button>
+        <strong></strong>
+        <button type="button" data-date-next aria-label="Mes siguiente">›</button>
+      </div>
+      <div class="debt-date-popover-grid"></div>
+      <div class="debt-date-popover-foot">
+        <button type="button" data-date-clear>Limpiar</button>
+        <button type="button" data-date-today>Hoy</button>
+      </div>
+    </div>`;
+
+  input.insertAdjacentElement("afterend", wrapper);
+  const trigger = wrapper.querySelector(".debt-date-trigger");
+  const valueLabel = wrapper.querySelector(".debt-date-value");
+  const popover = wrapper.querySelector(".debt-date-popover");
+  const monthLabel = wrapper.querySelector(".debt-date-popover-head strong");
+  const grid = wrapper.querySelector(".debt-date-popover-grid");
+  let viewMonth = input.value
+    ? new Date(input.value + "T12:00:00")
+    : new Date();
+  viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), 1);
+
+  const iso = date => [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0")
+  ].join("-");
+
+  const display = value => value
+    ? new Intl.DateTimeFormat("es-GT", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" })
+        .format(new Date(value + "T12:00:00Z"))
+    : "Seleccionar fecha";
+
+  const paint = () => {
+    monthLabel.textContent = formatCalendarMonth(viewMonth);
+    const year = viewMonth.getFullYear();
+    const month = viewMonth.getMonth();
+    const offset = (new Date(year, month, 1).getDay() + 6) % 7;
+    const count = new Date(year, month + 1, 0).getDate();
+    const cells = ["Lu","Ma","Mi","Ju","Vi","Sa","Do"]
+      .map(day => `<span class="debt-date-weekday">${day}</span>`);
+    for (let i = 0; i < offset; i++) cells.push('<span class="debt-date-day is-empty"></span>');
+    for (let day = 1; day <= count; day++) {
+      const date = new Date(year, month, day);
+      const key = iso(date);
+      const disabled = (min && key < min) || (max && key > max);
+      cells.push(`<button type="button" class="debt-date-day ${input.value === key ? "is-selected" : ""}" data-date-value="${key}" ${disabled ? "disabled" : ""}>${day}</button>`);
+    }
+    grid.innerHTML = cells.join("");
+    grid.querySelectorAll("[data-date-value]").forEach(button => {
+      button.addEventListener("click", () => selectDate(button.dataset.dateValue));
+    });
+  };
+
+  const selectDate = value => {
+    input.value = value;
+    valueLabel.textContent = display(value);
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+    popover.hidden = true;
+    trigger.setAttribute("aria-expanded", "false");
+    paint();
+  };
+
+  trigger.addEventListener("click", () => {
+    const opening = popover.hidden;
+    document.querySelectorAll(".debt-date-popover").forEach(item => item.hidden = true);
+    popover.hidden = !opening;
+    trigger.setAttribute("aria-expanded", String(opening));
+    if (opening) paint();
+  });
+
+  wrapper.querySelector("[data-date-prev]").addEventListener("click", () => {
+    viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1);
+    paint();
+  });
+  wrapper.querySelector("[data-date-next]").addEventListener("click", () => {
+    viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1);
+    paint();
+  });
+  wrapper.querySelector("[data-date-clear]").addEventListener("click", () => selectDate(""));
+  wrapper.querySelector("[data-date-today]").addEventListener("click", () => {
+    const today = iso(new Date());
+    if ((!min || today >= min) && (!max || today <= max)) {
+      viewMonth = new Date();
+      selectDate(today);
+    }
+  });
+
+  document.addEventListener("click", event => {
+    if (!wrapper.contains(event.target)) {
+      popover.hidden = true;
+      trigger.setAttribute("aria-expanded", "false");
+    }
+  });
+
+  valueLabel.textContent = display(input.value);
+  paint();
+}
+
 function openHistoricalPaymentForm(debtId) {
   const debt = debts.find(item => String(item.id) === String(debtId));
   if (!debt) return;
@@ -607,6 +723,10 @@ function openHistoricalPaymentForm(debtId) {
       </form>
     </div>`;
   overlay.hidden = false;
+  mountDebtDatePicker("debtHistoryDate", {
+    min: debt.start_date || "",
+    max: new Date().toISOString().slice(0, 10)
+  });
   const close = () => { overlay.hidden = true; overlay.replaceChildren(); };
   overlay.querySelector(".debt-payment-close").addEventListener("click", close);
   overlay.querySelector(".debt-payment-cancel").addEventListener("click", close);
@@ -685,6 +805,10 @@ function openPaymentForm(debtId) {
       </form>
     </div>`;
   overlay.hidden = false;
+  mountDebtDatePicker("debtPayDate", {
+    min: debt.start_date || "",
+    max: new Date().toISOString().slice(0, 10)
+  });
   const paymentForm = byId("debtPaymentForm");
   const periodsPerYear = debt.frequency === "weekly" ? 52 : debt.frequency === "biweekly" ? 26 : debt.frequency === "quarterly" ? 4 : debt.frequency === "yearly" ? 1 : 12;
   const estimatedInterest = Math.round((Number(debt.current_balance) * (Number(debt.interest_rate) / 100) / periodsPerYear) * 100) / 100;
