@@ -367,38 +367,73 @@ function formatCalendarMonth(date) {
 
 function drawCalendarGrid(grid, monthDate) {
   if (!grid) return;
+
   const year = monthDate.getFullYear();
   const month = monthDate.getMonth();
-  const firstDay = new Date(year, month, 1).getDay();
-  const offset = (firstDay + 6) % 7;
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const byDay = new Map();
+  const firstOfMonth = new Date(year, month, 1);
+  const offset = (firstOfMonth.getDay() + 6) % 7;
+  const gridStart = new Date(year, month, 1 - offset);
+  const byDate = new Map();
+
   calendarEvents.forEach(item => {
-    if (!item.date.startsWith(`${year}-${String(month + 1).padStart(2, "0")}-`)) return;
-    const day = Number(item.date.slice(8, 10));
-    if (!byDay.has(day)) byDay.set(day, []);
-    byDay.get(day).push(item);
+    if (!byDate.has(item.date)) byDate.set(item.date, []);
+    byDate.get(item.date).push(item);
   });
+
+  const iso = date =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
   const cells = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"]
     .map(day => `<span class="debt-calendar-weekday">${day}</span>`);
-  for (let i = 0; i < offset; i++) cells.push('<span class="debt-calendar-day is-empty" aria-hidden="true"></span>');
-  for (let day = 1; day <= daysInMonth; day++) {
-    const entries = byDay.get(day) || [];
-    const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    const names = entries.map(item => item.name).join(", ");
-    cells.push(`<button type="button" class="debt-calendar-day ${entries.length ? "has-event" : ""}" data-calendar-date="${dateKey}" aria-label="${day} ${formatCalendarMonth(monthDate)}${entries.length ? ": " + escape(names) : ""}" aria-pressed="false"><span>${day}</span>${entries.length ? `<i>${entries.length}</i>` : ""}</button>`);
+
+  // Se muestran siempre seis semanas para conservar una cuadrícula estable.
+  for (let index = 0; index < 42; index++) {
+    const date = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + index);
+    const dateKey = iso(date);
+    const dayEntries = byDate.get(dateKey) || [];
+    const outsideMonth = date.getMonth() !== month;
+    const names = dayEntries.map(item => item.name).join(", ");
+    const selectedDate = grid.dataset.selectedDate === dateKey;
+
+    cells.push(`
+      <button
+        type="button"
+        class="debt-calendar-day ${outsideMonth ? "is-outside-month" : ""} ${dayEntries.length ? "has-event" : ""}"
+        data-calendar-date="${dateKey}"
+        aria-label="${date.getDate()} ${formatCalendarMonth(date)}${dayEntries.length ? ": " + escape(names) : ""}"
+        aria-pressed="${selectedDate ? "true" : "false"}">
+        <span>${date.getDate()}</span>
+        ${dayEntries.length ? `<i>${dayEntries.length}</i>` : ""}
+      </button>
+    `);
   }
+
   grid.innerHTML = cells.join("");
+
   grid.querySelectorAll("[data-calendar-date]").forEach(button => {
     button.addEventListener("click", () => {
-      grid.querySelectorAll("[data-calendar-date]").forEach(item => item.setAttribute("aria-pressed", "false"));
-      button.setAttribute("aria-pressed", "true");
-      const selected = calendarEvents.filter(item => item.date === button.dataset.calendarDate);
+      grid.dataset.selectedDate = button.dataset.calendarDate;
+      grid.querySelectorAll("[data-calendar-date]").forEach(item => {
+        item.setAttribute("aria-pressed", String(item === button));
+      });
+
+      const selected = byDate.get(button.dataset.calendarDate) || [];
       const target = grid.parentElement.querySelector(".debt-calendar-selection");
+
       if (target) {
         target.innerHTML = selected.length
-          ? `<strong>${escape(new Intl.DateTimeFormat("es-GT", { dateStyle: "long", timeZone: "UTC" }).format(new Date(`${button.dataset.calendarDate}T12:00:00Z`)))}</strong><ul>${selected.map(item => `<li><span>${escape(item.name)}</span><b>${escape(money(item.installment_amount || item.balance || item.current_balance || 0, item.currency || "GTQ"))}</b></li>`).join("")}</ul>`
+          ? `<strong>${escape(new Intl.DateTimeFormat("es-GT", {
+              dateStyle: "long",
+              timeZone: "UTC"
+            }).format(new Date(`${button.dataset.calendarDate}T12:00:00Z`)))}</strong>
+            <ul>${selected.map(item => `
+              <li>
+                <span>${escape(item.name)}</span>
+                <b>${escape(money(
+                  item.installment_amount || item.balance || item.current_balance || 0,
+                  item.currency || "GTQ"
+                ))}</b>
+              </li>`).join("")}</ul>`
           : `<span>Sin vencimientos para este día.</span>`;
       }
     });
