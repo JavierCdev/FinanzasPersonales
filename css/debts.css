@@ -1002,3 +1002,75 @@
   display:flex; justify-content:space-between; margin-top:12px;
 }
 .debt-date-popover-foot button { padding:0 12px; color:#c7ec75; font-size:12px; }
+
+
+/* Vista mensual compacta: evitar que el calendario domine la tarjeta */
+.debts-calendar-preview {
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.debts-calendar-preview .debt-calendar-heading,
+.debts-calendar-preview .debts-calendar-grid,
+.debts-calendar-preview .debt-calendar-selection {
+  width: min(100%, 500px) !important;
+  max-width: 500px;
+}
+
+.debts-calendar-preview .debt-calendar-heading {
+  grid-template-columns: 30px minmax(0,1fr) 30px;
+  gap: 10px;
+  margin: 0 auto 2px;
+}
+
+.debts-calendar-preview .debt-calendar-nav {
+  width: 30px;
+  height: 30px;
+  font-size: 19px;
+}
+
+.debts-calendar-preview .debt-calendar-heading strong {
+  font-size: 13px;
+}
+
+.debts-calendar-preview .debts-calendar-grid {
+  grid-template-columns: repeat(7, minmax(0,1fr));
+  gap: 3px;
+  margin: 0 auto;
+}
+
+.debts-calendar-preview .debt-calendar-weekday {
+  padding: 3px 0 5px;
+  font-size: 9px;
+}
+
+.debts-calendar-preview .debt-calendar-day {
+  min-height: 34px !important;
+  height: 34px;
+  border-radius: 7px;
+  font-size: 11px;
+}
+
+.debts-calendar-preview .debt-calendar-day.has-event i {
+  top: 4px;
+  right: 5px;
+  width: 4px;
+  height: 4px;
+}
+
+.debts-calendar-preview .debt-calendar-selection {
+  min-height: 34px;
+  padding: 8px 10px;
+  font-size: 10px;
+}
+
+.debts-calendar-preview #debtsCalendarEmpty {
+  display: none !important;
+}
+
+@media (max-width: 600px) {
+  .debts-calendar-preview .debt-calendar-day {
+    min-height: 32px !important;
+    height: 32px;
+  }
+}
