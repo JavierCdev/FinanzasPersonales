@@ -944,3 +944,61 @@
   .debt-calendar-day { min-height:38px; }
   .debts-calendar-dialog-grid { gap:4px; }
 }
+
+
+/* Selector de fecha compartido para pagos de deudas */
+.debt-date-picker { position:relative; width:100%; }
+.debt-date-picker > input[type="hidden"] { display:none !important; }
+.debt-date-trigger {
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  width:100%; min-height:52px; padding:0 16px;
+  border:1px solid #34483e; border-radius:12px;
+  background:#1d2d26; color:#e7eee8; cursor:pointer;
+  font:inherit; text-align:left;
+}
+.debt-date-trigger:hover,
+.debt-date-trigger[aria-expanded="true"] { border-color:#8aaa60; }
+.debt-date-trigger > span:last-child { color:#c7ec75; font-size:19px; }
+.debt-date-popover {
+  position:absolute; z-index:1300; top:calc(100% + 8px); left:0;
+  width:min(310px, calc(100vw - 48px)); padding:14px;
+  border:1px solid #3a5144; border-radius:15px;
+  background:#17251f; box-shadow:0 18px 48px rgba(0,0,0,.42);
+}
+.debt-date-popover[hidden] { display:none !important; }
+.debt-date-popover-head {
+  display:grid; grid-template-columns:34px 1fr 34px;
+  align-items:center; gap:8px; margin-bottom:12px;
+}
+.debt-date-popover-head strong {
+  color:#eaf2eb; text-align:center; text-transform:capitalize;
+  font-size:13px;
+}
+.debt-date-popover-head button,
+.debt-date-popover-foot button {
+  min-width:32px; min-height:32px; border:1px solid #34483e;
+  border-radius:9px; background:#22352b; color:#c7ec75; cursor:pointer;
+}
+.debt-date-popover-grid {
+  display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:4px;
+}
+.debt-date-weekday {
+  padding:5px 0; color:#91a398; text-align:center;
+  font-size:10px; font-weight:700;
+}
+.debt-date-day {
+  display:grid; place-items:center; min-width:0; height:34px;
+  border:1px solid transparent; border-radius:8px;
+  background:transparent; color:#e4ece5; cursor:pointer;
+  font:inherit; font-size:12px;
+}
+.debt-date-day:hover:not(:disabled) { background:#2b4034; }
+.debt-date-day.is-selected {
+  border-color:#c7ec75; background:#344b35; color:#f0ffd4;
+}
+.debt-date-day:disabled { opacity:.28; cursor:not-allowed; }
+.debt-date-day.is-empty { pointer-events:none; }
+.debt-date-popover-foot {
+  display:flex; justify-content:space-between; margin-top:12px;
+}
+.debt-date-popover-foot button { padding:0 12px; color:#c7ec75; font-size:12px; }
