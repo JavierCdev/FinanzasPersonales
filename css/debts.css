@@ -1297,3 +1297,52 @@
     min-height: 34px !important;
   }
 }
+
+
+/* Mejor legibilidad y continuidad de la cuadrícula mensual */
+.debts-calendar-preview .debts-calendar-grid {
+  width: min(100%, 470px) !important;
+  max-width: 470px !important;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.debts-calendar-preview .debt-calendar-day {
+  height: 40px;
+  min-height: 40px !important;
+  border-radius: 9px;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.debts-calendar-preview .debt-calendar-day.is-outside-month {
+  background: transparent;
+  border-color: transparent;
+  color: #71847a;
+  opacity: .72;
+}
+
+.debts-calendar-preview .debt-calendar-day.is-outside-month:hover {
+  background: rgba(37, 55, 45, .35);
+  border-color: #405447;
+  opacity: 1;
+}
+
+.debts-calendar-preview .debt-calendar-day.is-outside-month.has-event {
+  background: rgba(159, 196, 94, .08);
+  border-color: rgba(199, 236, 117, .22);
+  color: #a8c77c;
+}
+
+.debts-calendar-preview .debt-calendar-day[aria-pressed="true"] {
+  outline: 1px solid #c7ec75;
+  outline-offset: 1px;
+  background: #304a37;
+}
+
+@media (max-width: 600px) {
+  .debts-calendar-preview .debt-calendar-day {
+    height: 36px;
+    min-height: 36px !important;
+  }
+}
