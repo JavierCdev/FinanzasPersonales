@@ -1415,3 +1415,170 @@
     max-width: 470px !important;
   }
 }
+
+
+/* Dashboard de vencimientos: proporciones y ritmo visual unificados */
+.debts-secondary-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  align-items: stretch !important;
+  gap: 16px !important;
+}
+
+.debts-secondary-grid > .panel {
+  display: flex !important;
+  flex-direction: column !important;
+  align-self: stretch !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  padding: 20px 22px !important;
+  border-radius: 18px !important;
+}
+
+.debts-secondary-grid > .panel .panel-header {
+  flex: 0 0 auto;
+  margin-bottom: 12px !important;
+}
+
+.debts-secondary-grid > .panel .panel-header h3 {
+  font-size: 15px !important;
+}
+
+.debts-secondary-grid > .panel .panel-header p {
+  margin-top: 5px !important;
+  font-size: 11px !important;
+}
+
+/* Próximos vencimientos: filas uniformes y sin huecos arbitrarios */
+.debts-secondary-grid > .panel:first-child #debtsUpcomingList {
+  display: flex !important;
+  flex: 1 1 auto !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  min-height: 0 !important;
+  gap: 0 !important;
+}
+
+.debts-secondary-grid > .panel:first-child #debtsUpcomingList .debt-upcoming-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 14px !important;
+  min-height: 0 !important;
+  padding: 12px 2px !important;
+}
+
+.debts-secondary-grid > .panel:first-child #debtsUpcomingList .debt-upcoming-name {
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+  text-align: left !important;
+}
+
+.debts-secondary-grid > .panel:first-child #debtsUpcomingList .debt-upcoming-meta {
+  min-width: 96px !important;
+  gap: 3px !important;
+}
+
+.debts-secondary-grid > .panel:first-child #debtsUpcomingList .debt-upcoming-meta small {
+  font-size: 9px !important;
+}
+
+.debts-secondary-grid > .panel:first-child #debtsUpcomingList .debt-upcoming-meta strong {
+  font-size: 11px !important;
+}
+
+/* Calendario: escala fija y centrada, sin estirarse con la tarjeta */
+.debts-secondary-grid > .panel:last-child .debts-calendar-preview {
+  display: flex !important;
+  flex: 1 1 auto !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 9px !important;
+  width: 100% !important;
+  min-height: 0 !important;
+}
+
+.debts-secondary-grid > .panel:last-child .debt-calendar-heading,
+.debts-secondary-grid > .panel:last-child #debtsCalendarGrid,
+.debts-secondary-grid > .panel:last-child .debt-calendar-selection {
+  width: min(100%, 440px) !important;
+  max-width: 440px !important;
+  margin-inline: auto !important;
+  box-sizing: border-box !important;
+}
+
+.debts-secondary-grid > .panel:last-child .debt-calendar-heading {
+  display: grid !important;
+  grid-template-columns: 30px minmax(0,1fr) 30px !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin-bottom: 0 !important;
+}
+
+.debts-secondary-grid > .panel:last-child .debt-calendar-heading strong {
+  font-size: 13px !important;
+}
+
+.debts-secondary-grid > .panel:last-child .debt-calendar-nav {
+  width: 30px !important;
+  height: 30px !important;
+  min-height: 30px !important;
+}
+
+.debts-secondary-grid > .panel:last-child #debtsCalendarGrid {
+  display: grid !important;
+  grid-template-columns: repeat(7, minmax(0,1fr)) !important;
+  gap: 4px !important;
+}
+
+.debts-secondary-grid > .panel:last-child #debtsCalendarGrid .debt-calendar-weekday {
+  height: 20px !important;
+  padding: 2px 0 !important;
+  font-size: 9px !important;
+}
+
+.debts-secondary-grid > .panel:last-child #debtsCalendarGrid .debt-calendar-day {
+  display: grid !important;
+  place-items: center !important;
+  width: 100% !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  padding: 0 !important;
+  border-radius: 8px !important;
+  font-size: 11px !important;
+}
+
+.debts-secondary-grid > .panel:last-child .debt-calendar-selection {
+  min-height: 32px !important;
+  padding: 7px 10px !important;
+  font-size: 10px !important;
+  line-height: 1.35 !important;
+}
+
+.debts-secondary-grid > .panel:last-child #debtsCalendarEmpty {
+  display: none !important;
+}
+
+@media (max-width: 760px) {
+  .debts-secondary-grid {
+    grid-template-columns: minmax(0,1fr) !important;
+    align-items: start !important;
+    gap: 14px !important;
+  }
+
+  .debts-secondary-grid > .panel {
+    padding: 18px !important;
+  }
+
+  .debts-secondary-grid > .panel:last-child .debts-calendar-preview {
+    flex: 0 0 auto !important;
+  }
+
+  .debts-secondary-grid > .panel:last-child #debtsCalendarGrid .debt-calendar-day {
+    height: 34px !important;
+    min-height: 34px !important;
+  }
+}
