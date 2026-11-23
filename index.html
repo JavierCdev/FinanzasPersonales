@@ -15,7 +15,7 @@
 <link
     rel="stylesheet"
     href="css/styles.css">
-<link rel="stylesheet" href="css/debts.css?v=20261123-emerald-dashboard">
+<link rel="stylesheet" href="css/debts.css?v=20261123-calendar-inner-compact-cards">
 </head>
 
 <body>
@@ -2221,10 +2221,12 @@
     <button type="button" class="text-button debts-panel-action" data-debts-view="calendar"><span aria-hidden="true">↗</span> Abrir calendario</button>
    </div>
    <div class="debts-calendar-preview">
-    <div class="debt-calendar-heading"><button type="button" class="debt-calendar-nav" id="debtsCalendarPrev" aria-label="Mes anterior">‹</button><strong id="debtsCalendarMonth">Calendario de pagos</strong><button type="button" class="debt-calendar-nav" id="debtsCalendarNext" aria-label="Mes siguiente">›</button></div>
-    <div id="debtsCalendarGrid" class="debts-calendar-grid"></div>
-    <div class="debt-calendar-selection">Seleccioná un día para consultar sus vencimientos.</div>
-    <p id="debtsCalendarEmpty">Seleccioná un día para consultar sus vencimientos.</p>
+    <div class="debts-calendar-inner">
+     <div class="debt-calendar-heading"><button type="button" class="debt-calendar-nav" id="debtsCalendarPrev" aria-label="Mes anterior">‹</button><strong id="debtsCalendarMonth">Calendario de pagos</strong><button type="button" class="debt-calendar-nav" id="debtsCalendarNext" aria-label="Mes siguiente">›</button></div>
+     <div id="debtsCalendarGrid" class="debts-calendar-grid"></div>
+     <div class="debt-calendar-selection">Seleccioná un día para consultar sus vencimientos.</div>
+     <p id="debtsCalendarEmpty">Seleccioná un día para consultar sus vencimientos.</p>
+    </div>
    </div>
    <div class="debts-calendar-legend" aria-label="Leyenda del calendario"><span><i class="is-selected"></i> Seleccionado</span><span><i class="is-due"></i> Con vencimiento</span><span><i class="is-soon"></i> Próximo a vencer</span><span><i class="is-overdue"></i> Vencido</span></div>
   </section>
