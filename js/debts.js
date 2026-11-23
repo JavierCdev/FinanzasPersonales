@@ -586,10 +586,13 @@ function render() {
         const isOverdue = item.upcomingDate < todayKey;
         const dateLabel = new Intl.DateTimeFormat("es-GT", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" })
           .format(new Date(`${item.upcomingDate}T12:00:00Z`));
-        return `<div class="debt-upcoming-row ${isOverdue ? "is-overdue" : ""}">
-          <span class="debt-upcoming-name">${escape(item.name)}</span>
-          <span class="debt-upcoming-meta"><small>${isOverdue ? "Vencido" : "Próximo"}</small><strong>${escape(dateLabel)}</strong></span>
-        </div>`;
+        const kind = item.type === "card" ? "card" : item.type === "financing" ? "financing" : "loan";
+        const dueAmount = Number(item.installment_amount || 0);
+        return `<article class="debt-upcoming-row ${isOverdue ? "is-overdue" : ""} ${kind}">
+          <span class="debt-upcoming-icon" aria-hidden="true">${kind === "card" ? "▤" : kind === "financing" ? "⌂" : "↗"}</span>
+          <span class="debt-upcoming-info"><strong class="debt-upcoming-name">${escape(item.name)}</strong><small class="debt-upcoming-kind">${kind === "card" ? "Tarjeta de crédito" : kind === "financing" ? "Financiamiento" : "Préstamo"} · ${item.frequency === "weekly" ? "Cuota semanal" : item.frequency === "biweekly" ? "Cuota quincenal" : "Cuota mensual"}</small></span>
+          <span class="debt-upcoming-meta"><small>${isOverdue ? "Vencido" : "Próximo"}</small><strong>${escape(dateLabel)}</strong>${dueAmount > 0 ? `<em>${escape(money(dueAmount, item.currency || "GTQ"))}</em>` : ""}</span>
+        </article>`;
       }).join("")
     : "No hay vencimientos pendientes.";
   renderDebtCalendar(visibleDueItems);
