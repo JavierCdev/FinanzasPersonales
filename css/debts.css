@@ -750,6 +750,7 @@
   place-items: center;
   justify-self: start;
   margin: 0;
+  transform: translateY(-8px);
 }
 .debts-calendar-dialog .debt-calendar-heading > .debt-calendar-nav:last-child {
   justify-self: end;
