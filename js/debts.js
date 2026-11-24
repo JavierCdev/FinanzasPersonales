@@ -590,8 +590,17 @@ function render() {
         const dueAmount = Number(item.installment_amount || 0);
         return `<article class="debt-upcoming-row ${isOverdue ? "is-overdue" : ""} ${kind}">
           <span class="debt-upcoming-icon" aria-hidden="true">${kind === "card" ? "▤" : kind === "financing" ? "⌂" : "↗"}</span>
-          <span class="debt-upcoming-info"><strong class="debt-upcoming-name">${escape(item.name)}</strong><small class="debt-upcoming-kind">${kind === "card" ? "Tarjeta de crédito" : kind === "financing" ? "Financiamiento" : "Préstamo"} · ${item.frequency === "weekly" ? "Cuota semanal" : item.frequency === "biweekly" ? "Cuota quincenal" : "Cuota mensual"}</small></span>
-          <span class="debt-upcoming-meta"><small>${isOverdue ? "Vencido" : "Próximo"}</small><strong>${escape(dateLabel)}</strong>${dueAmount > 0 ? `<em>${escape(money(dueAmount, item.currency || "GTQ"))}</em>` : ""}</span>
+          <div class="debt-upcoming-content">
+            <div class="debt-upcoming-info">
+              <strong class="debt-upcoming-name">${escape(item.name)}</strong>
+              <small class="debt-upcoming-kind">${kind === "card" ? "Tarjeta de crédito" : kind === "financing" ? "Financiamiento" : "Préstamo"} · ${item.frequency === "weekly" ? "Cuota semanal" : item.frequency === "biweekly" ? "Cuota quincenal" : "Cuota mensual"}</small>
+            </div>
+            <div class="debt-upcoming-meta">
+              <small>${isOverdue ? "Vencido" : "Próximo"}</small>
+              <strong>${escape(dateLabel)}</strong>
+              ${dueAmount > 0 ? `<em>${escape(money(dueAmount, item.currency || "GTQ"))}</em>` : ""}
+            </div>
+          </div>
         </article>`;
       }).join("")
     : "No hay vencimientos pendientes.";
