@@ -577,16 +577,18 @@ function renderUpcomingList(items, todayKey) {
         <div class="dv-row-main">
           <strong class="dv-row-name">${escape(item.name)}</strong>
           <span class="dv-row-kind">${kindLabel} · ${frequencyLabels[item.frequency] || frequencyLabels.monthly}</span>
+        </div>
+        <div class="dv-row-meta">
           <div class="dv-row-when">
             <span class="dv-badge">${status.label}</span>
             <span class="dv-date">${upIcon("calendar")}${escape(dateLabel)}</span>
           </div>
+          <div class="dv-row-amount">
+            <span>Cuota</span>
+            <strong>${amount > 0 ? escape(money(amount, item.currency || "GTQ")) : "—"}</strong>
+          </div>
         </div>
-        <div class="dv-row-amount">
-          <span>Importe</span>
-          <strong>${amount > 0 ? escape(money(amount, item.currency || "GTQ")) : "—"}</strong>
-        </div>
-      </article>`;
+      </article>``;
   }).join("");
 
   target.innerHTML = `
