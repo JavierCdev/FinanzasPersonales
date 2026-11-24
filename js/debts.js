@@ -588,7 +588,7 @@ function renderUpcomingList(items, todayKey) {
             <strong>${amount > 0 ? escape(money(amount, item.currency || "GTQ")) : "—"}</strong>
           </div>
         </div>
-      </article>``;
+      </article>`;
   }).join("");
 
   target.innerHTML = `
