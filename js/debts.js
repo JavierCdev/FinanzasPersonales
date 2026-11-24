@@ -504,6 +504,103 @@ function openDebtCalendar() {
   overlay.querySelector(".debts-calendar-dialog-close").focus();
 }
 
+
+const UP_ICON_PATHS = {
+  calendar: '<rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/>',
+  clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  coins: '<ellipse cx="9" cy="7" rx="5.5" ry="2.5"/><path d="M3.5 7v4c0 1.4 2.5 2.5 5.5 2.5s5.5-1.1 5.5-2.5V7M3.5 11v4c0 1.4 2.5 2.5 5.5 2.5M15 10.5c3 0 5.5 1 5.5 2.4v4c0 1.4-2.5 2.5-5.5 2.5s-5.5-1.1-5.5-2.5v-4"/>',
+  card: '<rect x="3" y="5.5" width="18" height="13" rx="3"/><path d="M3 10h18M7 15h4"/>',
+  arrow: '<path d="M7 17 17 7M9 7h8v8"/>',
+  home: '<path d="m4 11 8-6.5 8 6.5v8a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/>'
+};
+
+function upIcon(name) {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${UP_ICON_PATHS[name] || ""}</svg>`;
+}
+
+function renderUpcomingList(items, todayKey) {
+  const target = byId("debtsUpcomingList");
+  if (!target) return;
+
+  if (!items.length) {
+    target.className = "debts-inline-empty";
+    target.textContent = "No hay vencimientos pendientes.";
+    return;
+  }
+  target.className = "";
+
+  const pad = n => String(n).padStart(2, "0");
+  const [year, month] = todayKey.split("-").map(Number);
+  const thisMonth = `${year}-${pad(month)}`;
+  const nextMonth = month === 12 ? `${year + 1}-01` : `${year}-${pad(month + 1)}`;
+
+  const overdueCount = items.filter(item => item.upcomingDate < todayKey).length;
+  const thisMonthCount = items.filter(item => item.upcomingDate >= todayKey && item.upcomingDate.startsWith(thisMonth)).length;
+  const nextMonthCount = items.filter(item => item.upcomingDate.startsWith(nextMonth)).length;
+
+  const totals = new Map();
+  items.forEach(item => {
+    const amount = Number(item.installment_amount) || 0;
+    if (amount > 0) {
+      const currency = item.currency || "GTQ";
+      totals.set(currency, (totals.get(currency) || 0) + amount);
+    }
+  });
+  const totalLabel = totals.size
+    ? [...totals.entries()].map(([currency, amount]) => money(amount, currency)).join(" · ")
+    : money(0, "GTQ");
+
+  const daysUntil = date =>
+    Math.round((new Date(`${date}T12:00:00Z`) - new Date(`${todayKey}T12:00:00Z`)) / 86400000);
+
+  const frequencyLabels = {
+    weekly: "Cuota semanal", biweekly: "Cuota quincenal", quarterly: "Cuota trimestral",
+    yearly: "Cuota anual", monthly: "Cuota mensual"
+  };
+
+  const rows = items.slice(0, 5).map(item => {
+    const diff = daysUntil(item.upcomingDate);
+    const status = diff < 0
+      ? { cls: "is-overdue", label: "Vencido" }
+      : diff <= 7
+        ? { cls: "is-soon", label: "Próximo a vencer" }
+        : { cls: "is-upcoming", label: "Próximo" };
+    const kind = item.type === "card" ? "card" : item.type === "financing" ? "financing" : "loan";
+    const kindLabel = kind === "card" ? "Tarjeta de crédito" : kind === "financing" ? "Financiamiento" : "Préstamo";
+    const dateLabel = new Intl.DateTimeFormat("es-GT", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" })
+      .format(new Date(`${item.upcomingDate}T12:00:00Z`)).replace(/\./g, "");
+    const amount = Number(item.installment_amount) || 0;
+
+    return `
+      <article class="dv-row is-${kind} ${status.cls}">
+        <span class="dv-row-icon">${upIcon(kind === "card" ? "card" : kind === "financing" ? "home" : "arrow")}</span>
+        <div class="dv-row-main">
+          <strong class="dv-row-name">${escape(item.name)}</strong>
+          <span class="dv-row-kind">${kindLabel} · ${frequencyLabels[item.frequency] || frequencyLabels.monthly}</span>
+          <div class="dv-row-when">
+            <span class="dv-badge">${status.label}</span>
+            <span class="dv-date">${upIcon("calendar")}${escape(dateLabel)}</span>
+          </div>
+        </div>
+        <div class="dv-row-amount">
+          <span>Importe</span>
+          <strong>${amount > 0 ? escape(money(amount, item.currency || "GTQ")) : "—"}</strong>
+        </div>
+      </article>`;
+  }).join("");
+
+  target.innerHTML = `
+    <div class="dv-upcoming">
+      <div class="dv-stats">
+        <div class="dv-stat is-overdue"><span class="dv-stat-icon">${upIcon("clock")}</span><div><span>Vencidos</span><strong>${overdueCount}</strong></div></div>
+        <div class="dv-stat"><span class="dv-stat-icon">${upIcon("calendar")}</span><div><span>Este mes</span><strong>${thisMonthCount}</strong></div></div>
+        <div class="dv-stat"><span class="dv-stat-icon">${upIcon("calendar")}</span><div><span>Próximo mes</span><strong>${nextMonthCount}</strong></div></div>
+        <div class="dv-stat is-total"><span class="dv-stat-icon">${upIcon("coins")}</span><div><span>Total pendiente</span><strong>${escape(totalLabel)}</strong></div></div>
+      </div>
+      <div class="dv-list">${rows}</div>
+    </div>`;
+}
+
 function render() {
   const cards = getCardBalances();
   const all = [
@@ -581,29 +678,7 @@ function render() {
     .filter(item => item.upcomingDate >= todayKey)
     .sort((a,b) => String(a.upcomingDate).localeCompare(String(b.upcomingDate)));
   const visibleDueItems = [...overdue, ...upcoming];
-  byId("debtsUpcomingList").innerHTML = visibleDueItems.length
-    ? visibleDueItems.slice(0,5).map(item => {
-        const isOverdue = item.upcomingDate < todayKey;
-        const dateLabel = new Intl.DateTimeFormat("es-GT", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" })
-          .format(new Date(`${item.upcomingDate}T12:00:00Z`));
-        const kind = item.type === "card" ? "card" : item.type === "financing" ? "financing" : "loan";
-        const dueAmount = Number(item.installment_amount || 0);
-        return `<article class="debt-upcoming-row ${isOverdue ? "is-overdue" : ""} ${kind}">
-          <span class="debt-upcoming-icon" aria-hidden="true">${kind === "card" ? "▤" : kind === "financing" ? "⌂" : "↗"}</span>
-          <div class="debt-upcoming-content">
-            <div class="debt-upcoming-info">
-              <strong class="debt-upcoming-name">${escape(item.name)}</strong>
-              <small class="debt-upcoming-kind">${kind === "card" ? "Tarjeta de crédito" : kind === "financing" ? "Financiamiento" : "Préstamo"} · ${item.frequency === "weekly" ? "Cuota semanal" : item.frequency === "biweekly" ? "Cuota quincenal" : "Cuota mensual"}</small>
-            </div>
-            <div class="debt-upcoming-meta">
-              <small>${isOverdue ? "Vencido" : "Próximo"}</small>
-              <strong>${escape(dateLabel)}</strong>
-              ${dueAmount > 0 ? `<em>${escape(money(dueAmount, item.currency || "GTQ"))}</em>` : ""}
-            </div>
-          </div>
-        </article>`;
-      }).join("")
-    : "No hay vencimientos pendientes.";
+  renderUpcomingList(visibleDueItems, todayKey);
   renderDebtCalendar(visibleDueItems);
 }
 
