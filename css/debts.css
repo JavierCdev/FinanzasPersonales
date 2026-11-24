@@ -1419,9 +1419,8 @@
 
 /* ============================================================
    DEUDAS · DASHBOARD SECUNDARIO
-   Estructura y presentación consolidadas.
+   Layout limpio: icono fijo + contenido fluido.
 ============================================================ */
-
 .debts-secondary-grid.debts-dashboard-redesign {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1429,7 +1428,6 @@
   gap: 16px;
   margin-top: 18px;
 }
-
 .debts-secondary-grid.debts-dashboard-redesign > .panel {
   box-sizing: border-box;
   display: flex;
@@ -1440,40 +1438,34 @@
   height: auto;
   padding: 20px;
   overflow: hidden;
-  border: 1px solid rgba(60, 130, 91, .32);
+  border: 1px solid rgba(60,130,91,.32);
   border-radius: 18px;
-  background:
-    radial-gradient(ellipse at 18% 0%, rgba(22, 105, 62, .16), transparent 48%),
-    linear-gradient(145deg, #10251c, #0b1b15 70%, #071610);
-  box-shadow: 0 16px 38px rgba(0, 0, 0, .14), inset 0 1px rgba(213, 255, 224, .025);
+  background: radial-gradient(ellipse at 18% 0%,rgba(22,105,62,.16),transparent 48%),linear-gradient(145deg,#10251c,#0b1b15 70%,#071610);
+  box-shadow: 0 16px 38px rgba(0,0,0,.14),inset 0 1px rgba(213,255,224,.025);
 }
-
 .debts-dashboard-redesign .debts-visual-header {
-  position: relative;
   display: grid;
-  grid-template-columns: 54px minmax(0, 1fr) auto;
+  grid-template-columns: 54px minmax(0,1fr) auto;
   align-items: center;
   gap: 13px;
   flex: 0 0 auto;
   min-width: 0;
   margin: 0 0 16px;
   padding: 0 0 16px;
-  border-bottom: 1px solid rgba(128, 174, 143, .16);
+  border-bottom: 1px solid rgba(128,174,143,.16);
 }
-
 .debts-panel-icon {
   display: grid;
   width: 54px;
   height: 54px;
   place-items: center;
-  border: 1px solid rgba(125, 220, 79, .25);
+  border: 1px solid rgba(125,220,79,.25);
   border-radius: 16px;
-  background: linear-gradient(145deg, rgba(52, 126, 36, .3), rgba(17, 69, 38, .35));
+  background: linear-gradient(145deg,rgba(52,126,36,.3),rgba(17,69,38,.35));
   color: #c5f36b;
   font-size: 27px;
   font-weight: 800;
 }
-
 .debts-panel-heading { min-width: 0; }
 .debts-dashboard-redesign .debts-panel-heading h3 {
   margin: 0;
@@ -1494,9 +1486,9 @@
   justify-content: center;
   gap: 8px;
   padding: 0 12px;
-  border: 1px solid rgba(124, 196, 93, .32);
+  border: 1px solid rgba(124,196,93,.32);
   border-radius: 11px;
-  background: rgba(12, 43, 27, .5);
+  background: rgba(12,43,27,.5);
   color: #d0f58a;
   font-size: 11px;
   font-weight: 750;
@@ -1504,7 +1496,7 @@
 }
 .debts-dashboard-redesign .debts-panel-action span { font-size: 15px; }
 
-/* Próximos vencimientos */
+/* Próximos vencimientos: flex evita el desplazamiento del grid heredado. */
 .debts-upcoming-panel { position: relative; }
 .debts-upcoming-panel .debts-panel-scenery {
   position: absolute;
@@ -1512,9 +1504,8 @@
   height: 25%;
   opacity: .2;
   pointer-events: none;
-  background: radial-gradient(ellipse at 20% 100%, rgba(19, 119, 56, .28), transparent 58%);
+  background: radial-gradient(ellipse at 20% 100%,rgba(19,119,56,.28),transparent 58%);
 }
-
 .debts-upcoming-panel #debtsUpcomingList {
   position: relative;
   z-index: 1;
@@ -1528,77 +1519,78 @@
   border: 0;
   background: transparent;
 }
-
 .debts-upcoming-panel #debtsUpcomingList .debt-upcoming-row {
   box-sizing: border-box;
-  display: grid;
-  grid-template-columns: 38px minmax(0, 1fr);
+  display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 11px;
+  justify-content: flex-start;
+  gap: 12px;
   width: 100%;
   min-width: 0;
   min-height: 72px;
   padding: 10px 12px;
-  border: 1px solid rgba(107, 157, 121, .2);
+  border: 1px solid rgba(107,157,121,.2);
   border-left: 3px solid #44d78a;
   border-radius: 12px;
-  background: linear-gradient(110deg, rgba(9, 28, 19, .88), rgba(9, 25, 18, .72));
+  background: linear-gradient(110deg,rgba(9,28,19,.88),rgba(9,25,18,.72));
+  text-align: left;
 }
-
 .debts-upcoming-panel #debtsUpcomingList .debt-upcoming-row.is-overdue {
-  border-color: rgba(255, 116, 107, .22);
+  border-color: rgba(255,116,107,.22);
   border-left-color: #ff746b;
 }
 .debts-upcoming-panel #debtsUpcomingList .debt-upcoming-row.card { border-left-color: #e6c94e; }
 .debts-upcoming-panel #debtsUpcomingList .debt-upcoming-row.financing { border-left-color: #9bdc5d; }
-
 .debts-upcoming-panel #debtsUpcomingList .debt-upcoming-icon {
   display: grid;
-  grid-column: 1;
-  grid-row: 1;
+  flex: 0 0 36px;
   width: 36px;
   height: 36px;
   place-items: center;
+  margin: 0;
   border-radius: 11px;
-  background: rgba(64, 123, 60, .17);
+  background: rgba(64,123,60,.17);
   color: #c8f477;
   font-size: 18px;
   font-weight: 800;
 }
 .debts-upcoming-panel #debtsUpcomingList .debt-upcoming-row.is-overdue .debt-upcoming-icon {
-  background: rgba(255, 111, 101, .12);
+  background: rgba(255,111,101,.12);
   color: #ff8178;
 }
 .debts-upcoming-panel #debtsUpcomingList .debt-upcoming-row.card .debt-upcoming-icon {
-  background: rgba(211, 190, 54, .12);
+  background: rgba(211,190,54,.12);
   color: #e6d34f;
 }
-
-/* El bloque de contenido es un único grid item: evita que el meta se desplace. */
 .debts-upcoming-panel #debtsUpcomingList .debt-upcoming-content {
-  display: grid;
-  grid-column: 2;
-  grid-row: 1;
-  grid-template-columns: minmax(0, 1fr);
-  align-content: center;
-  justify-items: start;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
   gap: 6px;
+  width: auto;
   min-width: 0;
-  width: 100%;
+  margin: 0;
   text-align: left;
 }
 .debts-upcoming-panel #debtsUpcomingList .debt-upcoming-info {
   display: flex;
+  flex: 0 1 auto;
   flex-direction: column;
   align-items: flex-start;
+  justify-content: center;
   gap: 3px;
-  min-width: 0;
   width: 100%;
+  min-width: 0;
+  margin: 0;
   text-align: left;
 }
 .debts-upcoming-panel #debtsUpcomingList .debt-upcoming-name {
   display: block;
   width: 100%;
+  margin: 0;
   overflow: hidden;
   color: #edf5ef;
   font-size: 12px;
@@ -1611,6 +1603,7 @@
 .debts-upcoming-panel #debtsUpcomingList .debt-upcoming-kind {
   display: block;
   width: 100%;
+  margin: 0;
   overflow: hidden;
   color: #91a99a;
   font-size: 10px;
@@ -1621,19 +1614,21 @@
 }
 .debts-upcoming-panel #debtsUpcomingList .debt-upcoming-meta {
   display: flex;
+  flex: 0 1 auto;
   flex-direction: row;
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-start;
   gap: 7px 9px;
-  min-width: 0;
   width: 100%;
+  min-width: 0;
+  margin: 0;
   text-align: left;
 }
 .debts-upcoming-panel #debtsUpcomingList .debt-upcoming-meta small {
   padding: 3px 7px;
   border-radius: 999px;
-  background: rgba(0, 190, 111, .13);
+  background: rgba(0,190,111,.13);
   color: #8de5b0;
   font-size: 8px;
   font-weight: 800;
@@ -1641,16 +1636,18 @@
   text-transform: uppercase;
 }
 .debts-upcoming-panel #debtsUpcomingList .debt-upcoming-row.is-overdue .debt-upcoming-meta small {
-  background: rgba(255, 105, 96, .13);
+  background: rgba(255,105,96,.13);
   color: #ff9188;
 }
 .debts-upcoming-panel #debtsUpcomingList .debt-upcoming-meta strong {
+  margin: 0;
   color: #dce9df;
   font-size: 10px;
   font-weight: 750;
   white-space: nowrap;
 }
 .debts-upcoming-panel #debtsUpcomingList .debt-upcoming-meta em {
+  margin: 0;
   color: #c8ef83;
   font-size: 10px;
   font-style: normal;
@@ -1663,25 +1660,20 @@
 }
 
 /* Calendario */
-.debts-calendar-panel .debts-calendar-preview {
-  display: block;
-  flex: 0 0 auto;
-  width: 100%;
-  min-height: 0;
-}
+.debts-calendar-panel .debts-calendar-preview { display: block; flex: 0 0 auto; width: 100%; min-height: 0; }
 .debts-calendar-panel .debts-calendar-inner {
   box-sizing: border-box;
-  width: min(100%, 490px);
+  width: min(100%,490px);
   margin: 8px auto 0;
   padding: 15px;
-  border: 1px solid rgba(108, 166, 126, .24);
+  border: 1px solid rgba(108,166,126,.24);
   border-radius: 16px;
-  background: linear-gradient(145deg, rgba(8, 31, 20, .72), rgba(5, 23, 15, .68));
-  box-shadow: inset 0 1px rgba(222, 255, 229, .035);
+  background: linear-gradient(145deg,rgba(8,31,20,.72),rgba(5,23,15,.68));
+  box-shadow: inset 0 1px rgba(222,255,229,.035);
 }
 .debts-calendar-panel .debt-calendar-heading {
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) 34px;
+  grid-template-columns: 34px minmax(0,1fr) 34px;
   align-items: center;
   gap: 10px;
   margin: 0 0 10px;
@@ -1697,15 +1689,15 @@
   width: 34px;
   height: 34px;
   min-height: 34px;
-  border: 1px solid rgba(126, 190, 105, .25);
+  border: 1px solid rgba(126,190,105,.25);
   border-radius: 10px;
-  background: rgba(34, 75, 43, .32);
+  background: rgba(34,75,43,.32);
   color: #c6f178;
   font-size: 21px;
 }
 .debts-calendar-panel #debtsCalendarGrid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(7,minmax(0,1fr));
   gap: 4px;
   width: 100%;
 }
@@ -1731,24 +1723,20 @@
   padding: 0;
   border: 1px solid transparent;
   border-radius: 8px;
-  background: rgba(31, 63, 44, .42);
+  background: rgba(31,63,44,.42);
   color: #e1ebe3;
   font-size: 11px;
   font-weight: 650;
 }
-.debts-calendar-panel #debtsCalendarGrid .debt-calendar-day.is-outside-month {
-  background: transparent;
-  color: #60766a;
-  opacity: .8;
-}
+.debts-calendar-panel #debtsCalendarGrid .debt-calendar-day.is-outside-month { background: transparent; color: #60766a; opacity: .8; }
 .debts-calendar-panel #debtsCalendarGrid .debt-calendar-day.has-event {
-  border-color: rgba(53, 213, 135, .4);
-  background: rgba(16, 125, 76, .2);
+  border-color: rgba(53,213,135,.4);
+  background: rgba(16,125,76,.2);
   color: #a8efc1;
 }
 .debts-calendar-panel #debtsCalendarGrid .debt-calendar-day[aria-pressed="true"] {
   border-color: #c6f178;
-  outline: 1px solid rgba(198, 241, 120, .45);
+  outline: 1px solid rgba(198,241,120,.45);
   outline-offset: 1px;
   background: #c6f178;
   color: #102017;
@@ -1771,9 +1759,9 @@
   min-height: 35px;
   margin-top: 10px;
   padding: 8px 10px;
-  border: 1px solid rgba(108, 166, 126, .22);
+  border: 1px solid rgba(108,166,126,.22);
   border-radius: 11px;
-  background: rgba(5, 22, 14, .34);
+  background: rgba(5,22,14,.34);
   color: #9cb2a3;
   font-size: 10px;
   line-height: 1.4;
@@ -1782,58 +1770,39 @@
 .debts-calendar-panel .debts-calendar-legend {
   box-sizing: border-box;
   display: flex;
-  width: min(100%, 490px);
+  width: min(100%,490px);
   flex-wrap: wrap;
   justify-content: center;
   gap: 8px 13px;
   margin: 12px auto 0;
   padding: 10px 12px;
-  border: 1px solid rgba(93, 155, 112, .2);
+  border: 1px solid rgba(93,155,112,.2);
   border-radius: 12px;
-  background: rgba(4, 23, 14, .32);
+  background: rgba(4,23,14,.32);
   color: #b5c7ba;
   font-size: 9px;
 }
-.debts-calendar-panel .debts-calendar-legend span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-}
-.debts-calendar-panel .debts-calendar-legend i {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #c6f178;
-}
+.debts-calendar-panel .debts-calendar-legend span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.debts-calendar-panel .debts-calendar-legend i { width: 8px; height: 8px; border-radius: 50%; background: #c6f178; }
 .debts-calendar-panel .debts-calendar-legend i.is-due { background: #20d58a; }
 .debts-calendar-panel .debts-calendar-legend i.is-soon { background: #f0c84c; }
 .debts-calendar-panel .debts-calendar-legend i.is-overdue { background: #ff746b; }
 
 @media (max-width: 900px) {
-  .debts-secondary-grid.debts-dashboard-redesign {
-    grid-template-columns: minmax(0, 1fr);
-  }
+  .debts-secondary-grid.debts-dashboard-redesign { grid-template-columns: minmax(0,1fr); }
   .debts-calendar-panel .debts-calendar-inner,
-  .debts-calendar-panel .debts-calendar-legend {
-    width: min(100%, 520px);
-  }
+  .debts-calendar-panel .debts-calendar-legend { width: min(100%,520px); }
 }
 @media (max-width: 640px) {
   .debts-secondary-grid.debts-dashboard-redesign { gap: 12px; }
   .debts-secondary-grid.debts-dashboard-redesign > .panel { padding: 16px 13px; }
   .debts-dashboard-redesign .debts-visual-header {
-    grid-template-columns: 42px minmax(0, 1fr);
+    grid-template-columns: 42px minmax(0,1fr);
     gap: 10px;
     padding-bottom: 13px;
     margin-bottom: 13px;
   }
-  .debts-panel-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 13px;
-    font-size: 22px;
-  }
+  .debts-panel-icon { width: 42px; height: 42px; border-radius: 13px; font-size: 22px; }
   .debts-dashboard-redesign .debts-panel-heading h3 { font-size: 15px; }
   .debts-dashboard-redesign .debts-panel-heading p { font-size: 10px; }
   .debts-dashboard-redesign .debts-panel-action {
@@ -1843,27 +1812,11 @@
     padding: 0 10px;
     font-size: 10px;
   }
-  .debts-upcoming-panel #debtsUpcomingList .debt-upcoming-row {
-    grid-template-columns: 32px minmax(0, 1fr);
-    min-height: 68px;
-    padding: 9px;
-    gap: 8px;
-  }
-  .debts-upcoming-panel #debtsUpcomingList .debt-upcoming-icon {
-    width: 30px;
-    height: 30px;
-    font-size: 15px;
-  }
+  .debts-upcoming-panel #debtsUpcomingList .debt-upcoming-row { min-height: 68px; padding: 9px; gap: 9px; }
+  .debts-upcoming-panel #debtsUpcomingList .debt-upcoming-icon { flex-basis: 30px; width: 30px; height: 30px; font-size: 15px; }
+  .debts-upcoming-panel #debtsUpcomingList .debt-upcoming-meta { gap: 6px; }
   .debts-calendar-panel .debts-calendar-inner { padding: 11px; }
   .debts-calendar-panel #debtsCalendarGrid { gap: 3px; }
-  .debts-calendar-panel #debtsCalendarGrid .debt-calendar-day {
-    height: 34px;
-    min-height: 34px;
-    max-height: 34px;
-    font-size: 10px;
-  }
-  .debts-calendar-panel .debts-calendar-legend {
-    justify-content: flex-start;
-    font-size: 9px;
-  }
+  .debts-calendar-panel #debtsCalendarGrid .debt-calendar-day { height: 34px; min-height: 34px; max-height: 34px; font-size: 10px; }
+  .debts-calendar-panel .debts-calendar-legend { justify-content: flex-start; font-size: 9px; }
 }
