@@ -974,6 +974,8 @@
   font-size: 27px;
   font-weight: 800;
 }
+.debts-panel-icon svg { display:block; width:25px; height:25px; }
+.debts-dashboard-redesign .debts-panel-action svg { display:block; width:15px; height:15px; flex:0 0 15px; }
 .debts-panel-heading { min-width: 0; }
 .debts-dashboard-redesign .debts-panel-heading h3 {
   margin: 0;
