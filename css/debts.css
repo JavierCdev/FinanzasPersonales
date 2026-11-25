@@ -1298,3 +1298,20 @@
 @media (max-width:360px) {
   .dv-stats { grid-template-columns:minmax(0,1fr); }
 }
+
+/* Corrección final: centrado real de la navegación del calendario ampliado */
+.debts-calendar-dialog .debt-calendar-heading {
+  align-items: center !important;
+}
+.debts-calendar-dialog .debt-calendar-heading > .debts-calendar-dialog-month {
+  align-self: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1.25 !important;
+  transform: none !important;
+}
+.debts-calendar-dialog .debt-calendar-heading > .debt-calendar-nav {
+  align-self: center !important;
+  margin: 0 !important;
+  transform: none !important;
+}
