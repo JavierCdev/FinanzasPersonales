@@ -106,7 +106,7 @@ create index if not exists gastos_status_date_idx on public.gastos(user_id,statu
 
 create or replace function public.generar_cuotas_programadas_deuda(p_debt_id text)
 returns integer language plpgsql security definer set search_path=pg_catalog,public as $$
-declare d public.deudas%rowtype; v_balance numeric(14,2); v_interest numeric(14,2); v_principal numeric(14,2); v_total numeric(14,2); v_date date; v_count integer:=0; v_periods numeric;
+declare d public.deudas%rowtype; v_balance numeric(14,2); v_interest numeric(14,2); v_principal numeric(14,2); v_total numeric(14,2); v_date date; v_count integer:=0; v_periods numeric; v_category_id text;
 begin
  select * into d from public.deudas where id=p_debt_id and user_id=auth.uid() for update;
  if not found then raise exception 'No se encontró la deuda.'; end if;
@@ -114,6 +114,8 @@ begin
  if exists(select 1 from public.gastos where debt_id=d.id and status='scheduled') then
    delete from public.gastos where debt_id=d.id and status='scheduled';
  end if;
+ select id into v_category_id from public.categorias where type='expense' and active=true and (user_id is null or user_id=d.user_id) order by case when user_id=d.user_id then 0 else 1 end limit 1;
+ if v_category_id is null then raise exception 'Crea al menos una categoría de gastos antes de programar las cuotas.'; end if;
  v_balance:=d.current_balance; v_date:=d.first_due_date;
  v_periods:=case d.frequency when 'weekly' then 52 when 'biweekly' then 26 when 'quarterly' then 4 when 'yearly' then 1 else 12 end;
  while v_balance>0.009 and v_count<360 loop
@@ -122,7 +124,7 @@ begin
    v_principal:=least(v_balance,greatest(0,v_total-v_interest));
    if v_principal<=0 then exit; end if;
    insert into public.gastos(id,user_id,date,description,category_id,category_name,currency,amount,exchange_rate,amount_gtq,exchange_rate_source,notes,payment_method,status,debt_id,debt_installment_number,principal_amount,interest_amount,charges_amount)
-   values ('debt-schedule-'||d.id||'-'||(v_count+1),d.user_id,v_date,'Cuota: '||d.name,null,'Cuota de deuda',d.currency,v_principal+v_interest,1,v_principal+v_interest,'N/A','Cuota programada; no contabilizada hasta el pago.','scheduled','scheduled',d.id,v_count+1,v_principal,v_interest,0)
+   values ('debt-schedule-'||d.id||'-'||(v_count+1),d.user_id,v_date,'Cuota: '||d.name,v_category_id,'Cuota de deuda',d.currency,v_principal+v_interest,1,v_principal+v_interest,'N/A','Cuota programada; no contabilizada hasta el pago.','scheduled','scheduled',d.id,v_count+1,v_principal,v_interest,0)
    on conflict(id) do update set date=excluded.date,amount=excluded.amount,amount_gtq=excluded.amount_gtq,principal_amount=excluded.principal_amount,interest_amount=excluded.interest_amount;
    v_balance:=round(v_balance-v_principal,2); v_count:=v_count+1;
    v_date:=case d.frequency when 'weekly' then v_date+7 when 'biweekly' then v_date+14 when 'quarterly' then (v_date+interval '3 months')::date when 'yearly' then (v_date+interval '1 year')::date else (v_date+interval '1 month')::date end;
