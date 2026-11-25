@@ -29,6 +29,7 @@ const byId = id => document.getElementById(id);
 const value = id => byId(id)?.value?.trim() || "";
 const financingCardSelect = byId("debtFinancingCreditCard");
 const financingCategorySelect = byId("debtFinancingCategory");
+const expenseCategorySelect = byId("debtExpenseCategory");
 const linkFinancingCard = byId("debtLinkCreditCard");
 const money = (amount, currency) => formatCurrency(Number(amount) || 0, currency || "GTQ");
 const escape = input => String(input ?? "").replace(/[&<>"']/g, char => ({
@@ -154,14 +155,17 @@ function toggleFinancingCardFields() {
   byId("debtFinancingCardField").hidden = !linked;
   byId("debtFinancingCategoryField").hidden = !linked;
   byId("debtFinancingRateField").hidden = !linked || value("debtCurrency") !== "USD";
+  byId("debtExpenseCategoryField").hidden = linked || Boolean(editingDebtId);
   financingCardSelect.required = linked;
   financingCategorySelect.required = linked;
+  expenseCategorySelect.required = !editingDebtId && !linked && type.value !== "card";
 }
 
 function openForm() {
   editingDebtId = null;
   ["debtCurrency","debtOriginalAmount","debtInitialBalance"].forEach(id => { byId(id).disabled = false; });
   form.reset();
+  populateFinancingCategories();
   toggleDefaultPaymentFields();
   if (linkFinancingCard) linkFinancingCard.checked = false;
   if (financingCardSelect) financingCardSelect.disabled = false;
@@ -191,6 +195,7 @@ function openEditForm(debtId) {
   if (!debt) return;
   editingDebtId = String(debt.id);
   form.reset();
+  populateFinancingCategories();
   type.value = debt.type;
   byId("debtName").value = debt.name || "";
   byId("debtInstitution").value = debt.institution || "";
@@ -252,11 +257,13 @@ function populateCards() {
 }
 
 function populateFinancingCategories(selectedId = null) {
-  if (!financingCategorySelect) return;
   const options = (typeof categories !== "undefined" ? categories.expense : []).filter(item => item.active !== false);
-  financingCategorySelect.replaceChildren(new Option("Selecciona una categoría", ""));
-  options.forEach(item => financingCategorySelect.add(new Option(item.name, String(item.id))));
-  if (selectedId) financingCategorySelect.value = String(selectedId);
+  [financingCategorySelect, expenseCategorySelect].forEach(select => {
+    if (!select) return;
+    select.replaceChildren(new Option("Selecciona una categoría", ""));
+    options.forEach(item => select.add(new Option(item.name, String(item.id))));
+    if (select === financingCategorySelect && selectedId) select.value = String(selectedId);
+  });
 }
 
 function populateDefaultPaymentCards(selectedId = null) {
@@ -1113,9 +1120,16 @@ async function saveDebt(event) {
   const financingCategory = linkedCard
     ? (typeof categories !== "undefined" ? categories.expense.find(item => String(item.id) === value("debtFinancingCategory") && item.active !== false) : null)
     : null;
+  const initialExpenseCategory = !editingDebtId && !linkedCard
+    ? (typeof categories !== "undefined" ? categories.expense.find(item => String(item.id) === value("debtExpenseCategory") && item.active !== false) : null)
+    : null;
   const exchangeRate = currency === "USD" ? Number(value("debtFinancingExchangeRate")) : 1;
   if (linkedCard && (!selectedFinancingCard || !financingCategory || !Number.isFinite(exchangeRate) || exchangeRate <= 0)) {
     setNotice("Selecciona una tarjeta, una categoría válida y un tipo de cambio correcto.", true);
+    return;
+  }
+  if (!editingDebtId && !linkedCard && !initialExpenseCategory) {
+    setNotice("Selecciona la categoría para registrar el monto original como gasto.", true);
     return;
   }
   if (editingDebtId && debts.find(item => String(item.id) === editingDebtId)?.initial_expense_id && linkedCard) {
@@ -1194,11 +1208,35 @@ async function saveDebt(event) {
         const result = Array.isArray(response.data) ? response.data[0] : response.data;
         data = result?.debt || result;
       }
+    } else if (!editingDebtId) {
+      const expenseId = createId("expense");
+      const expense = {
+        id: expenseId,
+        date: startDate,
+        description: payload.name,
+        category_id: initialExpenseCategory.id,
+        category_name: initialExpenseCategory.name,
+        currency,
+        amount: original,
+        exchange_rate: exchangeRate,
+        amount_gtq: original * exchangeRate,
+        exchange_rate_source: currency === "USD" ? "Manual" : "N/A",
+        notes: payload.notes || "Gasto generado automáticamente al registrar la deuda.",
+        payment_method: "cash",
+        credit_card_id: null,
+        account_id: null
+      };
+      const response = await supabaseClient.rpc("registrar_deuda_con_gasto", {
+        p_debt: payload,
+        p_expense: expense
+      });
+      error = response.error;
+      if (!error) {
+        const result = Array.isArray(response.data) ? response.data[0] : response.data;
+        data = result?.debt || result;
+      }
     } else {
-      const query = editingDebtId
-        ? supabaseClient.from("deudas").update(payload).eq("id", editingDebtId)
-        : supabaseClient.from("deudas").insert(payload);
-      const response = await query.select().single();
+      const response = await supabaseClient.from("deudas").update(payload).eq("id", editingDebtId).select().single();
       data = response.data;
       error = response.error;
     }
@@ -1209,10 +1247,11 @@ async function saveDebt(event) {
     } else {
       debts.unshift(data);
     }
-    if (linkedCard) {
+    if (!wasEditing) {
       if (typeof initializeExpenses === "function") await initializeExpenses();
       if (typeof renderExpenseTable === "function") renderExpenseTable();
       if (typeof renderCreditCardStatements === "function") renderCreditCardStatements();
+      if (typeof renderAccounts === "function") renderAccounts();
       if (typeof updateDashboard === "function") updateDashboard();
       if (typeof updateReports === "function") updateReports();
       await loadDebts();
