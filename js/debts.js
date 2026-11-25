@@ -509,9 +509,9 @@ const UP_ICON_PATHS = {
   calendar: '<rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/>',
   clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
   coins: '<ellipse cx="9" cy="7" rx="5.5" ry="2.5"/><path d="M3.5 7v4c0 1.4 2.5 2.5 5.5 2.5s5.5-1.1 5.5-2.5V7M3.5 11v4c0 1.4 2.5 2.5 5.5 2.5M15 10.5c3 0 5.5 1 5.5 2.4v4c0 1.4-2.5 2.5-5.5 2.5s-5.5-1.1-5.5-2.5v-4"/>',
-  card: '<rect x="3" y="5.5" width="18" height="13" rx="3"/><path d="M3 10h18M7 15h4"/>',
-  arrow: '<path d="M7 17 17 7M9 7h8v8"/>',
-  home: '<path d="m4 11 8-6.5 8 6.5v8a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/>'
+  card: '<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18M7 15h4"/>',
+  landmark: '<path d="M3 9h18L12 4 3 9Z"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/>',
+  receipt: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z"/><path d="M9 8h6M9 12h6M9 16h4"/>'
 };
 
 function upIcon(name) {
@@ -577,7 +577,7 @@ function renderUpcomingList(items, todayKey) {
 
     return `
       <article class="dv-row is-${kind} ${status.cls}">
-        <span class="dv-row-icon">${upIcon(kind === "card" ? "card" : kind === "financing" ? "home" : "arrow")}</span>
+        <span class="dv-row-icon">${upIcon(kind === "card" ? "card" : kind === "financing" ? "receipt" : "landmark")}</span>
         <div class="dv-row-main">
           <strong class="dv-row-name">${escape(item.name)}</strong>
           <span class="dv-row-kind">${item.type === "card" ? detailLabel : `${kindLabel} · ${detailLabel}`}</span>
