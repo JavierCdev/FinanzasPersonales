@@ -1298,3 +1298,9 @@
 .debts-calendar-dialog .debt-calendar-heading > .debt-calendar-nav {
   align-self:center; margin:0; transform:none;
 }
+
+
+/* Acción destructiva de deudas */
+.debt-item-actions .debt-delete-button { border-color: rgba(255,116,107,.28); color: #ff9188; background: rgba(92,28,28,.18); }
+.debt-item-actions .debt-delete-button:hover:not(:disabled) { border-color: rgba(255,116,107,.55); background: rgba(120,34,34,.3); }
+.debt-item-actions button:disabled { opacity: .55; cursor: wait; }
