@@ -5664,6 +5664,9 @@ async function initializeExpenses() {
                     notes:
                         expense.notes ||
                         "",
+                    principalAmount: Number(expense.principal_amount) || 0,
+                    interestAmount: Number(expense.interest_amount) || 0,
+                    chargesAmount: Number(expense.charges_amount) || 0,
                     status: expense.status || "paid",
                     debtId: expense.debt_id || null,
                     debtInstallmentNumber: expense.debt_installment_number || null,
@@ -6737,7 +6740,7 @@ let html = `
     ${formatDate(expense.date)}
 </td>
 
-                    <td>${escapeHtml(expense.description || "")}</td>
+                    <td>${escapeHtml(expense.description || "")}${expense.status === "scheduled" ? '<span class="expense-status-pending"> · Programado</span>' : ""}</td>
                     <td>${escapeHtml(categoryName)}</td>
                     <td>${escapeHtml(expense.currency || "GTQ")}</td>
                     <td class="income-amount">
