@@ -320,24 +320,45 @@ let calendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
 let calendarEvents = [];
 
 function buildCalendarEvents(items) {
-  const events = [];
+  const uniqueEvents = new Map();
   const today = new Date();
+  const firstVisibleMonth = new Date(today.getFullYear(), today.getMonth(), 1);
   const horizon = new Date(today.getFullYear(), today.getMonth() + 18, 1);
+
   items.forEach(item => {
     let due = item.upcomingDate;
     if (!due) return;
+
     const isRecurring = item.type !== "card";
     let guard = 0;
+
     while (due && guard++ < 24) {
       const dueDate = new Date(`${due}T12:00:00`);
-      if (dueDate >= new Date(today.getFullYear(), today.getMonth(), 1) && dueDate < horizon) {
-        events.push({ ...item, date: due });
+      if (Number.isNaN(dueDate.getTime())) break;
+
+      if (dueDate >= firstVisibleMonth && dueDate < horizon) {
+        // Una deuda solo puede generar un vencimiento por fecha.
+        const eventKey = `${item.type}:${String(item.id)}:${due}`;
+        if (!uniqueEvents.has(eventKey)) {
+          uniqueEvents.set(eventKey, { ...item, date: due });
+        }
       }
+
       if (!isRecurring || dueDate >= horizon) break;
-      due = addFrequency(due, item.frequency || "monthly", 1);
+
+      const nextDue = addFrequency(due, item.frequency || "monthly", 1);
+
+      // Protección contra frecuencias inválidas que no avanzan la fecha.
+      if (!nextDue || nextDue <= due) break;
+
+      due = nextDue;
     }
   });
-  return events;
+
+  return [...uniqueEvents.values()].sort((a, b) =>
+    a.date.localeCompare(b.date) ||
+    String(a.name).localeCompare(String(b.name))
+  );
 }
 
 function formatCalendarMonth(date) {
@@ -346,38 +367,73 @@ function formatCalendarMonth(date) {
 
 function drawCalendarGrid(grid, monthDate) {
   if (!grid) return;
+
   const year = monthDate.getFullYear();
   const month = monthDate.getMonth();
-  const firstDay = new Date(year, month, 1).getDay();
-  const offset = (firstDay + 6) % 7;
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const byDay = new Map();
+  const firstOfMonth = new Date(year, month, 1);
+  const offset = (firstOfMonth.getDay() + 6) % 7;
+  const gridStart = new Date(year, month, 1 - offset);
+  const byDate = new Map();
+
   calendarEvents.forEach(item => {
-    if (!item.date.startsWith(`${year}-${String(month + 1).padStart(2, "0")}-`)) return;
-    const day = Number(item.date.slice(8, 10));
-    if (!byDay.has(day)) byDay.set(day, []);
-    byDay.get(day).push(item);
+    if (!byDate.has(item.date)) byDate.set(item.date, []);
+    byDate.get(item.date).push(item);
   });
+
+  const iso = date =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
   const cells = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"]
     .map(day => `<span class="debt-calendar-weekday">${day}</span>`);
-  for (let i = 0; i < offset; i++) cells.push('<span class="debt-calendar-day is-empty" aria-hidden="true"></span>');
-  for (let day = 1; day <= daysInMonth; day++) {
-    const entries = byDay.get(day) || [];
-    const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    const names = entries.map(item => item.name).join(", ");
-    cells.push(`<button type="button" class="debt-calendar-day ${entries.length ? "has-event" : ""}" data-calendar-date="${dateKey}" aria-label="${day} ${formatCalendarMonth(monthDate)}${entries.length ? ": " + escape(names) : ""}" aria-pressed="false"><span>${day}</span>${entries.length ? `<i>${entries.length}</i>` : ""}</button>`);
+
+  // Se muestran siempre seis semanas para conservar una cuadrícula estable.
+  for (let index = 0; index < 42; index++) {
+    const date = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + index);
+    const dateKey = iso(date);
+    const dayEntries = byDate.get(dateKey) || [];
+    const outsideMonth = date.getMonth() !== month;
+    const names = dayEntries.map(item => item.name).join(", ");
+    const selectedDate = grid.dataset.selectedDate === dateKey;
+
+    cells.push(`
+      <button
+        type="button"
+        class="debt-calendar-day ${outsideMonth ? "is-outside-month" : ""} ${dayEntries.length ? "has-event" : ""}"
+        data-calendar-date="${dateKey}"
+        aria-label="${date.getDate()} ${formatCalendarMonth(date)}${dayEntries.length ? ": " + escape(names) : ""}"
+        aria-pressed="${selectedDate ? "true" : "false"}">
+        <span>${date.getDate()}</span>
+        ${dayEntries.length ? `<i>${dayEntries.length}</i>` : ""}
+      </button>
+    `);
   }
+
   grid.innerHTML = cells.join("");
+
   grid.querySelectorAll("[data-calendar-date]").forEach(button => {
     button.addEventListener("click", () => {
-      grid.querySelectorAll("[data-calendar-date]").forEach(item => item.setAttribute("aria-pressed", "false"));
-      button.setAttribute("aria-pressed", "true");
-      const selected = calendarEvents.filter(item => item.date === button.dataset.calendarDate);
+      grid.dataset.selectedDate = button.dataset.calendarDate;
+      grid.querySelectorAll("[data-calendar-date]").forEach(item => {
+        item.setAttribute("aria-pressed", String(item === button));
+      });
+
+      const selected = byDate.get(button.dataset.calendarDate) || [];
       const target = grid.parentElement.querySelector(".debt-calendar-selection");
+
       if (target) {
         target.innerHTML = selected.length
-          ? `<strong>${escape(new Intl.DateTimeFormat("es-GT", { dateStyle: "long", timeZone: "UTC" }).format(new Date(`${button.dataset.calendarDate}T12:00:00Z`)))}</strong><ul>${selected.map(item => `<li><span>${escape(item.name)}</span><b>${escape(money(item.installment_amount || item.balance || item.current_balance || 0, item.currency || "GTQ"))}</b></li>`).join("")}</ul>`
+          ? `<strong>${escape(new Intl.DateTimeFormat("es-GT", {
+              dateStyle: "long",
+              timeZone: "UTC"
+            }).format(new Date(`${button.dataset.calendarDate}T12:00:00Z`)))}</strong>
+            <ul>${selected.map(item => `
+              <li>
+                <span>${escape(item.name)}</span>
+                <b>${escape(money(
+                  item.installment_amount || item.balance || item.current_balance || 0,
+                  item.currency || "GTQ"
+                ))}</b>
+              </li>`).join("")}</ul>`
           : `<span>Sin vencimientos para este día.</span>`;
       }
     });
@@ -448,19 +504,131 @@ function openDebtCalendar() {
   overlay.querySelector(".debts-calendar-dialog-close").focus();
 }
 
+
+const UP_ICON_PATHS = {
+  calendar: '<rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/>',
+  clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  coins: '<ellipse cx="9" cy="7" rx="5.5" ry="2.5"/><path d="M3.5 7v4c0 1.4 2.5 2.5 5.5 2.5s5.5-1.1 5.5-2.5V7M3.5 11v4c0 1.4 2.5 2.5 5.5 2.5M15 10.5c3 0 5.5 1 5.5 2.4v4c0 1.4-2.5 2.5-5.5 2.5s-5.5-1.1-5.5-2.5v-4"/>',
+  card: '<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18M7 15h4"/>',
+  landmark: '<path d="M3 9h18L12 4 3 9Z"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/>',
+  receipt: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z"/><path d="M9 8h6M9 12h6M9 16h4"/>'
+};
+
+function upIcon(name) {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${UP_ICON_PATHS[name] || ""}</svg>`;
+}
+
+function renderUpcomingList(items, todayKey) {
+  const target = byId("debtsUpcomingList");
+  if (!target) return;
+
+  if (!items.length) {
+    target.className = "debts-inline-empty";
+    target.textContent = "No hay vencimientos pendientes.";
+    return;
+  }
+  target.className = "";
+
+  const pad = n => String(n).padStart(2, "0");
+  const [year, month] = todayKey.split("-").map(Number);
+  const thisMonth = `${year}-${pad(month)}`;
+  const nextMonth = month === 12 ? `${year + 1}-01` : `${year}-${pad(month + 1)}`;
+
+  const overdueCount = items.filter(item => item.upcomingDate < todayKey).length;
+  const thisMonthCount = items.filter(item => item.upcomingDate >= todayKey && item.upcomingDate.startsWith(thisMonth)).length;
+  const nextMonthCount = items.filter(item => item.upcomingDate.startsWith(nextMonth)).length;
+
+  const totals = new Map();
+  items.forEach(item => {
+    const amount = Number(item.installment_amount) || 0;
+    if (amount > 0) {
+      const currency = item.currency || "GTQ";
+      totals.set(currency, (totals.get(currency) || 0) + amount);
+    }
+  });
+  const totalLabel = totals.size
+    ? [...totals.entries()].map(([currency, amount]) => money(amount, currency)).join(" · ")
+    : money(0, "GTQ");
+
+  const daysUntil = date =>
+    Math.round((new Date(`${date}T12:00:00Z`) - new Date(`${todayKey}T12:00:00Z`)) / 86400000);
+
+  const frequencyLabels = {
+    weekly: "Cuota semanal", biweekly: "Cuota quincenal", quarterly: "Cuota trimestral",
+    yearly: "Cuota anual", monthly: "Cuota mensual"
+  };
+
+  const rows = items.slice(0, 5).map(item => {
+    const diff = daysUntil(item.upcomingDate);
+    const status = diff < 0
+      ? { cls: "is-overdue", label: "Vencido" }
+      : diff <= 7
+        ? { cls: "is-soon", label: "Próximo a vencer" }
+        : { cls: "is-upcoming", label: "Próximo" };
+    const kind = item.type === "card" ? "card" : item.type === "financing" ? "financing" : "loan";
+    const kindLabel = kind === "card" ? "Tarjeta de crédito" : kind === "financing" ? "Financiamiento" : "Préstamo";
+    const dateLabel = new Intl.DateTimeFormat("es-GT", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" })
+      .format(new Date(`${item.upcomingDate}T12:00:00Z`)).replace(/\./g, "");
+    const amount = Number(item.type === "card" ? item.balance : item.installment_amount) || 0;
+    const amountLabel = item.type === "card" ? "Saldo pendiente" : "Cuota";
+    const detailLabel = item.type === "card"
+      ? "Fecha límite de pago"
+      : `${frequencyLabels[item.frequency] || frequencyLabels.monthly}`;
+
+    return `
+      <article class="dv-row is-${kind} ${status.cls}">
+        <span class="dv-row-icon">${upIcon(kind === "card" ? "card" : kind === "financing" ? "receipt" : "landmark")}</span>
+        <div class="dv-row-main">
+          <strong class="dv-row-name">${escape(item.name)}</strong>
+          <span class="dv-row-kind">${item.type === "card" ? detailLabel : `${kindLabel} · ${detailLabel}`}</span>
+        </div>
+        <div class="dv-row-meta">
+          <div class="dv-row-when">
+            <span class="dv-badge">${status.label}</span>
+            <span class="dv-date">${upIcon("calendar")}${escape(dateLabel)}</span>
+          </div>
+          <div class="dv-row-amount">
+            <span>${amountLabel}</span>
+            <strong>${amount > 0 ? escape(money(amount, item.currency || "GTQ")) : "—"}</strong>
+          </div>
+        </div>
+      </article>`;
+  }).join("");
+
+  target.innerHTML = `
+    <div class="dv-upcoming">
+      <div class="dv-stats">
+        <div class="dv-stat is-overdue"><span class="dv-stat-icon">${upIcon("clock")}</span><div><span>Vencidos</span><strong>${overdueCount}</strong></div></div>
+        <div class="dv-stat"><span class="dv-stat-icon">${upIcon("calendar")}</span><div><span>Este mes</span><strong>${thisMonthCount}</strong></div></div>
+        <div class="dv-stat"><span class="dv-stat-icon">${upIcon("calendar")}</span><div><span>Próximo mes</span><strong>${nextMonthCount}</strong></div></div>
+        <div class="dv-stat is-total"><span class="dv-stat-icon">${upIcon("coins")}</span><div><span>Total pendiente</span><strong>${escape(totalLabel)}</strong></div></div>
+      </div>
+      <div class="dv-list">${rows}</div>
+    </div>`;
+}
+
 function render() {
+  // Las tarjetas se administran en Cuentas. Aquí solo se muestran préstamos
+  // y financiamientos; sus fechas de pago siguen integradas al calendario.
   const cards = getCardBalances();
-  const all = [
-    ...debts.map(debt => ({ ...debt, type: debt.type })),
-    ...cards
-  ];
+  const all = debts.filter(debt => debt.type !== "card");
+  const calendarItems = [...all, ...cards];
   const term = (search?.value || "").trim().toLowerCase();
   const filtered = all.filter(item => {
     const matchesTerm = !term || `${item.name} ${item.institution || ""}`.toLowerCase().includes(term);
     const matchesType = !typeFilter || typeFilter.value === "all" || item.type === typeFilter.value;
     const isPaid = Number(item.current_balance ?? item.balance) <= 0.009;
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const nextDue = isPaid ? null : getNextDebtDue(item);
+    const isOverdue = Boolean(nextDue && nextDue < todayKey);
     const matchesStatus = !statusFilter || statusFilter.value === "all" ||
-      (statusFilter.value === "paid" ? isPaid : statusFilter.value === "active" ? !isPaid : false);
+      (statusFilter.value === "paid"
+        ? isPaid
+        : statusFilter.value === "overdue"
+          ? isOverdue
+          : statusFilter.value === "active"
+            ? !isPaid && !isOverdue
+            : true);
     return matchesTerm && matchesType && matchesStatus;
   });
 
@@ -473,7 +641,7 @@ function render() {
     return [...totals.entries()].map(([currency, amount]) => money(amount, currency)).join(" · ") || money(0, "GTQ");
   };
   const activeDebts = all.filter(item => item.is_active !== false && Number(item.current_balance ?? item.balance) > 0.009);
-  const monthlyRows = debts.filter(item => item.is_active && Number(item.installment_amount) > 0).map(item => {
+  const monthlyRows = all.filter(item => item.is_active && Number(item.installment_amount) > 0).map(item => {
     const factor = item.frequency === "weekly" ? 52/12 : item.frequency === "biweekly" ? 26/12 : item.frequency === "quarterly" ? 1/3 : item.frequency === "yearly" ? 1/12 : 1;
     return { currency: item.currency || "GTQ", monthlyAmount: Number(item.installment_amount) * factor };
   });
@@ -496,7 +664,7 @@ function render() {
     list.className = "debts-empty-state";
     list.innerHTML = all.length
       ? '<p>No hay resultados para los filtros seleccionados.</p>'
-      : '<div class="debts-empty-icon">₲</div><h3>Aún no tienes deudas registradas</h3><p>Registra tu primer préstamo o financiamiento. Las tarjetas se vincularán desde las que ya tienes registradas.</p><button type="button" class="primary-button" id="debtEmptyNewButton">Registrar primera deuda</button>';
+      : '<div class="debts-empty-icon">₲</div><h3>Aún no tienes préstamos o financiamientos</h3><p>Registra una obligación para comenzar a controlar sus cuotas y pagos. Tus tarjetas se administran desde Cuentas.</p><button type="button" class="primary-button" id="debtEmptyNewButton">Registrar primera deuda</button>';
     byId("debtEmptyNewButton")?.addEventListener("click", openForm);
   } else {
     list.className = "debts-list";
@@ -514,7 +682,7 @@ function render() {
   }
 
   const todayKey = new Date().toISOString().slice(0, 10);
-  const dueItems = all.map(item => ({
+  const dueItems = calendarItems.map(item => ({
     ...item,
     upcomingDate: item.type === "card" ? item.nextDue : getNextDebtDue(item)
   })).filter(item => item.is_active !== false && item.upcomingDate);
@@ -525,17 +693,7 @@ function render() {
     .filter(item => item.upcomingDate >= todayKey)
     .sort((a,b) => String(a.upcomingDate).localeCompare(String(b.upcomingDate)));
   const visibleDueItems = [...overdue, ...upcoming];
-  byId("debtsUpcomingList").innerHTML = visibleDueItems.length
-    ? visibleDueItems.slice(0,5).map(item => {
-        const isOverdue = item.upcomingDate < todayKey;
-        const dateLabel = new Intl.DateTimeFormat("es-GT", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" })
-          .format(new Date(`${item.upcomingDate}T12:00:00Z`));
-        return `<div class="debt-upcoming-row ${isOverdue ? "is-overdue" : ""}">
-          <span class="debt-upcoming-name">${escape(item.name)}</span>
-          <span class="debt-upcoming-meta"><small>${isOverdue ? "Vencido" : "Próximo"}</small><strong>${escape(dateLabel)}</strong></span>
-        </div>`;
-      }).join("")
-    : "No hay vencimientos pendientes.";
+  renderUpcomingList(visibleDueItems, todayKey);
   renderDebtCalendar(visibleDueItems);
 }
 
@@ -565,6 +723,122 @@ async function loadDebts() {
   }
 }
 
+function mountDebtDatePicker(inputId, { min = "", max = "" } = {}) {
+  const input = byId(inputId);
+  if (!input || input.dataset.customDatePicker === "true") return;
+
+  input.dataset.customDatePicker = "true";
+  input.type = "hidden";
+  input.required = false;
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "debt-date-picker";
+  wrapper.innerHTML = `
+    <button type="button" class="debt-date-trigger" aria-haspopup="dialog" aria-expanded="false">
+      <span class="debt-date-value">Seleccionar fecha</span>
+      <span aria-hidden="true">▦</span>
+    </button>
+    <div class="debt-date-popover" hidden>
+      <div class="debt-date-popover-head">
+        <button type="button" data-date-prev aria-label="Mes anterior">‹</button>
+        <strong></strong>
+        <button type="button" data-date-next aria-label="Mes siguiente">›</button>
+      </div>
+      <div class="debt-date-popover-grid"></div>
+      <div class="debt-date-popover-foot">
+        <button type="button" data-date-clear>Limpiar</button>
+        <button type="button" data-date-today>Hoy</button>
+      </div>
+    </div>`;
+
+  input.insertAdjacentElement("afterend", wrapper);
+  const trigger = wrapper.querySelector(".debt-date-trigger");
+  const valueLabel = wrapper.querySelector(".debt-date-value");
+  const popover = wrapper.querySelector(".debt-date-popover");
+  const monthLabel = wrapper.querySelector(".debt-date-popover-head strong");
+  const grid = wrapper.querySelector(".debt-date-popover-grid");
+  let viewMonth = input.value
+    ? new Date(input.value + "T12:00:00")
+    : new Date();
+  viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), 1);
+
+  const iso = date => [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0")
+  ].join("-");
+
+  const display = value => value
+    ? new Intl.DateTimeFormat("es-GT", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" })
+        .format(new Date(value + "T12:00:00Z"))
+    : "Seleccionar fecha";
+
+  const paint = () => {
+    monthLabel.textContent = formatCalendarMonth(viewMonth);
+    const year = viewMonth.getFullYear();
+    const month = viewMonth.getMonth();
+    const offset = (new Date(year, month, 1).getDay() + 6) % 7;
+    const count = new Date(year, month + 1, 0).getDate();
+    const cells = ["Lu","Ma","Mi","Ju","Vi","Sa","Do"]
+      .map(day => `<span class="debt-date-weekday">${day}</span>`);
+    for (let i = 0; i < offset; i++) cells.push('<span class="debt-date-day is-empty"></span>');
+    for (let day = 1; day <= count; day++) {
+      const date = new Date(year, month, day);
+      const key = iso(date);
+      const disabled = (min && key < min) || (max && key > max);
+      cells.push(`<button type="button" class="debt-date-day ${input.value === key ? "is-selected" : ""}" data-date-value="${key}" ${disabled ? "disabled" : ""}>${day}</button>`);
+    }
+    grid.innerHTML = cells.join("");
+    grid.querySelectorAll("[data-date-value]").forEach(button => {
+      button.addEventListener("click", () => selectDate(button.dataset.dateValue));
+    });
+  };
+
+  const selectDate = value => {
+    input.value = value;
+    valueLabel.textContent = display(value);
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+    popover.hidden = true;
+    trigger.setAttribute("aria-expanded", "false");
+    paint();
+  };
+
+  trigger.addEventListener("click", () => {
+    const opening = popover.hidden;
+    document.querySelectorAll(".debt-date-popover").forEach(item => item.hidden = true);
+    popover.hidden = !opening;
+    trigger.setAttribute("aria-expanded", String(opening));
+    if (opening) paint();
+  });
+
+  wrapper.querySelector("[data-date-prev]").addEventListener("click", () => {
+    viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1);
+    paint();
+  });
+  wrapper.querySelector("[data-date-next]").addEventListener("click", () => {
+    viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1);
+    paint();
+  });
+  wrapper.querySelector("[data-date-clear]").addEventListener("click", () => selectDate(""));
+  wrapper.querySelector("[data-date-today]").addEventListener("click", () => {
+    const today = iso(new Date());
+    if ((!min || today >= min) && (!max || today <= max)) {
+      viewMonth = new Date();
+      selectDate(today);
+    }
+  });
+
+  document.addEventListener("click", event => {
+    if (!wrapper.contains(event.target)) {
+      popover.hidden = true;
+      trigger.setAttribute("aria-expanded", "false");
+    }
+  });
+
+  valueLabel.textContent = display(input.value);
+  paint();
+}
+
 function openHistoricalPaymentForm(debtId) {
   const debt = debts.find(item => String(item.id) === String(debtId));
   if (!debt) return;
@@ -586,6 +860,10 @@ function openHistoricalPaymentForm(debtId) {
       </form>
     </div>`;
   overlay.hidden = false;
+  mountDebtDatePicker("debtHistoryDate", {
+    min: debt.start_date || "",
+    max: new Date().toISOString().slice(0, 10)
+  });
   const close = () => { overlay.hidden = true; overlay.replaceChildren(); };
   overlay.querySelector(".debt-payment-close").addEventListener("click", close);
   overlay.querySelector(".debt-payment-cancel").addEventListener("click", close);
@@ -664,6 +942,10 @@ function openPaymentForm(debtId) {
       </form>
     </div>`;
   overlay.hidden = false;
+  mountDebtDatePicker("debtPayDate", {
+    min: debt.start_date || "",
+    max: new Date().toISOString().slice(0, 10)
+  });
   const paymentForm = byId("debtPaymentForm");
   const periodsPerYear = debt.frequency === "weekly" ? 52 : debt.frequency === "biweekly" ? 26 : debt.frequency === "quarterly" ? 4 : debt.frequency === "yearly" ? 1 : 12;
   const estimatedInterest = Math.round((Number(debt.current_balance) * (Number(debt.interest_rate) / 100) / periodsPerYear) * 100) / 100;
