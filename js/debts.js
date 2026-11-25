@@ -618,8 +618,17 @@ function render() {
     const matchesTerm = !term || `${item.name} ${item.institution || ""}`.toLowerCase().includes(term);
     const matchesType = !typeFilter || typeFilter.value === "all" || item.type === typeFilter.value;
     const isPaid = Number(item.current_balance ?? item.balance) <= 0.009;
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const nextDue = isPaid ? null : getNextDebtDue(item);
+    const isOverdue = Boolean(nextDue && nextDue < todayKey);
     const matchesStatus = !statusFilter || statusFilter.value === "all" ||
-      (statusFilter.value === "paid" ? isPaid : statusFilter.value === "active" ? !isPaid : false);
+      (statusFilter.value === "paid"
+        ? isPaid
+        : statusFilter.value === "overdue"
+          ? isOverdue
+          : statusFilter.value === "active"
+            ? !isPaid && !isOverdue
+            : true);
     return matchesTerm && matchesType && matchesStatus;
   });
 
