@@ -704,6 +704,7 @@ function render() {
           <button type="button" class="secondary-button" data-debt-edit="${escape(item.id)}">Editar</button>
           <button type="button" class="secondary-button" data-debt-history="${escape(item.id)}">Pagos anteriores</button>
           <button type="button" class="secondary-button debt-pay-button" data-debt-pay="${escape(item.id)}">Registrar pago</button>
+          <button type="button" class="secondary-button debt-delete-button" data-debt-delete="${escape(item.id)}">Eliminar</button>
         </div>`}
       </article>`;
     }).join("");
@@ -1282,7 +1283,39 @@ async function saveDebt(event) {
   }
 }
 
+async function deleteDebt(debtId, button) {
+  const debt = debts.find(item => String(item.id) === String(debtId));
+  if (!debt) return;
+  const relatedPayments = debtPayments.filter(item => String(item.debt_id) === String(debtId)).length;
+  const message = relatedPayments
+    ? `¿Eliminar "${debt.name}"? También se eliminarán ${relatedPayments} pago(s) y sus gastos asociados, además de la compra inicial vinculada. Esta acción no se puede deshacer.`
+    : `¿Eliminar "${debt.name}" y su gasto inicial asociado? Esta acción no se puede deshacer.`;
+  if (!window.confirm(message)) return;
+
+  button.disabled = true;
+  try {
+    const { error } = await supabaseClient.rpc("eliminar_deuda_y_movimientos", { p_debt_id: String(debtId) });
+    if (error) throw error;
+    debts = debts.filter(item => String(item.id) !== String(debtId));
+    debtPayments = debtPayments.filter(item => String(item.debt_id) !== String(debtId));
+    if (typeof initializeExpenses === "function") await initializeExpenses();
+    if (typeof renderExpenseTable === "function") renderExpenseTable();
+    if (typeof renderCreditCardStatements === "function") renderCreditCardStatements();
+    if (typeof renderAccounts === "function") renderAccounts();
+    if (typeof updateDashboard === "function") updateDashboard();
+    if (typeof updateReports === "function") updateReports();
+    await loadDebts();
+    showToast("Deuda y movimientos asociados eliminados correctamente.");
+  } catch (error) {
+    console.error("Error eliminando deuda:", error);
+    showToast(error?.message || "No se pudo eliminar la deuda.");
+    button.disabled = false;
+  }
+}
+
 list.addEventListener("click", event => {
+  const deleteButton = event.target.closest("[data-debt-delete]");
+  if (deleteButton) { deleteDebt(deleteButton.dataset.debtDelete, deleteButton); return; }
   const editButton = event.target.closest("[data-debt-edit]");
   if (editButton) { openEditForm(editButton.dataset.debtEdit); return; }
   const historyButton = event.target.closest("[data-debt-history]");
@@ -1290,6 +1323,7 @@ list.addEventListener("click", event => {
   const payButton = event.target.closest("[data-debt-pay]");
   if (payButton) openPaymentForm(payButton.dataset.debtPay);
 });
+
 byId("debtNewButton")?.addEventListener("click", openForm);
 byId("debtEmptyNewButton")?.addEventListener("click", openForm);
 byId("debtFormClose")?.addEventListener("click", closeForm);
