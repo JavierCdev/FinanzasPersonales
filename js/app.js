@@ -417,6 +417,15 @@ function createId(type) {
 
 }
 
+function isScheduledExpense(expense) {
+    return String(expense?.status || "").trim().toLowerCase() === "scheduled" ||
+        String(expense?.paymentMethod || "").trim().toLowerCase() === "scheduled";
+}
+
+function isCountedExpense(expense) {
+    return !isScheduledExpense(expense);
+}
+
 
 let bankAccounts = [];
 let accountTransfers = [];
@@ -572,7 +581,7 @@ function calculateBankAccountBalance(account) {
         balance += Number(income.amount) || 0;
     });
     expenses.forEach(expense => {
-        if (expense.status === "scheduled" || expense.paymentMethod === "scheduled") return;
+        if (isScheduledExpense(expense)) return;
         if (expense.paymentMethod === "card" || String(expense.accountId || "") !== String(account.id) || !onOrAfterOpening(expense.date) || expense.currency !== account.currency) return;
         balance -= Number(expense.amount) || 0;
     });
@@ -617,7 +626,7 @@ function renderAccounts() {
         ? `${totalCards}${cards}`
         : `${totalCards}<div class="panel account-empty-state"><h2>Aún no tienes cuentas</h2><p>Agrega una cuenta bancaria, de ahorro o efectivo para empezar a separar tus saldos.</p></div>`;
 
-    const unassigned = incomes.filter(item => !item.accountId).length + expenses.filter(item => item.paymentMethod !== "card" && !item.accountId).length;
+    const unassigned = incomes.filter(item => !item.accountId).length + expenses.filter(item => isCountedExpense(item) && item.paymentMethod !== "card" && !item.accountId).length;
     if (accountUnassignedNotice) {
     accountUnassignedNotice.hidden = unassigned === 0;
 }
@@ -705,7 +714,7 @@ function getCardStatementBalances(cardId) {
 
     expenses.forEach(expense => {
         if (
-            expense.status === "scheduled" || expense.paymentMethod === "scheduled" ||
+            isScheduledExpense(expense) ||
             expense.paymentMethod !== "card" ||
             String(expense.creditCardId || "") !== String(cardId) ||
             !expense.statementCutoffDate ||
@@ -1035,7 +1044,7 @@ function openAccountForm(account = null) {
     updateAccountInstitutionVisibility();
     const hasActivity = account && (
         incomes.some(item => String(item.accountId || "") === String(account.id)) ||
-        expenses.some(item => String(item.accountId || "") === String(account.id)) ||
+        expenses.some(item => isCountedExpense(item) && String(item.accountId || "") === String(account.id)) ||
         accountTransfers.some(item => String(item.fromAccountId) === String(account.id) || String(item.toAccountId) === String(account.id))
     );
     accountCurrency.disabled = Boolean(hasActivity);
@@ -1096,6 +1105,7 @@ async function assignUnassignedToAccount() {
 
     const pendingExpenses = expenses.filter(
         expense =>
+            isCountedExpense(expense) &&
             expense.paymentMethod !== "card" &&
             !expense.accountId &&
             expense.currency === account.currency
@@ -2168,7 +2178,7 @@ function categoryHasTransactions(
     const transactions =
         type === "income"
             ? incomes
-            : expenses;
+            : expenses.filter(isCountedExpense);
 
 
     return Array.isArray(transactions)
@@ -4766,6 +4776,10 @@ function getSpentForBudget(
         return expensesList.reduce(
         (total, expense) => {
 
+            if (isScheduledExpense(expense)) {
+                return total;
+            }
+
             if (
                 expense.categoryId !==
                 categoryId
@@ -5798,6 +5812,11 @@ function openExpenseForm(
     expense = null
 ) {
 
+    if (isScheduledExpense(expense)) {
+        alert("Las cuotas programadas se registran desde el botón «Registrar pago».");
+        return;
+    }
+
     if (
         !expenseFormPanel ||
         !expenseForm
@@ -6618,7 +6637,7 @@ const monthlyExpenses = expenses.filter(expense => {
 
     if (!searchTerm) return true;
 
-    const category = categories.expense.find(
+    const category = isScheduledExpense(expense) ? null : categories.expense.find(
         item => item.id === expense.categoryId
     );
 
@@ -6630,7 +6649,7 @@ const monthlyExpenses = expenses.filter(expense => {
     const searchableText = [
         expense.description || "",
         expense.notes || "",
-        expense.categoryName || "",
+        isScheduledExpense(expense) ? "cuota programada por asignar" : expense.categoryName || "",
         category?.name || "",
         expense.amount,
         expense.amountGTQ,
@@ -6647,7 +6666,7 @@ const monthlyExpenses = expenses.filter(expense => {
 
 keepOnlyVisibleSelection(
     selectedExpenseIds,
-    monthlyExpenses.map(expense => expense.id)
+    monthlyExpenses.filter(isCountedExpense).map(expense => expense.id)
 );
 
 if (monthlyExpenses.length === 0) {
@@ -6714,7 +6733,8 @@ let html = `
     sorted.forEach(
         expense => {
 
-            const category =
+            const scheduled = isScheduledExpense(expense);
+            const category = scheduled ? null :
                 categories.expense.find(
                     item =>
                         item.id ===
@@ -6723,24 +6743,28 @@ let html = `
 
 
             const categoryName =
-                category?.name ||
-                expense.categoryName ||
-                "Categoría eliminada";
+                scheduled
+                    ? "Por asignar"
+                    : category?.name || expense.categoryName || "Categoría eliminada";
+            const expenseActions = scheduled
+                ? `<button type="button" class="table-action-button expense-pay-scheduled" data-scheduled-expense-pay="${escapeHtml(expense.id)}" ${expense.debtId ? "" : "disabled"}>Registrar pago</button>`
+                : `<button type="button" class="table-action-button" data-expense-action="edit" data-expense-id="${escapeHtml(expense.id)}">Editar</button>
+                   <button type="button" class="table-action-button delete" data-expense-action="delete" data-expense-id="${escapeHtml(expense.id)}">Eliminar</button>`;
 
 
                         html += `
                 <tr class="expense-main-row">
                     
 <td>
-    <input
+    ${scheduled ? "" : `<input
         type="checkbox"
         class="expense-select-checkbox"
-        data-expense-select-id="${expense.id}"
-        aria-label="Seleccionar gasto">
+        data-expense-select-id="${escapeHtml(expense.id)}"
+        aria-label="Seleccionar gasto">`}
     ${formatDate(expense.date)}
 </td>
 
-                    <td>${escapeHtml(expense.description || "")}${expense.status === "scheduled" ? '<span class="expense-status-pending"> · Programado</span>' : ""}</td>
+                    <td>${escapeHtml(expense.description || "")}${scheduled ? '<span class="expense-status-pending" role="status">Programada</span>' : ""}</td>
                     <td>${escapeHtml(categoryName)}</td>
                     <td>${escapeHtml(expense.currency || "GTQ")}</td>
                     <td class="income-amount">
@@ -6751,30 +6775,17 @@ let html = `
                     </td>
                     <td>
                         <div class="table-actions">
-                            <button
-                                type="button"
-                                class="table-action-button"
-                                data-expense-action="edit"
-                                data-expense-id="${expense.id}">
-                                Editar
-                            </button>
-                            <button
-                                type="button"
-                                class="table-action-button delete"
-                                data-expense-action="delete"
-                                data-expense-id="${expense.id}">
-                                Eliminar
-                            </button>
+                            ${expenseActions}
                         </div>
                     </td>
 
                     <td class="expense-mobile-summary-cell" colspan="7">
 
-<input
+${scheduled ? "" : `<input
     type="checkbox"
     class="expense-select-checkbox expense-select-checkbox-mobile"
-    data-expense-select-id="${expense.id}"
-    aria-label="Seleccionar gasto">
+    data-expense-select-id="${escapeHtml(expense.id)}"
+    aria-label="Seleccionar gasto">`}
                     
                         <button
                             type="button"
@@ -6785,7 +6796,7 @@ let html = `
                                 ${formatDate(expense.date)}
                             </span>
                             <span class="expense-mobile-description">
-                                ${escapeHtml(expense.description || "Sin descripción")}
+                                ${escapeHtml(expense.description || "Sin descripción")}${scheduled ? ' <span class="expense-status-pending" role="status">Programada</span>' : ""}
                             </span>
                             <span class="expense-mobile-category">
                                 ${escapeHtml(categoryName)}
@@ -6840,20 +6851,7 @@ let html = `
                             }
 
                             <div class="expense-details-actions">
-                                <button
-                                    type="button"
-                                    class="table-action-button"
-                                    data-expense-action="edit"
-                                    data-expense-id="${expense.id}">
-                                    Editar
-                                </button>
-                                <button
-                                    type="button"
-                                    class="table-action-button delete"
-                                    data-expense-action="delete"
-                                    data-expense-id="${expense.id}">
-                                    Eliminar
-                                </button>
+                                ${expenseActions}
                             </div>
                         </div>
                     </td>
@@ -6891,6 +6889,19 @@ bindBulkSelection({
 
 
 expenseTableContainer?.addEventListener("click", event => {
+    const payButton = event.target.closest("[data-scheduled-expense-pay]");
+    if (payButton && expenseTableContainer.contains(payButton)) {
+        const expense = expenses.find(item => String(item.id) === String(payButton.dataset.scheduledExpensePay));
+        if (!isScheduledExpense(expense) || !expense.debtId) {
+            alert("Esta cuota ya no está pendiente o no se pudo identificar la deuda.");
+            return;
+        }
+        document.dispatchEvent(new CustomEvent("finanzas:pay-scheduled-debt", {
+            detail: { debtId: expense.debtId, expenseId: expense.id }
+        }));
+        return;
+    }
+
     const toggle = event.target.closest("[data-expense-toggle]");
 
     if (!toggle || !expenseTableContainer.contains(toggle)) {
@@ -6937,6 +6948,7 @@ function renderCreditCardStatements() {
 
 const actualCardExpenses = expenses.filter(
     expense =>
+        isCountedExpense(expense) &&
         expense.paymentMethod === "card" &&
         expense.creditCardId &&
         expense.statementCutoffDate &&
@@ -7081,6 +7093,11 @@ document.addEventListener(
             return;
         }
 
+        if (isScheduledExpense(expense)) {
+            alert("Las cuotas programadas se liquidan desde el botón «Registrar pago».");
+            return;
+        }
+
 
         if (
             action === "edit"
@@ -7183,7 +7200,10 @@ document.addEventListener("click", async event => {
         ".expense-select-checkbox",
         "expenseSelectId",
         selectedExpenseIds
-    );
+    ).filter(id => {
+        const expense = expenses.find(item => String(item.id) === String(id));
+        return expense && isCountedExpense(expense);
+    });
 
     if (ids.length === 0) {
         alert("Selecciona al menos un gasto.");
@@ -7513,6 +7533,7 @@ function getLastUsedExpenseCreditCardId() {
 
     const lastCardExpense = expenses
         .filter(expense =>
+            isCountedExpense(expense) &&
             expense.paymentMethod === "card" &&
             expense.creditCardId &&
             activeCardIds.has(String(expense.creditCardId))
@@ -8187,10 +8208,7 @@ function populateYearSelectors() {
     // AÑOS DE LOS GASTOS
     // --------------------------------------------------------
 
-    const storedExpenses =
-    Array.isArray(expenses)
-        ? expenses.filter(expense => expense.status !== "scheduled" && expense.paymentMethod !== "scheduled")
-        : [];
+    const storedExpenses = Array.isArray(expenses) ? expenses.filter(isCountedExpense) : [];
 
     storedExpenses.forEach(expense => {
 
@@ -8401,10 +8419,7 @@ function getDashboardExpenses(
     year
 ) {
 
-    const storedExpenses =
-    Array.isArray(expenses)
-        ? expenses
-        : [];
+    const storedExpenses = Array.isArray(expenses) ? expenses.filter(isCountedExpense) : [];
 
 
     return storedExpenses.reduce(
@@ -8645,7 +8660,7 @@ function updateDashboardCards() {
     }, 0);
 
 totalIncome = sumForSelectedPeriod(incomes);
-totalExpenses = sumForSelectedPeriod(expenses);
+totalExpenses = sumForSelectedPeriod(expenses.filter(isCountedExpense));
     // --------------------------------------------------------
     // GASTOS FIJOS DEL MES SELECCIONADO
     // --------------------------------------------------------
@@ -8783,10 +8798,7 @@ function getMonthlyDashboardData(
     year
 ) {
 
-    const storedExpenses =
-    Array.isArray(expenses)
-        ? expenses
-        : [];
+    const storedExpenses = Array.isArray(expenses) ? expenses.filter(isCountedExpense) : [];
 
     const months =
         Array.from(
@@ -9041,10 +9053,7 @@ function getExpenseCategoryData(
     year
 ) {
 
-    const storedExpenses =
-    Array.isArray(expenses)
-        ? expenses
-        : [];
+    const storedExpenses = Array.isArray(expenses) ? expenses.filter(isCountedExpense) : [];
 
     const totals = {};
 
@@ -9303,6 +9312,7 @@ function getProjectedFixedCardCharges(selectedPeriod) {
 
             const alreadyRegistered = expenses.some(
                 registeredExpense =>
+                    isCountedExpense(registeredExpense) &&
                     registeredExpense.paymentMethod === "card" &&
                     String(registeredExpense.creditCardId) ===
                         String(expense.creditCardId) &&
@@ -9400,6 +9410,7 @@ projectedCharges.push({
 
             const alreadyRegistered = expenses.some(
                 registeredExpense =>
+                    isCountedExpense(registeredExpense) &&
                     registeredExpense.paymentMethod === "card" &&
                     String(registeredExpense.creditCardId) ===
                         String(expense.creditCardId) &&
@@ -9446,6 +9457,7 @@ function renderDashboardCardPayments() {
 
     const actualDueExpenses = expenses.filter(
     expense =>
+        isCountedExpense(expense) &&
         expense.paymentMethod === "card" &&
         expense.creditCardId &&
         expense.statementCutoffDate &&
@@ -12042,9 +12054,7 @@ function reportDateMatches(
 
 function getReportExpenses() {
 
-    return Array.isArray(expenses)
-        ? expenses.filter(expense => expense.status !== "scheduled" && expense.paymentMethod !== "scheduled")
-        : [];
+    return Array.isArray(expenses) ? expenses.filter(isCountedExpense) : [];
 
 }
 

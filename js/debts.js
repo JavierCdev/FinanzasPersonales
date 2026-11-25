@@ -942,9 +942,16 @@ function openHistoricalPaymentForm(debtId) {
   });
 }
 
-function openPaymentForm(debtId) {
+function openPaymentForm(debtId, scheduledExpenseId = "") {
   const debt = debts.find(item => String(item.id) === String(debtId));
   if (!debt) return;
+  const scheduledExpenses = (typeof expenses !== "undefined" ? expenses : []).filter(item =>
+    (item.status === "scheduled" || item.paymentMethod === "scheduled") && String(item.debtId) === String(debt.id)
+  );
+  if (scheduledExpenseId && !scheduledExpenses.some(item => String(item.id) === String(scheduledExpenseId))) {
+    showToast("Esta cuota ya no está pendiente. Actualiza la lista e inténtalo de nuevo.", "error");
+    return;
+  }
   const categoriesList = (typeof categories !== "undefined" ? categories.expense : []).filter(item => item.active !== false);
   const accountsList = (typeof bankAccounts !== "undefined" ? bankAccounts : []).filter(item => item.isActive && item.currency === debt.currency);
   const availableCards = (typeof creditCards !== "undefined" ? creditCards : []).filter(item => item.active !== false);
@@ -955,7 +962,7 @@ function openPaymentForm(debtId) {
       <form id="debtPaymentForm">
         <div class="form-grid">
           <div class="form-group"><label for="debtPayDate">Fecha del pago</label><input id="debtPayDate" type="date" value="${new Date().toISOString().slice(0,10)}" required></div>
-          <div class="form-group debts-form-full"><label for="debtPayScheduledExpense">Cuota programada (opcional)</label><select id="debtPayScheduledExpense"><option value="">Registrar pago sin cuota programada</option>${(typeof expenses !== "undefined" ? expenses : []).filter(item => item.status === "scheduled" && String(item.debtId) === String(debt.id)).map(item => `<option value="${escape(item.id)}" data-date="${escape(item.date)}" data-amount="${Number(item.amount)||0}" data-principal="${Number(item.principalAmount)||0}" data-interest="${Number(item.interestAmount)||0}">Cuota ${item.debtInstallmentNumber} · ${escape(item.date)} · ${money(item.amount,debt.currency)}</option>`).join("")}</select></div>
+          <div class="form-group debts-form-full"><label for="debtPayScheduledExpense">Cuota programada (opcional)</label><select id="debtPayScheduledExpense"><option value="">Registrar pago sin cuota programada</option>${scheduledExpenses.map(item => `<option value="${escape(item.id)}" data-amount="${Number(item.amount)||0}" data-principal="${Number(item.principalAmount)||0}" data-interest="${Number(item.interestAmount)||0}" data-charges="${Number(item.chargesAmount)||0}">Cuota ${item.debtInstallmentNumber} · ${escape(item.date)} · ${money(item.amount,debt.currency)}</option>`).join("")}</select></div>
           <div class="form-group"><label for="debtPayCategory">Categoría de gasto</label><select id="debtPayCategory" required><option value="">Selecciona una categoría</option>${categoriesList.map(item=>`<option value="${escape(item.id)}">${escape(item.name)}</option>`).join("")}</select></div>
           <div class="form-group"><label for="debtPayPrincipal">Abono a capital (${debt.currency})</label><input id="debtPayPrincipal" type="number" min="0.01" step="0.01" max="${Number(debt.current_balance)}" required></div>
           <div class="form-group"><label for="debtPayInterest">Intereses (${debt.currency})</label><input id="debtPayInterest" type="number" min="0" step="0.01" value="0" required></div>
@@ -977,6 +984,7 @@ function openPaymentForm(debtId) {
     max: new Date().toISOString().slice(0, 10)
   });
   const paymentForm = byId("debtPaymentForm");
+  const scheduledSelect = byId("debtPayScheduledExpense");
   const periodsPerYear = debt.frequency === "weekly" ? 52 : debt.frequency === "biweekly" ? 26 : debt.frequency === "quarterly" ? 4 : debt.frequency === "yearly" ? 1 : 12;
   const estimatedInterest = Math.round((Number(debt.current_balance) * (Number(debt.interest_rate) / 100) / periodsPerYear) * 100) / 100;
   const scheduledPayment = Number(debt.installment_amount) || 0;
@@ -1001,6 +1009,26 @@ function openPaymentForm(debtId) {
     byId("debtPayNotice").textContent = "La cuota establecida no cubre los intereses estimados del período. Revisa el monto de la cuota.";
   }
   const updateTotal = () => { byId("debtPayTotal").textContent = "Total del pago: " + money(total(),debt.currency); };
+  const applyScheduledValues = () => {
+    const selected = scheduledSelect.selectedOptions[0];
+    if (selected?.value) {
+      byId("debtPayPrincipal").value = Number(selected.dataset.principal || 0).toFixed(2);
+      byId("debtPayInterest").value = Number(selected.dataset.interest || 0).toFixed(2);
+      byId("debtPayCharges").value = Number(selected.dataset.charges || 0).toFixed(2);
+      byId("debtPayNotice").textContent = "Capital e intereses precargados desde la cuota. Elige la categoría que corresponde al pago.";
+    } else {
+      byId("debtPayPrincipal").value = suggestedPrincipal > 0 ? suggestedPrincipal.toFixed(2) : "";
+      byId("debtPayInterest").value = estimatedInterest.toFixed(2);
+      byId("debtPayCharges").value = "0";
+      byId("debtPayNotice").textContent = "";
+    }
+    updateTotal();
+  };
+  scheduledSelect.addEventListener("change", applyScheduledValues);
+  if (scheduledExpenseId) {
+    scheduledSelect.value = String(scheduledExpenseId);
+    applyScheduledValues();
+  }
   amountFields.forEach(id=>byId(id).addEventListener("input",updateTotal));
   const close = () => { overlay.hidden = true; overlay.replaceChildren(); };
   overlay.querySelector(".debt-payment-close").addEventListener("click",close);
@@ -1282,6 +1310,11 @@ list.addEventListener("click", event => {
   if (historyButton) { openHistoricalPaymentForm(historyButton.dataset.debtHistory); return; }
   const payButton = event.target.closest("[data-debt-pay]");
   if (payButton) openPaymentForm(payButton.dataset.debtPay);
+});
+
+document.addEventListener("finanzas:pay-scheduled-debt", event => {
+  const { debtId, expenseId } = event.detail || {};
+  if (debtId && expenseId) openPaymentForm(debtId, expenseId);
 });
 
 byId("debtNewButton")?.addEventListener("click", openForm);
