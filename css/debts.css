@@ -1271,8 +1271,37 @@
 .dv-row.is-card { --dv-accent:#e6c94e; }
 .dv-row.is-financing { --dv-accent:#9bdc5d; }
 .dv-row.is-overdue.is-loan,.dv-row.is-overdue.is-financing { --dv-accent:#ff746b; }
-.debts-section .dv-row > .dv-row-icon { grid-column:1; grid-row:1; justify-self:start; display:grid; width:36px; height:36px; place-items:center; border-radius:10px; background:color-mix(in srgb,var(--dv-accent) 13%,transparent); color:var(--dv-accent); }
-.dv-row-icon svg { width:19px; height:19px; }
+.debts-section .dv-row > .dv-row-icon {
+  grid-column:1;
+  grid-row:1;
+  justify-self:start;
+  display:grid;
+  box-sizing:border-box;
+  flex:0 0 44px;
+  width:44px;
+  min-width:44px;
+  height:44px;
+  min-height:44px;
+  aspect-ratio:1 / 1;
+  place-items:center;
+  overflow:hidden;
+  border:1px solid color-mix(in srgb,var(--dv-accent) 18%,transparent);
+  border-radius:12px;
+  background:color-mix(in srgb,var(--dv-accent) 13%,transparent);
+  color:var(--dv-accent);
+}
+.dv-row-icon svg {
+  display:block;
+  flex:none;
+  width:20px;
+  height:20px;
+  min-width:20px;
+  min-height:20px;
+  stroke:currentColor;
+  stroke-width:1.8;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
 .debts-section .dv-row > .dv-row-main { grid-column:2; grid-row:1; display:grid; align-content:center; justify-items:start !important; align-self:center; gap:3px; min-width:0; width:100%; margin:0; text-align:left !important; }
 .debts-section .dv-row-name { display:block; width:100%; max-width:100%; overflow:hidden; color:#f1f7f2; font-size:13px; font-weight:750; line-height:1.3; text-align:left !important; text-overflow:ellipsis; white-space:nowrap; }
 .dv-row-kind { color:#9fb5a7; font-size:10px; line-height:1.35; text-align:left !important; }
@@ -1288,7 +1317,7 @@
 .dv-row-amount strong { color:#c8f477; font-size:13px; font-weight:750; font-variant-numeric:tabular-nums; white-space:nowrap; }
 @media (max-width:760px) {
   .debts-section .dv-row { grid-template-columns:34px minmax(0,1fr) !important; grid-template-rows:auto auto !important; gap:8px 10px !important; min-height:0 !important; padding:10px !important; }
-  .debts-section .dv-row > .dv-row-icon { grid-column:1; grid-row:1; width:33px; height:33px; }
+  .debts-section .dv-row > .dv-row-icon { grid-column:1; grid-row:1; width:44px; min-width:44px; height:44px; min-height:44px; }
   .debts-section .dv-row > .dv-row-main { grid-column:2; grid-row:1; }
   .debts-section .dv-row > .dv-row-meta { grid-column:2; grid-row:2; display:flex; flex-wrap:wrap; justify-content:space-between; gap:7px 10px; padding-top:7px; border-top:1px solid rgba(128,174,143,.16); }
   .dv-row-when { display:flex; flex-wrap:wrap; align-items:center; gap:7px; }
