@@ -156,6 +156,7 @@ function toggleFinancingCardFields() {
   byId("debtFinancingCategoryField").hidden = !linked;
   byId("debtFinancingRateField").hidden = !linked || value("debtCurrency") !== "USD";
   byId("debtExpenseCategoryField").hidden = linked || Boolean(editingDebtId);
+  byId("debtExpenseRateField").hidden = linked || Boolean(editingDebtId) || value("debtCurrency") !== "USD";
   financingCardSelect.required = linked;
   financingCategorySelect.required = linked;
   expenseCategorySelect.required = !editingDebtId && !linked && type.value !== "card";
@@ -1123,7 +1124,7 @@ async function saveDebt(event) {
   const initialExpenseCategory = !editingDebtId && !linkedCard
     ? (typeof categories !== "undefined" ? categories.expense.find(item => String(item.id) === value("debtExpenseCategory") && item.active !== false) : null)
     : null;
-  const exchangeRate = currency === "USD" ? Number(value("debtFinancingExchangeRate")) : 1;
+  const exchangeRate = currency === "USD" ? Number(value(linkedCard ? "debtFinancingExchangeRate" : "debtExpenseExchangeRate")) : 1;
   if (linkedCard && (!selectedFinancingCard || !financingCategory || !Number.isFinite(exchangeRate) || exchangeRate <= 0)) {
     setNotice("Selecciona una tarjeta, una categoría válida y un tipo de cambio correcto.", true);
     return;
