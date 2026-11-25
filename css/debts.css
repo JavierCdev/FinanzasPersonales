@@ -931,8 +931,8 @@
 .debts-secondary-grid.debts-dashboard-redesign {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-auto-rows: auto;
-  align-items: start;
+  grid-auto-rows: minmax(0,1fr);
+  align-items: stretch;
   gap: 16px;
   margin-top: 18px;
 }
@@ -942,7 +942,7 @@
   min-width: 0;
   min-height: 0;
   flex-direction: column;
-  align-self: start;
+  align-self: stretch;
   height: auto;
   padding: 20px;
   overflow: hidden;
@@ -1030,11 +1030,15 @@
   background: transparent;
 }
 
-/* Calendario */
-.debts-calendar-panel .debts-calendar-preview { display: block; flex: 0 0 auto; width: 100%; min-height: 0; }
+/* Calendario: crece con el panel para conservar tarjetas del mismo alto. */
+.debts-calendar-panel .debts-calendar-preview { display: flex; flex: 1 1 auto; width: 100%; min-height: 0; }
 .debts-calendar-panel .debts-calendar-inner {
   box-sizing: border-box;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
   width: min(100%,490px);
+  min-height: 0;
   margin: 4px auto 0;
   padding: 12px;
   border: 1px solid rgba(108,166,126,.24);
@@ -1070,6 +1074,8 @@
 .debts-calendar-panel #debtsCalendarGrid {
   display: grid;
   grid-template-columns: repeat(7,minmax(0,1fr));
+  grid-template-rows: 22px repeat(6,minmax(38px,1fr));
+  flex: 1 1 auto;
   gap: 4px;
   width: 100%;
 }
@@ -1088,9 +1094,9 @@
   position: relative;
   display: grid;
   width: 100%;
-  height: 32px;
-  min-height: 32px;
-  max-height: 32px;
+  height: 100%;
+  min-height: 38px;
+  max-height: none;
   place-items: center;
   padding: 0;
   border: 1px solid transparent;
@@ -1168,6 +1174,17 @@
   .debts-secondary-grid.debts-dashboard-redesign > .panel {
     height: auto;
     min-height: 0;
+  }
+  .debts-calendar-panel .debts-calendar-preview { flex: 0 0 auto; }
+  .debts-calendar-panel .debts-calendar-inner { display: block; }
+  .debts-calendar-panel #debtsCalendarGrid {
+    grid-template-rows: none;
+    flex: 0 0 auto;
+  }
+  .debts-calendar-panel #debtsCalendarGrid .debt-calendar-day {
+    height: 32px;
+    min-height: 32px;
+    max-height: 32px;
   }
   .debts-calendar-panel .debts-calendar-inner,
   .debts-calendar-panel .debts-calendar-legend { width: min(100%,520px); }
