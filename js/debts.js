@@ -632,7 +632,7 @@ function render() {
     return [...totals.entries()].map(([currency, amount]) => money(amount, currency)).join(" · ") || money(0, "GTQ");
   };
   const activeDebts = all.filter(item => item.is_active !== false && Number(item.current_balance ?? item.balance) > 0.009);
-  const monthlyRows = debts.filter(item => item.is_active && Number(item.installment_amount) > 0).map(item => {
+  const monthlyRows = all.filter(item => item.is_active && Number(item.installment_amount) > 0).map(item => {
     const factor = item.frequency === "weekly" ? 52/12 : item.frequency === "biweekly" ? 26/12 : item.frequency === "quarterly" ? 1/3 : item.frequency === "yearly" ? 1/12 : 1;
     return { currency: item.currency || "GTQ", monthlyAmount: Number(item.installment_amount) * factor };
   });
@@ -655,7 +655,7 @@ function render() {
     list.className = "debts-empty-state";
     list.innerHTML = all.length
       ? '<p>No hay resultados para los filtros seleccionados.</p>'
-      : '<div class="debts-empty-icon">₲</div><h3>Aún no tienes deudas registradas</h3><p>Registra tu primer préstamo o financiamiento. Las tarjetas se vincularán desde las que ya tienes registradas.</p><button type="button" class="primary-button" id="debtEmptyNewButton">Registrar primera deuda</button>';
+      : '<div class="debts-empty-icon">₲</div><h3>Aún no tienes préstamos o financiamientos</h3><p>Registra una obligación para comenzar a controlar sus cuotas y pagos. Tus tarjetas se administran desde Cuentas.</p><button type="button" class="primary-button" id="debtEmptyNewButton">Registrar primera deuda</button>';
     byId("debtEmptyNewButton")?.addEventListener("click", openForm);
   } else {
     list.className = "debts-list";
