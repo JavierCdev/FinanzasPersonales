@@ -1119,27 +1119,13 @@ async function saveDebt(event) {
   const selectedFinancingCard = linkedCard
     ? (typeof creditCards !== "undefined" ? creditCards.find(card => String(card.id) === value("debtFinancingCreditCard") && card.active !== false) : null)
     : null;
-  const financingCategory = linkedCard
-    ? (typeof categories !== "undefined" ? categories.expense.find(item => String(item.id) === value("debtFinancingCategory") && item.active !== false) : null)
-    : null;
-  const initialExpenseCategory = !editingDebtId && !linkedCard
-    ? (typeof categories !== "undefined" ? categories.expense.find(item => String(item.id) === value("debtExpenseCategory") && item.active !== false) : null)
-    : null;
-  const exchangeRate = currency === "USD" ? Number(value(linkedCard ? "debtFinancingExchangeRate" : "debtExpenseExchangeRate")) : 1;
-  if (currency === "USD" && (!Number.isFinite(exchangeRate) || exchangeRate <= 0)) {
-    setNotice("Ingresa un tipo de cambio válido para convertir el gasto a quetzales.", true);
+
+  if (linkedCard && !selectedFinancingCard) {
+    setNotice("Selecciona una tarjeta válida para vincular el financiamiento.", true);
     return;
   }
-  if (linkedCard && (!selectedFinancingCard || !financingCategory || !Number.isFinite(exchangeRate) || exchangeRate <= 0)) {
-    setNotice("Selecciona una tarjeta, una categoría válida y un tipo de cambio correcto.", true);
-    return;
-  }
-  if (!editingDebtId && !linkedCard && !initialExpenseCategory) {
-    setNotice("Selecciona la categoría para registrar el monto original como gasto.", true);
-    return;
-  }
-  if (editingDebtId && debts.find(item => String(item.id) === editingDebtId)?.initial_expense_id && linkedCard) {
-    setNotice("Este financiamiento ya tiene una compra registrada en la tarjeta. No se puede volver a generar.", true);
+  if (editingDebtId && debts.find(item => String(item.id) === editingDebtId)?.initial_expense_id) {
+    setNotice("Este registro conserva un movimiento inicial histórico. No se generará otro movimiento al editarlo.", true);
     return;
   }
 
@@ -1183,30 +1169,8 @@ async function saveDebt(event) {
     let data;
     let error;
     if (!editingDebtId && linkedCard) {
-      const debtId = payload.id;
-      const expenseId = createId("expense");
-      const statementDates = getCreditCardStatementDates(startDate, selectedFinancingCard);
-      const amountGTQ = original * exchangeRate;
-      const expense = {
-        id: expenseId,
-        date: startDate,
-        description: payload.name,
-        category_id: financingCategory.id,
-        category_name: financingCategory.name,
-        currency,
-        amount: original,
-        exchange_rate: exchangeRate,
-        amount_gtq: amountGTQ,
-        exchange_rate_source: currency === "USD" ? "Manual" : "N/A",
-        notes: payload.notes || "Compra registrada desde un financiamiento vinculado a tarjeta.",
-        payment_method: "card",
-        credit_card_id: selectedFinancingCard.id,
-        statement_cutoff_date: statementDates.statementCutoffDate,
-        statement_due_date: statementDates.statementDueDate
-      };
-      const response = await supabaseClient.rpc("registrar_financiamiento_con_tarjeta", {
+      const response = await supabaseClient.rpc("registrar_financiamiento_sin_compra", {
         p_debt: payload,
-        p_expense: expense,
         p_credit_card_id: selectedFinancingCard.id
       });
       error = response.error;
@@ -1215,26 +1179,8 @@ async function saveDebt(event) {
         data = result?.debt || result;
       }
     } else if (!editingDebtId) {
-      const expenseId = createId("expense");
-      const expense = {
-        id: expenseId,
-        date: startDate,
-        description: payload.name,
-        category_id: initialExpenseCategory.id,
-        category_name: initialExpenseCategory.name,
-        currency,
-        amount: original,
-        exchange_rate: exchangeRate,
-        amount_gtq: original * exchangeRate,
-        exchange_rate_source: currency === "USD" ? "Manual" : "N/A",
-        notes: payload.notes || "Gasto generado automáticamente al registrar la deuda.",
-        payment_method: "cash",
-        credit_card_id: null,
-        account_id: null
-      };
-      const response = await supabaseClient.rpc("registrar_deuda_con_gasto", {
-        p_debt: payload,
-        p_expense: expense
+      const response = await supabaseClient.rpc("registrar_deuda_sin_gasto", {
+        p_debt: payload
       });
       error = response.error;
       if (!error) {
