@@ -955,6 +955,7 @@ function openPaymentForm(debtId) {
       <form id="debtPaymentForm">
         <div class="form-grid">
           <div class="form-group"><label for="debtPayDate">Fecha del pago</label><input id="debtPayDate" type="date" value="${new Date().toISOString().slice(0,10)}" required></div>
+          <div class="form-group debts-form-full"><label for="debtPayScheduledExpense">Cuota programada (opcional)</label><select id="debtPayScheduledExpense"><option value="">Registrar pago sin cuota programada</option>${(typeof expenses !== "undefined" ? expenses : []).filter(item => item.status === "scheduled" && String(item.debtId) === String(debt.id)).map(item => `<option value="${escape(item.id)}" data-date="${escape(item.date)}" data-amount="${Number(item.amount)||0}" data-principal="${Number(item.principalAmount)||0}" data-interest="${Number(item.interestAmount)||0}">Cuota ${item.debtInstallmentNumber} · ${escape(item.date)} · ${money(item.amount,debt.currency)}</option>`).join("")}</select></div>
           <div class="form-group"><label for="debtPayCategory">Categoría de gasto</label><select id="debtPayCategory" required><option value="">Selecciona una categoría</option>${categoriesList.map(item=>`<option value="${escape(item.id)}">${escape(item.name)}</option>`).join("")}</select></div>
           <div class="form-group"><label for="debtPayPrincipal">Abono a capital (${debt.currency})</label><input id="debtPayPrincipal" type="number" min="0.01" step="0.01" max="${Number(debt.current_balance)}" required></div>
           <div class="form-group"><label for="debtPayInterest">Intereses (${debt.currency})</label><input id="debtPayInterest" type="number" min="0" step="0.01" value="0" required></div>
@@ -1012,6 +1013,7 @@ function openPaymentForm(debtId) {
     const amount = principal + interest + charges;
     const rate = debt.currency === "USD" ? Number(byId("debtPayRate").value) : 1;
     const categoryId = byId("debtPayCategory").value;
+    const scheduledExpenseId = byId("debtPayScheduledExpense")?.value || "";
     const paymentMethod = byId("debtPayMethod").value;
     const accountId = paymentMethod === "card" ? null : (byId("debtPayAccount").value || null);
     const creditCardId = paymentMethod === "card" ? byId("debtPayCard").value : null;
@@ -1046,7 +1048,19 @@ function openPaymentForm(debtId) {
         p_amount_gtq: amount * rate
       };
       let response;
-      if (paymentMethod === "card") {
+      if (scheduledExpenseId) {
+        const selectedCard = paymentMethod === "card" ? availableCards.find(card => String(card.id) === String(creditCardId)) : null;
+        const statementDates = selectedCard ? getCreditCardStatementDates(paymentDate, selectedCard) : { statementCutoffDate: null, statementDueDate: null };
+        response = await supabaseClient.rpc("registrar_pago_deuda_programado", {
+          p_payment_id: paymentId, p_debt_id: debt.id, p_scheduled_expense_id: scheduledExpenseId,
+          p_payment_date: paymentDate, p_principal_amount: principal, p_interest_amount: interest,
+          p_charges_amount: charges, p_total_amount: amount, p_category_id: categoryId,
+          p_currency: debt.currency, p_exchange_rate: rate, p_amount_gtq: amount * rate,
+          p_payment_method: paymentMethod, p_account_id: accountId, p_credit_card_id: creditCardId || null,
+          p_statement_cutoff_date: statementDates.statementCutoffDate, p_statement_due_date: statementDates.statementDueDate,
+          p_notes: valueFrom("debtPayNotes")
+        });
+      } else if (paymentMethod === "card") {
         const selectedCard = availableCards.find(card => String(card.id) === String(creditCardId));
         if (!selectedCard) throw new Error("No se encontró la tarjeta seleccionada.");
         const statementDates = getCreditCardStatementDates(paymentDate, selectedCard);
