@@ -572,6 +572,7 @@ function calculateBankAccountBalance(account) {
         balance += Number(income.amount) || 0;
     });
     expenses.forEach(expense => {
+        if (expense.status === "scheduled" || expense.paymentMethod === "scheduled") return;
         if (expense.paymentMethod === "card" || String(expense.accountId || "") !== String(account.id) || !onOrAfterOpening(expense.date) || expense.currency !== account.currency) return;
         balance -= Number(expense.amount) || 0;
     });
@@ -704,6 +705,7 @@ function getCardStatementBalances(cardId) {
 
     expenses.forEach(expense => {
         if (
+            expense.status === "scheduled" || expense.paymentMethod === "scheduled" ||
             expense.paymentMethod !== "card" ||
             String(expense.creditCardId || "") !== String(cardId) ||
             !expense.statementCutoffDate ||
@@ -5590,6 +5592,7 @@ async function initializeExpenses() {
                 amount_gtq,
                 exchange_rate_source,
                 notes,
+                status, debt_id, debt_installment_number, principal_amount, interest_amount, charges_amount,
                 payment_method,
                 credit_card_id,
                 statement_cutoff_date,
@@ -5661,6 +5664,9 @@ async function initializeExpenses() {
                     notes:
                         expense.notes ||
                         "",
+                    status: expense.status || "paid",
+                    debtId: expense.debt_id || null,
+                    debtInstallmentNumber: expense.debt_installment_number || null,
 
                     accountId:
                         expense.account_id || null,
@@ -8180,7 +8186,7 @@ function populateYearSelectors() {
 
     const storedExpenses =
     Array.isArray(expenses)
-        ? expenses
+        ? expenses.filter(expense => expense.status !== "scheduled" && expense.paymentMethod !== "scheduled")
         : [];
 
     storedExpenses.forEach(expense => {
@@ -12034,7 +12040,7 @@ function reportDateMatches(
 function getReportExpenses() {
 
     return Array.isArray(expenses)
-        ? expenses
+        ? expenses.filter(expense => expense.status !== "scheduled" && expense.paymentMethod !== "scheduled")
         : [];
 
 }
