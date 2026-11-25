@@ -1125,6 +1125,10 @@ async function saveDebt(event) {
     ? (typeof categories !== "undefined" ? categories.expense.find(item => String(item.id) === value("debtExpenseCategory") && item.active !== false) : null)
     : null;
   const exchangeRate = currency === "USD" ? Number(value(linkedCard ? "debtFinancingExchangeRate" : "debtExpenseExchangeRate")) : 1;
+  if (currency === "USD" && (!Number.isFinite(exchangeRate) || exchangeRate <= 0)) {
+    setNotice("Ingresa un tipo de cambio válido para convertir el gasto a quetzales.", true);
+    return;
+  }
   if (linkedCard && (!selectedFinancingCard || !financingCategory || !Number.isFinite(exchangeRate) || exchangeRate <= 0)) {
     setNotice("Selecciona una tarjeta, una categoría válida y un tipo de cambio correcto.", true);
     return;
