@@ -569,14 +569,18 @@ function renderUpcomingList(items, todayKey) {
     const kindLabel = kind === "card" ? "Tarjeta de crédito" : kind === "financing" ? "Financiamiento" : "Préstamo";
     const dateLabel = new Intl.DateTimeFormat("es-GT", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" })
       .format(new Date(`${item.upcomingDate}T12:00:00Z`)).replace(/\./g, "");
-    const amount = Number(item.installment_amount) || 0;
+    const amount = Number(item.type === "card" ? item.balance : item.installment_amount) || 0;
+    const amountLabel = item.type === "card" ? "Saldo pendiente" : "Cuota";
+    const detailLabel = item.type === "card"
+      ? "Fecha límite de pago"
+      : `${frequencyLabels[item.frequency] || frequencyLabels.monthly}`;
 
     return `
       <article class="dv-row is-${kind} ${status.cls}">
         <span class="dv-row-icon">${upIcon(kind === "card" ? "card" : kind === "financing" ? "home" : "arrow")}</span>
         <div class="dv-row-main">
           <strong class="dv-row-name">${escape(item.name)}</strong>
-          <span class="dv-row-kind">${kindLabel} · ${frequencyLabels[item.frequency] || frequencyLabels.monthly}</span>
+          <span class="dv-row-kind">${item.type === "card" ? detailLabel : `${kindLabel} · ${detailLabel}`}</span>
         </div>
         <div class="dv-row-meta">
           <div class="dv-row-when">
@@ -584,7 +588,7 @@ function renderUpcomingList(items, todayKey) {
             <span class="dv-date">${upIcon("calendar")}${escape(dateLabel)}</span>
           </div>
           <div class="dv-row-amount">
-            <span>Cuota</span>
+            <span>${amountLabel}</span>
             <strong>${amount > 0 ? escape(money(amount, item.currency || "GTQ")) : "—"}</strong>
           </div>
         </div>
@@ -604,11 +608,11 @@ function renderUpcomingList(items, todayKey) {
 }
 
 function render() {
+  // Las tarjetas se administran en Cuentas. Aquí solo se muestran préstamos
+  // y financiamientos; sus fechas de pago siguen integradas al calendario.
   const cards = getCardBalances();
-  const all = [
-    ...debts.map(debt => ({ ...debt, type: debt.type })),
-    ...cards
-  ];
+  const all = debts.filter(debt => debt.type !== "card");
+  const calendarItems = [...all, ...cards];
   const term = (search?.value || "").trim().toLowerCase();
   const filtered = all.filter(item => {
     const matchesTerm = !term || `${item.name} ${item.institution || ""}`.toLowerCase().includes(term);
@@ -669,7 +673,7 @@ function render() {
   }
 
   const todayKey = new Date().toISOString().slice(0, 10);
-  const dueItems = all.map(item => ({
+  const dueItems = calendarItems.map(item => ({
     ...item,
     upcomingDate: item.type === "card" ? item.nextDue : getNextDebtDue(item)
   })).filter(item => item.is_active !== false && item.upcomingDate);
