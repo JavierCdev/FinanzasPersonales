@@ -673,10 +673,30 @@ function render() {
       const currency = item.currency || "GTQ";
       const label = item.type === "card" ? "Tarjeta de crédito" : item.type === "loan" ? "Préstamo" : "Financiamiento";
       const due = item.type === "card" ? item.nextDue : getNextDebtDue(item);
-      return `<article class="debt-item">
-        <div class="debt-item-main"><span class="debt-item-type">${label}</span><h3>${escape(item.name)}</h3><p>${escape(item.institution || (item.type === "card" ? "Tarjeta registrada" : ""))}</p></div>
-        <div class="debt-item-balance"><span>Saldo pendiente</span><strong>${money(balance, currency)}</strong>${due ? `<small class="${due < new Date().toISOString().slice(0,10) ? "is-overdue" : ""}">${due < new Date().toISOString().slice(0,10) ? "Vencido desde" : "Próximo vencimiento"}: ${escape(due)}</small>` : ""}</div>
-        ${item.type === "card" ? "" : `<div class="debt-item-actions"><button type="button" class="secondary-button" data-debt-edit="${escape(item.id)}">Editar</button><button type="button" class="secondary-button" data-debt-history="${escape(item.id)}">Pagos anteriores</button><button type="button" class="secondary-button debt-pay-button" data-debt-pay="${escape(item.id)}">Registrar pago</button></div>`}
+      const today = new Date().toISOString().slice(0, 10);
+      const isOverdue = Boolean(due && due < today && item.type !== "card");
+      const dueLabel = due
+        ? `${isOverdue ? "Vencido desde" : "Próximo vencimiento"}: ${escape(due)}`
+        : "Sin fecha de vencimiento";
+      return `<article class="debt-item${isOverdue ? " is-overdue" : ""}">
+        <div class="debt-item-main">
+          <div class="debt-item-heading">
+            <span class="debt-item-type">${label}</span>
+            ${isOverdue ? '<span class="debt-item-status">Vencido</span>' : ""}
+          </div>
+          <h3>${escape(item.name)}</h3>
+          <p>${escape(item.institution || (item.type === "card" ? "Tarjeta registrada" : ""))}</p>
+        </div>
+        <div class="debt-item-balance">
+          <span>Saldo pendiente</span>
+          <strong>${money(balance, currency)}</strong>
+          <small class="${isOverdue ? "is-overdue" : ""}">${dueLabel}</small>
+        </div>
+        ${item.type === "card" ? "" : `<div class="debt-item-actions">
+          <button type="button" class="secondary-button" data-debt-edit="${escape(item.id)}">Editar</button>
+          <button type="button" class="secondary-button" data-debt-history="${escape(item.id)}">Pagos anteriores</button>
+          <button type="button" class="secondary-button debt-pay-button" data-debt-pay="${escape(item.id)}">Registrar pago</button>
+        </div>`}
       </article>`;
     }).join("");
   }
