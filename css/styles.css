@@ -8293,3 +8293,71 @@ select option:hover {
     line-height: 1.3;
     white-space: nowrap;
 }
+
+/* Dashboard: resumen compacto junto al detalle de pagos. */
+#dashboardCardPayments {
+    display: grid;
+    grid-template-columns: minmax(195px, 230px) minmax(0, 1fr);
+    align-items: start;
+    gap: 12px;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+}
+#dashboardCardPayments > .dashboard-payment-summary {
+    box-sizing: border-box;
+    display: flex;
+    min-height: 88px;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 10px;
+    margin: 0;
+    padding: 14px 16px;
+    border: 1px solid #31483b;
+    border-radius: 13px;
+    background: linear-gradient(145deg, #1b3026, #17251f);
+}
+#dashboardCardPayments .dashboard-payment-summary > div { gap: 5px; }
+#dashboardCardPayments .dashboard-payment-summary span { font-size: 10px; }
+#dashboardCardPayments .dashboard-payment-summary strong { font-size: 24px; }
+#dashboardCardPayments .dashboard-payment-summary small {
+    display: inline-flex;
+    align-items: center;
+    min-height: 22px;
+    box-sizing: border-box;
+    padding: 3px 8px;
+    border: 1px solid #34483d;
+    border-radius: 999px;
+    background: rgba(7, 20, 14, .3);
+    color: #b4c5ba;
+    font-size: 10px;
+}
+#dashboardCardPayments .dashboard-payment-table-wrap {
+    min-width: 0;
+    align-self: start;
+    margin: 0;
+    background: #151f1d;
+}
+#dashboardCardPayments .dashboard-payment-table { table-layout: auto; }
+#dashboardCardPayments .dashboard-payment-table th,
+#dashboardCardPayments .dashboard-payment-table td { white-space: nowrap; }
+#dashboardCardPayments > .empty-table { grid-column: 1 / -1; }
+@media (max-width: 900px) {
+    #dashboardCardPayments { grid-template-columns: minmax(0, 1fr); }
+    #dashboardCardPayments > .dashboard-payment-summary {
+        min-height: 0;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+}
+@media (max-width: 600px) {
+    #dashboardCardPayments { display: block; }
+    #dashboardCardPayments > .dashboard-payment-summary {
+        margin-bottom: 10px;
+        padding: 12px;
+    }
+    #dashboardCardPayments .dashboard-payment-cards { padding: 0; }
+}
