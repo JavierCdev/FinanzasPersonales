@@ -1290,9 +1290,15 @@ async function deleteDebt(debtId, button) {
   const debt = debts.find(item => String(item.id) === String(debtId));
   if (!debt) return;
   const relatedPayments = debtPayments.filter(item => String(item.debt_id) === String(debtId)).length;
-  const message = relatedPayments
-    ? `¿Eliminar "${debt.name}"? También se eliminarán ${relatedPayments} pago(s) y sus gastos asociados, además de la compra inicial vinculada. Esta acción no se puede deshacer.`
-    : `¿Eliminar "${debt.name}" y su gasto inicial asociado? Esta acción no se puede deshacer.`;
+  const relatedScheduledExpenses = (typeof expenses !== "undefined" ? expenses : []).filter(item =>
+    (item.status === "scheduled" || item.paymentMethod === "scheduled") &&
+    String(item.debtId) === String(debtId)
+  ).length;
+  const relatedItems = [];
+  if (relatedPayments) relatedItems.push(`${relatedPayments} pago(s) y sus gastos asociados`);
+  if (relatedScheduledExpenses) relatedItems.push(`${relatedScheduledExpenses} cuota(s) programada(s)`);
+  relatedItems.push("el gasto inicial vinculado");
+  const message = `¿Eliminar "${debt.name}"? También se eliminarán ${relatedItems.join(", ")}. Esta acción no se puede deshacer.`;
   if (!window.confirm(message)) return;
 
   button.disabled = true;
@@ -1308,7 +1314,7 @@ async function deleteDebt(debtId, button) {
     if (typeof updateDashboard === "function") updateDashboard();
     if (typeof updateReports === "function") updateReports();
     await loadDebts();
-    showToast("Deuda y movimientos asociados eliminados correctamente.");
+    showToast("Deuda, cuotas programadas y movimientos asociados eliminados correctamente.");
   } catch (error) {
     console.error("Error eliminando deuda:", error);
     showToast(error?.message || "No se pudo eliminar la deuda.");
