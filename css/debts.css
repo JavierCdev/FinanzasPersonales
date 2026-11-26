@@ -867,6 +867,92 @@
   .debts-calendar-dialog-grid { gap:4px; }
 }
 
+/* Calendario ampliado: compacto y con proporciones equilibradas. */
+.debts-calendar-dialog { padding:16px; }
+.debts-calendar-dialog-card {
+  width:min(620px,100%);
+  max-height:min(88vh,760px);
+  padding:22px clamp(18px,2.5vw,28px);
+  border-radius:20px;
+}
+.debts-calendar-dialog-header { margin-bottom:16px; }
+.debts-calendar-dialog .debt-calendar-heading {
+  grid-template-columns:40px minmax(0,1fr) 40px;
+  gap:8px;
+  margin-bottom:14px;
+}
+.debts-calendar-dialog .debt-calendar-heading > .debt-calendar-nav {
+  width:40px;
+  min-width:40px;
+  height:40px;
+  min-height:40px;
+  transform:none;
+}
+.debts-calendar-dialog-grid {
+  width:min(100%,520px);
+  margin:0 auto;
+  gap:6px;
+}
+.debts-calendar-dialog-grid .debt-calendar-weekday {
+  padding:3px 0;
+  color:#91a99a;
+  font-size:10px;
+}
+.debts-calendar-dialog-grid .debt-calendar-day {
+  min-height:44px;
+  border-radius:10px;
+  font-size:14px;
+  transition:background .16s ease,border-color .16s ease,transform .16s ease;
+}
+.debts-calendar-dialog-grid .debt-calendar-day:hover:not(:disabled) {
+  transform:translateY(-1px);
+  border-color:rgba(147,195,106,.42);
+  background:#24382e;
+}
+.debts-calendar-dialog-grid .debt-calendar-day[aria-pressed="true"] {
+  border-color:rgba(198,241,120,.72);
+  outline:0;
+  background:linear-gradient(145deg,rgba(154,199,86,.25),rgba(61,91,53,.35));
+  color:#e5f5c2;
+  box-shadow:inset 0 0 0 1px rgba(198,241,120,.2);
+}
+.debts-calendar-dialog .debt-calendar-selection {
+  width:min(100%,520px);
+  box-sizing:border-box;
+  margin:14px auto 0;
+  padding:11px 13px;
+  border-radius:11px;
+  line-height:1.45;
+}
+@media (max-width:700px) {
+  .debts-calendar-dialog { padding:10px; }
+  .debts-calendar-dialog-card {
+    width:min(100%,560px);
+    max-height:calc(100dvh - 20px);
+    padding:18px 14px;
+    border-radius:17px;
+  }
+  .debts-calendar-dialog .debt-calendar-heading {
+    grid-template-columns:36px minmax(0,1fr) 36px;
+    gap:6px;
+    margin-bottom:12px;
+  }
+  .debts-calendar-dialog .debt-calendar-heading > .debt-calendar-nav {
+    width:36px;
+    min-width:36px;
+    height:36px;
+    min-height:36px;
+  }
+  .debts-calendar-dialog-grid { width:100%; gap:4px; }
+  .debts-calendar-dialog-grid .debt-calendar-day { min-height:40px; font-size:12px; }
+  .debts-calendar-dialog .debt-calendar-selection { width:100%; margin-top:12px; }
+}
+@media (max-width:380px) {
+  .debts-calendar-dialog-card { padding:16px 10px; }
+  .debts-calendar-dialog-grid { gap:3px; }
+  .debts-calendar-dialog-grid .debt-calendar-day { min-height:36px; font-size:11px; }
+}
+
 /* Selector de fecha compartido para pagos de deudas */
 .debt-date-picker { position:relative; width:100%; }
 .debt-date-picker > input[type="hidden"] { display:none !important; }
