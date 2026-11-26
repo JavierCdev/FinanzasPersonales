@@ -5813,7 +5813,7 @@ function openExpenseForm(
 ) {
 
     if (isScheduledExpense(expense)) {
-        alert("Las cuotas programadas se registran desde el botón «Registrar pago».");
+        alert("Las cuotas programadas se liquidan desde el módulo Deudas.");
         return;
     }
 
@@ -6747,7 +6747,7 @@ let html = `
                     ? "Por asignar"
                     : category?.name || expense.categoryName || "Categoría eliminada";
             const expenseActions = scheduled
-                ? `<button type="button" class="table-action-button expense-pay-scheduled" data-scheduled-expense-pay="${escapeHtml(expense.id)}" ${expense.debtId ? "" : "disabled"}>Registrar pago</button>`
+                ? ""
                 : `<button type="button" class="table-action-button" data-expense-action="edit" data-expense-id="${escapeHtml(expense.id)}">Editar</button>
                    <button type="button" class="table-action-button delete" data-expense-action="delete" data-expense-id="${escapeHtml(expense.id)}">Eliminar</button>`;
 
@@ -6889,19 +6889,6 @@ bindBulkSelection({
 
 
 expenseTableContainer?.addEventListener("click", event => {
-    const payButton = event.target.closest("[data-scheduled-expense-pay]");
-    if (payButton && expenseTableContainer.contains(payButton)) {
-        const expense = expenses.find(item => String(item.id) === String(payButton.dataset.scheduledExpensePay));
-        if (!isScheduledExpense(expense) || !expense.debtId) {
-            alert("Esta cuota ya no está pendiente o no se pudo identificar la deuda.");
-            return;
-        }
-        document.dispatchEvent(new CustomEvent("finanzas:pay-scheduled-debt", {
-            detail: { debtId: expense.debtId, expenseId: expense.id }
-        }));
-        return;
-    }
-
     const toggle = event.target.closest("[data-expense-toggle]");
 
     if (!toggle || !expenseTableContainer.contains(toggle)) {
@@ -7094,7 +7081,7 @@ document.addEventListener(
         }
 
         if (isScheduledExpense(expense)) {
-            alert("Las cuotas programadas se liquidan desde el botón «Registrar pago».");
+            alert("Las cuotas programadas se liquidan desde el módulo Deudas.");
             return;
         }
 

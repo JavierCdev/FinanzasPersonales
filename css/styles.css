@@ -8293,19 +8293,3 @@ select option:hover {
     line-height: 1.3;
     white-space: nowrap;
 }
-
-#expenseTableContainer .expense-pay-scheduled {
-    border-color: #3b805f;
-    background: #1d3b2e;
-    color: #8fe0b6;
-}
-
-#expenseTableContainer .expense-pay-scheduled:hover {
-    border-color: #60ac7f;
-    background: #254b39;
-}
-
-#expenseTableContainer .expense-pay-scheduled:disabled {
-    cursor: not-allowed;
-    opacity: 0.55;
-}

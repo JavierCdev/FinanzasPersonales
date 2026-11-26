@@ -965,16 +965,12 @@ function openHistoricalPaymentForm(debtId) {
   });
 }
 
-function openPaymentForm(debtId, scheduledExpenseId = "") {
+function openPaymentForm(debtId) {
   const debt = debts.find(item => String(item.id) === String(debtId));
   if (!debt) return;
   const scheduledExpenses = (typeof expenses !== "undefined" ? expenses : []).filter(item =>
     (item.status === "scheduled" || item.paymentMethod === "scheduled") && String(item.debtId) === String(debt.id)
   );
-  if (scheduledExpenseId && !scheduledExpenses.some(item => String(item.id) === String(scheduledExpenseId))) {
-    showToast("Esta cuota ya no está pendiente. Actualiza la lista e inténtalo de nuevo.", "error");
-    return;
-  }
   const categoriesList = (typeof categories !== "undefined" ? categories.expense : []).filter(item => item.active !== false);
   const accountsList = (typeof bankAccounts !== "undefined" ? bankAccounts : []).filter(item => item.isActive && item.currency === debt.currency);
   const availableCards = (typeof creditCards !== "undefined" ? creditCards : []).filter(item => item.active !== false);
@@ -1048,10 +1044,6 @@ function openPaymentForm(debtId, scheduledExpenseId = "") {
     updateTotal();
   };
   scheduledSelect.addEventListener("change", applyScheduledValues);
-  if (scheduledExpenseId) {
-    scheduledSelect.value = String(scheduledExpenseId);
-    applyScheduledValues();
-  }
   amountFields.forEach(id=>byId(id).addEventListener("input",updateTotal));
   const close = () => { overlay.hidden = true; overlay.replaceChildren(); };
   overlay.querySelector(".debt-payment-close").addEventListener("click",close);
@@ -1333,11 +1325,6 @@ list.addEventListener("click", event => {
   if (historyButton) { openHistoricalPaymentForm(historyButton.dataset.debtHistory); return; }
   const payButton = event.target.closest("[data-debt-pay]");
   if (payButton) openPaymentForm(payButton.dataset.debtPay);
-});
-
-document.addEventListener("finanzas:pay-scheduled-debt", event => {
-  const { debtId, expenseId } = event.detail || {};
-  if (debtId && expenseId) openPaymentForm(debtId, expenseId);
 });
 
 byId("debtNewButton")?.addEventListener("click", openForm);
