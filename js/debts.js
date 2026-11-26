@@ -373,6 +373,26 @@ function formatCalendarMonth(date) {
   return new Intl.DateTimeFormat("es-GT", { month: "long", year: "numeric" }).format(date);
 }
 
+function updateCalendarSelection(grid, dateKey, selected) {
+  const target = grid?.parentElement?.querySelector(".debt-calendar-selection");
+  if (!target) return;
+
+  target.innerHTML = selected.length
+    ? `<strong>${escape(new Intl.DateTimeFormat("es-GT", {
+        dateStyle: "long",
+        timeZone: "UTC"
+      }).format(new Date(`${dateKey}T12:00:00Z`)))}</strong>
+      <ul>${selected.map(item => `
+        <li>
+          <span>${escape(item.name)}</span>
+          <b>${escape(money(
+            item.installment_amount || item.balance || item.current_balance || 0,
+            item.currency || "GTQ"
+          ))}</b>
+        </li>`).join("")}</ul>`
+    : `<span>Sin vencimientos para este día.</span>`;
+}
+
 function drawCalendarGrid(grid, monthDate) {
   if (!grid) return;
 
@@ -420,30 +440,33 @@ function drawCalendarGrid(grid, monthDate) {
 
   grid.querySelectorAll("[data-calendar-date]").forEach(button => {
     button.addEventListener("click", () => {
-      grid.dataset.selectedDate = button.dataset.calendarDate;
+      const dateKey = button.dataset.calendarDate;
+      if (button.classList.contains("is-outside-month")) {
+        const clickedDate = new Date(`${dateKey}T12:00:00`);
+        calendarMonth = new Date(clickedDate.getFullYear(), clickedDate.getMonth(), 1);
+
+        const monthLabel = byId("debtsCalendarMonth");
+        const dialogMonthLabel = document.querySelector(".debts-calendar-dialog-month");
+        if (monthLabel) monthLabel.textContent = formatCalendarMonth(calendarMonth);
+        if (dialogMonthLabel) dialogMonthLabel.textContent = formatCalendarMonth(calendarMonth);
+
+        const selected = byDate.get(dateKey) || [];
+        const grids = [byId("debtsCalendarGrid"), document.querySelector(".debts-calendar-dialog-grid")]
+          .filter(Boolean);
+        grids.forEach(view => {
+          view.dataset.selectedDate = dateKey;
+          drawCalendarGrid(view, calendarMonth);
+          updateCalendarSelection(view, dateKey, selected);
+        });
+        return;
+      }
+
+      grid.dataset.selectedDate = dateKey;
       grid.querySelectorAll("[data-calendar-date]").forEach(item => {
         item.setAttribute("aria-pressed", String(item === button));
       });
 
-      const selected = byDate.get(button.dataset.calendarDate) || [];
-      const target = grid.parentElement.querySelector(".debt-calendar-selection");
-
-      if (target) {
-        target.innerHTML = selected.length
-          ? `<strong>${escape(new Intl.DateTimeFormat("es-GT", {
-              dateStyle: "long",
-              timeZone: "UTC"
-            }).format(new Date(`${button.dataset.calendarDate}T12:00:00Z`)))}</strong>
-            <ul>${selected.map(item => `
-              <li>
-                <span>${escape(item.name)}</span>
-                <b>${escape(money(
-                  item.installment_amount || item.balance || item.current_balance || 0,
-                  item.currency || "GTQ"
-                ))}</b>
-              </li>`).join("")}</ul>`
-          : `<span>Sin vencimientos para este día.</span>`;
-      }
+      updateCalendarSelection(grid, dateKey, byDate.get(dateKey) || []);
     });
   });
 }
